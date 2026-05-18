@@ -11,6 +11,18 @@
       "StarterPlayerScripts": {
         "$path": "src/StarterPlayer/StarterPlayerScripts"
       }
+    },
+
+    "ReplicatedStorage": {
+      "GUI": {
+        "$path": "src/ReplicatedStorageAssets/GUI.rbxmx"
+      },
+      "VFX": {
+        "$path": "src/ReplicatedStorageAssets/VFX.rbxmx"
+      },
+      "Audio": {
+        "$path": "src/ReplicatedStorageAssets/Audio.rbxmx"
+      }
     }
   }
 }
