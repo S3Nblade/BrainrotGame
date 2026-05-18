@@ -1,22 +1,16 @@
-{
-  "name": "BrainrotGame",
-  "tree": {
-    "$className": "DataModel",
-
-    "ServerScriptService": {
-      "$path": "src/ServerScriptService"
-    },
-
-    "StarterPlayer": {
-      "StarterPlayerScripts": {
-        "$path": "src/StarterPlayer/StarterPlayerScripts"
-      }
-    },
-
-    "ReplicatedStorage": {
-      "GUI": {
-        "$path": "src/ReplicatedStorageAssets/GUI.rbxmx"
-      }
-    }
-  }
-}
+(
+echo {
+echo   "name": "BrainrotGame",
+echo   "tree": {
+echo     "$className": "DataModel",
+echo     "ServerScriptService": {
+echo       "$path": "src/ServerScriptService"
+echo     },
+echo     "StarterPlayer": {
+echo       "StarterPlayerScripts": {
+echo         "$path": "src/StarterPlayer/StarterPlayerScripts"
+echo       }
+echo     }
+echo   }
+echo }
+) > default.project.json
