@@ -244,11 +244,29 @@ local function openTemplatePopup(name, assetNames)
 	}
 end
 
+local function callProUI(methodName)
+	local api = rawget(_G, "BrainrotProUI")
+	if type(api) == "table" and type(api[methodName]) == "function" then
+		api[methodName]()
+		return true
+	end
+
+	return false
+end
+
 local function openShop()
+	if callProUI("OpenShop") then
+		return
+	end
+
 	openTemplatePopup("Shop", { "shopT", "shoptemplate", "shop" })
 end
 
 local function openRebirth()
+	if callProUI("OpenRebirth") then
+		return
+	end
+
 	openTemplatePopup("Rebirth", { "rebirthT", "rebirthtemplate", "rebirth" })
 end
 
@@ -279,6 +297,10 @@ local function openInvite()
 end
 
 local function openIndex()
+	if callProUI("OpenIndex") then
+		return
+	end
+
 	if toggleGui({
 		"InventoryPanelGui",
 		"IndexPanelGui",

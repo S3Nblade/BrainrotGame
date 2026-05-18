@@ -9,8 +9,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local buyRemote = ReplicatedStorage:WaitForChild("BuyTrainingWeight")
-local updateSpeed = ReplicatedStorage:WaitForChild("UpdateSpeedStats")
+local buyRemote = ReplicatedStorage:FindFirstChild("BuyTrainingWeight")
+local updateSpeed = ReplicatedStorage:FindFirstChild("UpdateSpeedStats")
+
+if not buyRemote or not updateSpeed then
+	warn("[TrainingShopUpgrades] Legacy training shop skipped; unified pro shop is handling upgrades.")
+	return
+end
 
 local FONT = Enum.Font.FredokaOne
 
@@ -20,7 +25,7 @@ local currentTier = "Stone Weight"
 local TIERS = {
 	{
 		name = "Stone Weight",
-		icon = "🏋️",
+		icon = "ST",
 		speedPerTrain = 2,
 		requiredSpeed = 0,
 		top = Color3.fromRGB(160, 170, 185),
@@ -28,7 +33,7 @@ local TIERS = {
 	},
 	{
 		name = "Iron Weight",
-		icon = "💪",
+		icon = "IR",
 		speedPerTrain = 5,
 		requiredSpeed = 250,
 		top = Color3.fromRGB(100, 170, 255),
@@ -36,7 +41,7 @@ local TIERS = {
 	},
 	{
 		name = "Golden Weight",
-		icon = "👑",
+		icon = "$",
 		speedPerTrain = 12,
 		requiredSpeed = 1500,
 		top = Color3.fromRGB(255, 215, 55),
@@ -44,7 +49,7 @@ local TIERS = {
 	},
 	{
 		name = "Galaxy Weight",
-		icon = "⚡",
+		icon = "GX",
 		speedPerTrain = 30,
 		requiredSpeed = 5000,
 		top = Color3.fromRGB(190, 80, 255),

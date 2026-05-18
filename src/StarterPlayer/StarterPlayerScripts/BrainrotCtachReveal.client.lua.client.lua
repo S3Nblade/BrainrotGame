@@ -123,7 +123,7 @@ local function makeBurst(parent, color)
 		star.AnchorPoint = Vector2.new(0.5, 0.5)
 		star.Position = UDim2.new(0.5, 0, 0.5, 0)
 		star.Size = UDim2.new(0, 24, 0, 24)
-		star.Text = if i % 2 == 0 then "✨" else "⭐"
+		star.Text = if i % 2 == 0 then "*" else "+"
 		star.Font = FONT
 		star.TextScaled = true
 		star.TextColor3 = color
@@ -210,19 +210,53 @@ local function showFound(data)
 	dim.ZIndex = 240
 	dim.Parent = gui
 
+	local shadow = Instance.new("Frame")
+	shadow.Name = "CardShadow"
+	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadow.Position = UDim2.new(0.5, 0, 0.5, 32)
+	shadow.Size = UDim2.new(0, 462, 0, 260)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.62
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = 248
+	shadow.Parent = gui
+	addCorner(shadow, 30)
+
 	local card = Instance.new("Frame")
 	card.Name = "RevealCard"
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.new(0.5, 0, 0.5, 20)
-	card.Size = UDim2.new(0, 430, 0, 235)
-	card.BackgroundColor3 = Color3.fromRGB(15, 35, 55)
+	card.Size = UDim2.new(0, 460, 0, 260)
+	card.BackgroundColor3 = Color3.fromRGB(70, 205, 255)
 	card.BorderSizePixel = 0
 	card.ZIndex = 250
 	card.Parent = gui
 
 	addCorner(card, 28)
-	addStroke(card, Color3.fromRGB(0, 0, 0), 5)
-	addGradient(card, Color3.fromRGB(30, 70, 105), Color3.fromRGB(5, 15, 28))
+	addStroke(card, Color3.fromRGB(18, 20, 34), 5)
+	addGradient(card, Color3.fromRGB(72, 215, 255), Color3.fromRGB(43, 100, 230))
+
+	local inner = Instance.new("Frame")
+	inner.Name = "CreamInset"
+	inner.Position = UDim2.new(0, 18, 0, 78)
+	inner.Size = UDim2.new(1, -36, 1, -96)
+	inner.BackgroundColor3 = Color3.fromRGB(255, 247, 218)
+	inner.BorderSizePixel = 0
+	inner.ZIndex = 251
+	inner.Parent = card
+	addCorner(inner, 22)
+	addStroke(inner, Color3.fromRGB(18, 20, 34), 3)
+
+	local shine = Instance.new("Frame")
+	shine.Name = "TopShine"
+	shine.Position = UDim2.new(0, 18, 0, 12)
+	shine.Size = UDim2.new(1, -36, 0, 22)
+	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	shine.BackgroundTransparency = 0.78
+	shine.BorderSizePixel = 0
+	shine.ZIndex = 251
+	shine.Parent = card
+	addCorner(shine, 14)
 
 	local scale = Instance.new("UIScale")
 	scale.Scale = 0.55
@@ -231,11 +265,11 @@ local function showFound(data)
 	makeText(
 		card,
 		"Found",
-		"FOUND!",
+		"NPC FOUND!",
 		UDim2.new(0, 20, 0, 16),
 		UDim2.new(1, -40, 0, 58),
 		46,
-		Color3.fromRGB(120, 255, 35),
+		Color3.fromRGB(255, 235, 84),
 		252
 	)
 
@@ -243,18 +277,18 @@ local function showFound(data)
 		card,
 		"NPCName",
 		npcName,
-		UDim2.new(0, 20, 0, 74),
+		UDim2.new(0, 28, 0, 92),
 		UDim2.new(1, -40, 0, 42),
 		30,
-		Color3.fromRGB(255, 255, 255),
+		Color3.fromRGB(46, 53, 80),
 		252
 	)
 
 	local pill = Instance.new("Frame")
 	pill.Name = "RarityPill"
 	pill.AnchorPoint = Vector2.new(0.5, 0)
-	pill.Position = UDim2.new(0.5, 0, 0, 124)
-	pill.Size = UDim2.new(0, 190, 0, 40)
+	pill.Position = UDim2.new(0.5, 0, 0, 142)
+	pill.Size = UDim2.new(0, 214, 0, 42)
 	pill.BackgroundColor3 = rarityColor
 	pill.BorderSizePixel = 0
 	pill.ZIndex = 252
@@ -279,7 +313,7 @@ local function showFound(data)
 		card,
 		"Income",
 		"+ $" .. formatMoney(mps) .. "/s",
-		UDim2.new(0, 20, 0, 172),
+		UDim2.new(0, 20, 0, 192),
 		UDim2.new(1, -40, 0, 34),
 		24,
 		Color3.fromRGB(255, 230, 70),
@@ -289,11 +323,11 @@ local function showFound(data)
 	makeText(
 		card,
 		"Hint",
-		"Carry it to your plot or drop it!",
-		UDim2.new(0, 20, 0, 206),
-		UDim2.new(1, -40, 0, 22),
+		"Carry it to your plot to start earning.",
+		UDim2.new(0, 30, 0, 226),
+		UDim2.new(1, -60, 0, 24),
 		16,
-		Color3.fromRGB(190, 230, 255),
+		Color3.fromRGB(255, 252, 223),
 		252
 	)
 
@@ -318,6 +352,10 @@ local function showFound(data)
 
 		TweenService:Create(card, TweenInfo.new(0.18), {
 			Position = UDim2.new(0.5, 0, 0.5, -30),
+			BackgroundTransparency = 1,
+		}):Play()
+
+		TweenService:Create(shadow, TweenInfo.new(0.18), {
 			BackgroundTransparency = 1,
 		}):Play()
 

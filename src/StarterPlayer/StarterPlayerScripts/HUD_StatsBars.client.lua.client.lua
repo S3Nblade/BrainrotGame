@@ -113,24 +113,28 @@ local function formatNumber(value)
 end
 
 local function createIcon(parent, imageId, fallbackText, size)
+	if imageId == "" and fallbackText ~= "$" then
+		fallbackText = "STR"
+	end
+
 	if imageId ~= "" then
 		local img = Instance.new("ImageLabel")
 		img.Name = "Icon"
 		img.AnchorPoint = Vector2.new(0, 0.5)
-		img.Position = UDim2.new(0, 0, 0.5, 0)
+		img.Position = UDim2.new(0, 10, 0.5, 0)
 		img.Size = UDim2.fromOffset(size, size)
 		img.BackgroundTransparency = 1
 		img.Image = imageId
 		img.ScaleType = Enum.ScaleType.Fit
 		img.ZIndex = 3
 		img.Parent = parent
-		return img, size
+		return img, size + 16
 	end
 
 	local txt = Instance.new("TextLabel")
 	txt.Name = "Icon"
 	txt.AnchorPoint = Vector2.new(0, 0.5)
-	txt.Position = UDim2.new(0, 0, 0.5, 0)
+	txt.Position = UDim2.new(0, 10, 0.5, 0)
 	txt.Size = UDim2.fromOffset(size, size)
 	txt.BackgroundTransparency = 1
 	txt.Text = fallbackText
@@ -141,7 +145,7 @@ local function createIcon(parent, imageId, fallbackText, size)
 	txt.TextStrokeTransparency = 0
 	txt.ZIndex = 3
 	txt.Parent = parent
-	return txt, size
+	return txt, size + 16
 end
 
 local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, textColor)
@@ -154,6 +158,32 @@ local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, 
 	local scale = Instance.new("UIScale")
 	scale.Scale = 1
 	scale.Parent = row
+
+	local pill = Instance.new("Frame")
+	pill.Name = "PillBackground"
+	pill.Position = UDim2.new(0, 0, 0, 2)
+	pill.Size = UDim2.new(1, -8, 1, -4)
+	pill.BackgroundColor3 = textColor
+	pill.BorderSizePixel = 0
+	pill.ZIndex = 1
+	pill.Parent = row
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 18)
+	corner.Parent = pill
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(18, 20, 34)
+	stroke.Thickness = 3
+	stroke.Parent = pill
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 90
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, textColor:Lerp(Color3.fromRGB(255, 255, 255), 0.25)),
+		ColorSequenceKeypoint.new(1, textColor:Lerp(Color3.fromRGB(16, 20, 36), 0.42)),
+	})
+	gradient.Parent = pill
 
 	local _icon, iconWidth = createIcon(row, imageId, fallbackText, iconSize)
 
@@ -184,7 +214,7 @@ end
 local strengthLabel, strengthScale = createRow(
 	"StrengthRow",
 	strengthImage,
-	"💪",
+	"STR",
 	46,
 	35,
 	Color3.fromRGB(255, 191, 45)
