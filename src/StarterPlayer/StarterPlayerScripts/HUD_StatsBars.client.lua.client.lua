@@ -164,6 +164,7 @@ local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, 
 	pill.Position = UDim2.new(0, 0, 0, 2)
 	pill.Size = UDim2.new(1, -8, 1, -4)
 	pill.BackgroundColor3 = textColor
+	pill.BackgroundTransparency = 1
 	pill.BorderSizePixel = 0
 	pill.ZIndex = 1
 	pill.Parent = row
@@ -175,6 +176,7 @@ local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, 
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(18, 20, 34)
 	stroke.Thickness = 3
+	stroke.Transparency = 1
 	stroke.Parent = pill
 
 	local gradient = Instance.new("UIGradient")

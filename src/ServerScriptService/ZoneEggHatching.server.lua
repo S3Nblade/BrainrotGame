@@ -14,7 +14,7 @@ local RunService = game:GetService("RunService")
 local EggConfig = require(ServerScriptService:WaitForChild("EggConfig"))
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
-local EGG_FOLDER_NAME = "ZoneEggs"
+local EGG_FOLDER_NAME = NPC_FOLDER_NAME
 local EGG_SPAWNER_ID = "CleanZoneEggSpawner_v1"
 local REVEAL_REMOTE_NAME = "EggRevealResult"
 local LEGACY_REVEAL_REMOTE_NAME = "ZoneEggHatchResult"
@@ -322,17 +322,25 @@ local function randomPointInsideZone(zoneName, zoneConfig)
 		return nil
 	end
 
+	local boundaryRoot =
+		root:FindFirstChild("ZoneBoundary", true)
+		or root:FindFirstChild("EggSpawnArea", true)
+		or root:FindFirstChild("EggArea", true)
+		or root:FindFirstChild("Bounds", true)
+		or root
+
 	local spawnPoints = getSpawnPoints(root)
 	if #spawnPoints > 0 then
 		return randomPointOnPart(spawnPoints[rng:NextInteger(1, #spawnPoints)], zoneConfig.SpawnYOffset or 2.25)
 	end
 
-	local cf, size = getBounds(root)
+	local cf, size = getBounds(boundaryRoot)
 	if not cf or not size then
 		return nil
 	end
 	zoneRuntime[zoneName] = zoneRuntime[zoneName] or {}
 	zoneRuntime[zoneName].root = root
+	zoneRuntime[zoneName].boundaryRoot = boundaryRoot
 	zoneRuntime[zoneName].cframe = cf
 	zoneRuntime[zoneName].size = size
 
@@ -359,13 +367,20 @@ local function refreshZoneRuntime(zoneName)
 		return nil
 	end
 
-	local cf, size = getBounds(root)
+	local boundaryRoot =
+		root:FindFirstChild("ZoneBoundary", true)
+		or root:FindFirstChild("EggSpawnArea", true)
+		or root:FindFirstChild("EggArea", true)
+		or root:FindFirstChild("Bounds", true)
+		or root
+	local cf, size = getBounds(boundaryRoot)
 	if not cf or not size then
 		return nil
 	end
 
 	zoneRuntime[zoneName] = {
 		root = root,
+		boundaryRoot = boundaryRoot,
 		cframe = cf,
 		size = size,
 	}
@@ -1080,6 +1095,53 @@ local function escapeEgg(eggData)
 	end)
 end
 
+local function directionBlocked(eggData, origin, direction, distance)
+	local egg = eggData.Model
+	local runtime = zoneRuntime[eggData.Zone] or refreshZoneRuntime(eggData.Zone)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { egg, eggFolder }
+	params.IgnoreWater = true
+
+	local result = Workspace:Raycast(origin, direction.Unit * distance, params)
+	if not result then
+		return false
+	end
+
+	if runtime and runtime.root and result.Instance:IsDescendantOf(runtime.root) then
+		local lowerName = string.lower(result.Instance.Name)
+		if string.find(lowerName, "floor", 1, true)
+			or string.find(lowerName, "ground", 1, true)
+			or string.find(lowerName, "grass", 1, true)
+			or string.find(lowerName, "terrain", 1, true)
+			or string.find(lowerName, "spawn", 1, true) then
+			return false
+		end
+	end
+
+	return true
+end
+
+local function chooseSafeDirection(eggData, origin, preferred)
+	local candidates = {
+		preferred,
+		CFrame.fromAxisAngle(Vector3.yAxis, math.rad(35)):VectorToWorldSpace(preferred),
+		CFrame.fromAxisAngle(Vector3.yAxis, math.rad(-35)):VectorToWorldSpace(preferred),
+		CFrame.fromAxisAngle(Vector3.yAxis, math.rad(75)):VectorToWorldSpace(preferred),
+		CFrame.fromAxisAngle(Vector3.yAxis, math.rad(-75)):VectorToWorldSpace(preferred),
+		-preferred,
+	}
+
+	for _, direction in ipairs(candidates) do
+		local flat = Vector3.new(direction.X, 0, direction.Z)
+		if flat.Magnitude > 0.1 and not directionBlocked(eggData, origin + Vector3.new(0, 0.8, 0), flat, 6) then
+			return flat.Unit
+		end
+	end
+
+	return Vector3.new(math.cos(os.clock() + eggData.MoveSeed), 0, math.sin(os.clock() + eggData.MoveSeed)).Unit
+end
+
 local function moveEggAway(eggData, dt)
 	local egg = eggData.Model
 	local root = getRoot(egg)
@@ -1124,11 +1186,24 @@ local function moveEggAway(eggData, dt)
 	end
 
 	local strafe = Vector3.new(-away.Z, 0, away.X).Unit * math.sin(now * 1.6 + eggData.MoveSeed) * 0.42
-	local direction = (away.Unit + strafe).Unit
+	local direction = chooseSafeDirection(eggData, root.Position, (away.Unit + strafe).Unit)
 	local speed = tonumber(eggData.EggDef.Speed) or tonumber(egg:GetAttribute("EggSpeed")) or 12
 	local nextPosition = root.Position + direction * speed * dt
 	nextPosition = clampToZone(eggData.Zone, nextPosition)
 	nextPosition = Vector3.new(nextPosition.X, eggData.BaseY or nextPosition.Y, nextPosition.Z)
+
+	if eggData.LastPosition and (root.Position - eggData.LastPosition).Magnitude < 0.05 then
+		eggData.StuckTime = (eggData.StuckTime or 0) + dt
+	else
+		eggData.StuckTime = 0
+	end
+
+	if (eggData.StuckTime or 0) > 1.1 then
+		local recover = clampToZone(eggData.Zone, root.Position + chooseSafeDirection(eggData, root.Position, direction + Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1))) * 8)
+		nextPosition = Vector3.new(recover.X, eggData.BaseY or recover.Y, recover.Z)
+		eggData.StuckTime = 0
+	end
+	eggData.LastPosition = root.Position
 
 	local bounce = math.sin(os.clock() * 10 + eggData.MoveSeed) * 0.16
 	local lookAt = nextPosition + direction

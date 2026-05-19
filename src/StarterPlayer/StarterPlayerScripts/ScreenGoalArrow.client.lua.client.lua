@@ -17,6 +17,17 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
+local TutorialEnabled = false
+
+if not TutorialEnabled then
+	local playerGui = player:WaitForChild("PlayerGui")
+	local old = playerGui:FindFirstChild("ScreenGoalArrowGui")
+	if old then
+		old:Destroy()
+	end
+	print("[ScreenGoalArrow] Tutorial disabled by config.")
+	return
+end
 
 local STEP_CATCH = 1
 local STEP_PLACE = 2

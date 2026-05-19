@@ -3,6 +3,13 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local PlayerAuraEnabled = false
+
+if not PlayerAuraEnabled then
+	print("[GoldenAuraPlayerSpeedTest] Player aura disabled by config.")
+	return
+end
+
 local TEXTURES = {
 	SoftGlow = "rbxassetid://89264740074171",
 	FlameWisp = "rbxassetid://109158324213433",

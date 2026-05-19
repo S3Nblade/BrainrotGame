@@ -28,6 +28,24 @@ local dirtyPlayers = {}
 local savingPlayers = {}
 local connectedNpcs = {}
 
+local function getOrCreateBindableFunction(name)
+	local bindable = ServerStorage:FindFirstChild(name)
+	if bindable and bindable:IsA("BindableFunction") then
+		return bindable
+	end
+	if bindable then
+		bindable:Destroy()
+	end
+
+	bindable = Instance.new("BindableFunction")
+	bindable.Name = name
+	bindable.Parent = ServerStorage
+	return bindable
+end
+
+local addSavedSpeedFunction = getOrCreateBindableFunction("AddSavedSpeedFunction")
+local saveSpeedFunction = getOrCreateBindableFunction("SaveSpeedFunction")
+
 local function log(...)
 	print("[BrainrotPersistentSaveBridge]", ...)
 end
@@ -209,6 +227,85 @@ local function setMoneyAmount(player, amount)
 	end
 end
 
+local function getStrengthValue(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		leaderstats = Instance.new("Folder")
+		leaderstats.Name = "leaderstats"
+		leaderstats.Parent = player
+	end
+
+	local strength =
+		leaderstats:FindFirstChild("Strength")
+		or leaderstats:FindFirstChild("Power")
+		or leaderstats:FindFirstChild("SpeedPower")
+		or leaderstats:FindFirstChild("Speed")
+
+	if strength and strength:IsA("ValueBase") then
+		return strength
+	end
+
+	strength = Instance.new("NumberValue")
+	strength.Name = "Strength"
+	strength.Value =
+		tonumber(player:GetAttribute("Strength"))
+		or tonumber(player:GetAttribute("Power"))
+		or tonumber(player:GetAttribute("SpeedPower"))
+		or tonumber(player:GetAttribute("Speed"))
+		or 0
+	strength.Parent = leaderstats
+	return strength
+end
+
+local function getStrengthAmount(player)
+	local value = getStrengthValue(player)
+	return tonumber(value.Value) or 0
+end
+
+local function setStrengthAmount(player, amount)
+	amount = math.max(0, math.floor(tonumber(amount) or 0))
+
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		leaderstats = Instance.new("Folder")
+		leaderstats.Name = "leaderstats"
+		leaderstats.Parent = player
+	end
+
+	local strength = leaderstats:FindFirstChild("Strength")
+	if not strength then
+		strength = Instance.new("NumberValue")
+		strength.Name = "Strength"
+		strength.Parent = leaderstats
+	end
+
+	if strength:IsA("ValueBase") then
+		strength.Value = amount
+	end
+
+	for _, statName in ipairs({ "Power", "SpeedPower", "Speed" }) do
+		local alias = leaderstats:FindFirstChild(statName)
+		if alias and alias:IsA("ValueBase") then
+			alias.Value = amount
+		end
+	end
+
+	player:SetAttribute("Strength", amount)
+	player:SetAttribute("Power", amount)
+	player:SetAttribute("SpeedPower", amount)
+	player:SetAttribute("Speed", amount)
+	player:SetAttribute("WalkSpeed", math.clamp(16 + math.sqrt(amount) * 1.55, 16, 115))
+
+	local updateSpeedStats = ReplicatedStorage:FindFirstChild("UpdateSpeedStats")
+	if updateSpeedStats and updateSpeedStats:IsA("RemoteEvent") then
+		updateSpeedStats:FireClient(player, {
+			strength = amount,
+			speedPower = amount,
+			walkSpeed = player:GetAttribute("WalkSpeed"),
+		})
+	end
+end
+
 local function serializeNpc(player, npc)
 	local uid = ensureUid(npc)
 	local cf = npc:GetPivot()
@@ -262,6 +359,7 @@ local function collectSaveData(player)
 		name = player.Name,
 		savedAt = os.time(),
 		money = getMoneyAmount(player),
+		strength = getStrengthAmount(player),
 		npcs = npcs,
 	}
 end
@@ -296,11 +394,36 @@ local function savePlayer(player, reason)
 
 	if ok then
 		dirtyPlayers[player] = nil
-		log("Saved:", player.Name, "Money:", data.money, "NPCs:", #data.npcs, "Reason:", reason or "manual")
+		log("Saved:", player.Name, "Money:", data.money, "Strength:", data.strength, "NPCs:", #data.npcs, "Reason:", reason or "manual")
 	else
 		warnLog("SAVE FAILED:", player.Name, err)
 		warnLog("Enable Game Settings > Security > Enable Studio Access to API Services")
 	end
+end
+
+addSavedSpeedFunction.OnInvoke = function(player, gain, saveNow)
+	if not player or not player.Parent then
+		return 0
+	end
+
+	local total = getStrengthAmount(player) + math.max(0, math.floor(tonumber(gain) or 0))
+	setStrengthAmount(player, total)
+	markDirty(player, "strength changed")
+
+	if saveNow == true then
+		savePlayer(player, "strength add")
+	end
+
+	return total
+end
+
+saveSpeedFunction.OnInvoke = function(player)
+	if not player or not player.Parent then
+		return false
+	end
+
+	savePlayer(player, "strength save request")
+	return true
 end
 
 local function getExistingNpcByUid(uid)
@@ -470,6 +593,7 @@ local function restorePlayer(player)
 	end
 
 	setMoneyAmount(player, tonumber(decoded.money) or 0)
+	setStrengthAmount(player, tonumber(decoded.strength) or tonumber(decoded.speedPower) or tonumber(decoded.speed) or 0)
 
 	local restored = 0
 
@@ -480,31 +604,47 @@ local function restorePlayer(player)
 		end
 	end
 
-	log("Restored:", player.Name, "Money:", decoded.money or 0, "NPCs:", restored)
+	log("Restored:", player.Name, "Money:", decoded.money or 0, "Strength:", decoded.strength or 0, "NPCs:", restored)
 end
 
-local function connectMoneyWatch(player)
+local function connectStatWatch(player)
 	task.spawn(function()
 		local leaderstats = player:WaitForChild("leaderstats", 20)
 		if not leaderstats then
 			return
 		end
 
+		local watched = {
+			Money = true,
+			Coins = true,
+			Cash = true,
+			Strength = true,
+			Power = true,
+			SpeedPower = true,
+			Speed = true,
+		}
+
 		for _, child in ipairs(leaderstats:GetChildren()) do
-			if child:IsA("ValueBase") and (child.Name == "Money" or child.Name == "Coins" or child.Name == "Cash") then
+			if child:IsA("ValueBase") and watched[child.Name] then
 				child.Changed:Connect(function()
-					markDirty(player, "money changed")
+					markDirty(player, string.lower(child.Name) .. " changed")
 				end)
 			end
 		end
 
 		leaderstats.ChildAdded:Connect(function(child)
-			if child:IsA("ValueBase") and (child.Name == "Money" or child.Name == "Coins" or child.Name == "Cash") then
+			if child:IsA("ValueBase") and watched[child.Name] then
 				child.Changed:Connect(function()
-					markDirty(player, "money changed")
+					markDirty(player, string.lower(child.Name) .. " changed")
 				end)
 			end
 		end)
+
+		for _, attr in ipairs({ "Money", "Coins", "Cash", "Strength", "Power", "SpeedPower", "Speed" }) do
+			player:GetAttributeChangedSignal(attr):Connect(function()
+				markDirty(player, string.lower(attr) .. " attribute")
+			end)
+		end
 	end)
 end
 
@@ -559,7 +699,7 @@ for _, npc in ipairs(getNpcFolder():GetChildren()) do
 end
 
 Players.PlayerAdded:Connect(function(player)
-	connectMoneyWatch(player)
+	connectStatWatch(player)
 
 	task.delay(RESTORE_AFTER_SECONDS, function()
 		if player.Parent then
@@ -601,4 +741,4 @@ game:BindToClose(function()
 	task.wait(2)
 end)
 
-print("[BrainrotPersistentSaveBridge] Loaded. Money + inventory + placed NPC backup save active.")
+print("[BrainrotPersistentSaveBridge] Loaded. Money + Strength + inventory + placed NPC backup save active.")

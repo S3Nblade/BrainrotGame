@@ -18,8 +18,8 @@ local clockFolder = guiFolder:WaitForChild("Clock")
 local FONT = Enum.Font.FredokaOne
 local tracked = {}
 
-local BILLBOARD_SIZE = UDim2.fromOffset(220, 92)
-local BILLBOARD_OFFSET = Vector3.new(0, 7.25, 0)
+local BILLBOARD_SIZE = UDim2.fromOffset(220, 122)
+local BILLBOARD_OFFSET = Vector3.new(0, 6.75, 0)
 
 local CLOCK_SIZE = 40
 local LOW_TIME_SECONDS = 5
@@ -363,12 +363,38 @@ local function createGui(npc)
 	local clock = createClockTimerRow(main)
 	local hpBar = createHPBar(main)
 
+	local eggName = createText(
+		main,
+		"EggName",
+		UDim2.new(0.5, -92, 0, 0),
+		UDim2.fromOffset(184, 22),
+		"",
+		Color3.fromRGB(255, 255, 255),
+		18,
+		36
+	)
+	eggName.Visible = false
+
+	local luckText = createText(
+		main,
+		"LuckText",
+		UDim2.new(0.5, -82, 0, 84),
+		UDim2.fromOffset(164, 24),
+		"",
+		Color3.fromRGB(255, 224, 90),
+		17,
+		36
+	)
+	luckText.Visible = false
+
 	return {
 		billboard = billboard,
 		main = main,
 		scale = scale,
 		clock = clock,
 		hpBar = hpBar,
+		eggName = eggName,
+		luckText = luckText,
 		hpTween = nil,
 		lastMode = "hidden",
 		lastHPRatio = nil,
@@ -504,12 +530,22 @@ local function setCaptureMode(data, npc)
 	local endTime = tonumber(npc:GetAttribute("CaptureChaseEndTime")) or 0
 	local timeLeft = math.max(0, endTime - getServerTime())
 
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
 	data.clock.row.Visible = true
+	data.eggName.Visible = isEgg
+	data.luckText.Visible = isEgg
 
-	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 56)
-	data.hpBar.outer.Size = UDim2.fromOffset(194, 25)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(125, 22, 31)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 66, 78)
+	if isEgg then
+		data.eggName.Text = tostring(npc:GetAttribute("DisplayName") or npc.Name)
+		data.luckText.Text = "Luck +" .. tostring(math.floor(tonumber(npc:GetAttribute("LuckBonus")) or 0)) .. "%"
+	end
+
+	data.clock.row.Position = isEgg and UDim2.new(0.5, 0, 0, 22) or UDim2.new(0.5, 0, 0, 2)
+	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
+	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
+	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(20, 22, 34)
+	data.hpBar.outer.BackgroundTransparency = isEgg and 0.18 or 0
+	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(255, 92, 110) or Color3.fromRGB(255, 66, 78)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 170, 175)
 
 	updateClock(data, timeLeft)
@@ -532,6 +568,8 @@ local function setStunnedMode(data, npc)
 	data.lastMode = "stunned"
 
 	data.clock.row.Visible = false
+	data.eggName.Visible = false
+	data.luckText.Visible = false
 
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(165, 23)
@@ -551,6 +589,8 @@ local function setPanicMode(data)
 	data.stunPopupShown = false
 
 	data.clock.row.Visible = false
+	data.eggName.Visible = false
+	data.luckText.Visible = false
 
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)

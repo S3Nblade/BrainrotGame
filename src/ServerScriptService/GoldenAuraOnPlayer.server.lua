@@ -1,6 +1,19 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
+local PlayerAuraEnabled = false
+
+if not PlayerAuraEnabled then
+	for _, obj in ipairs(workspace:GetChildren()) do
+		if obj.Name == "GoldenImageAura_ACTIVE" or obj.Name == "AuraImageID_TEST" then
+			obj:Destroy()
+		end
+	end
+
+	print("[GoldenAuraOnPlayer] Player aura disabled by config.")
+	return
+end
+
 local TEXTURES = {
 	SoftGlow = "rbxassetid://89264740074171",
 	FlameWisp = "rbxassetid://109158324213433",

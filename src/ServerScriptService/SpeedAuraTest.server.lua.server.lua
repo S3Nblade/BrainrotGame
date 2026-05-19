@@ -2,6 +2,13 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local PlayerAuraEnabled = false
+
+if not PlayerAuraEnabled then
+	print("[SpeedAuraTest] Player aura disabled by config.")
+	return
+end
+
 local AURA_TEMPLATE = ReplicatedStorage:WaitForChild("GoldenBrainrotAura")
 
 local BASE_SCALE = 1.0
