@@ -576,6 +576,13 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 		silhouetteOverlay.ImageTransparency = 0.08
 	end
 
+	local rimGlow = createImageLayer(card, "AssetSilhouetteRimGlow", "SilhouetteRimGlow", 41, 0.15, Color3.fromRGB(190, 62, 255))
+	if rimGlow then
+		rimGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+		rimGlow.Position = UDim2.fromScale(0.5, 0.43)
+		rimGlow.Size = UDim2.fromScale(0.88, 0.76)
+	end
+
 	local question = createTextLabel(card, "Question", "?", UDim2.fromScale(0.44, 0.32), UDim2.fromScale(0.28, 0.2), 42, THEME.Cream, 42)
 	question.AnchorPoint = Vector2.new(0, 0)
 
@@ -618,6 +625,7 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 		question = question,
 		questionImage = questionImage,
 		silhouetteOverlay = silhouetteOverlay,
+		rimGlow = rimGlow,
 		cardOutline = cardOutline,
 		nameLabel = nameLabel,
 		rarityLabel = rarityLabel,
@@ -633,6 +641,10 @@ local function updateShadowCard(cardData, npc, revealed)
 	end
 	if cardData.silhouetteOverlay then
 		cardData.silhouetteOverlay.Visible = not revealed
+	end
+	if cardData.rimGlow then
+		cardData.rimGlow.ImageColor3 = profile.color
+		cardData.rimGlow.Visible = not revealed
 	end
 	cardData.rarityLabel.TextColor3 = profile.color
 	cardData.question.Text = revealed and "!" or "?"
@@ -863,6 +875,23 @@ local function playRevealSequence(rawPayload)
 		playTween(ambientBurst, 0.42, { ImageTransparency = 0.36, Rotation = 8 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end
 
+	local energyBeams = createImageLayer(gui, "CinematicEnergyBeams", "CinematicEnergyBeams", 4, 1, profile.color)
+	if energyBeams then
+		energyBeams.AnchorPoint = Vector2.new(0.5, 0.5)
+		energyBeams.Position = UDim2.fromScale(0.5, 0.56)
+		energyBeams.Size = UDim2.fromScale(1.12, 1.12)
+		playTween(energyBeams, 0.46, { ImageTransparency = 0.18, Rotation = -3 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
+	local confettiField = createImageLayer(gui, "CinematicConfettiField", "CinematicConfettiField", 82, 1, Color3.fromRGB(255, 255, 255))
+	if confettiField then
+		confettiField.AnchorPoint = Vector2.new(0.5, 0.5)
+		confettiField.Position = UDim2.fromScale(0.5, 0.5)
+		confettiField.Size = UDim2.fromScale(1.05, 1.05)
+		confettiField.Rotation = -2
+		playTween(confettiField, 0.5, { ImageTransparency = 0.1, Rotation = 2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
 	local stage = Instance.new("Frame")
 	stage.Name = "RevealStage"
 	stage.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -888,6 +917,13 @@ local function playRevealSequence(rawPayload)
 		panelBg.Position = UDim2.fromScale(0.5, 0.58)
 		panelBg.Size = UDim2.fromScale(0.78, 0.46)
 		panelBg.ImageTransparency = 0.34
+	end
+
+	local floorGlow = createImageLayer(stage, "CinematicFloorGlow", "CinematicFloorGlow", 17, 0.08, profile.color)
+	if floorGlow then
+		floorGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+		floorGlow.Position = UDim2.fromScale(0.5, 0.72)
+		floorGlow.Size = UDim2.fromScale(0.86, 0.32)
 	end
 
 	local stageScale = Instance.new("UIScale")

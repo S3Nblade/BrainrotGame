@@ -13,6 +13,10 @@ These assets are decorative layers only. Do not bake dynamic text, buttons, NPC 
 | `question_mark_glow.png` | Glowing mystery question mark | `ImageLabel` | Center of shadow cards | Yes | Roll phase unknown marker | Transparent background |
 | `center_spotlight.png` | Bright white/purple center glow behind final NPC | `ImageLabel` | Center screen, around 92% x 92% | Yes | Final selection glow build-up | Radial transparent edge |
 | `reveal_burst.png` | Large purple radial rays like a reward explosion | `ImageLabel` | Full-screen center burst | Yes | Ambient roll energy and final burst, rotate/tween | Transparent between rays |
+| `cinematic_energy_beams.png` | Wide purple light beam field matching the reference reward explosion | `ImageLabel` | Full-screen center, around 112% x 112% | Yes | Persistent cinematic beams behind silhouettes and final NPC | Transparent between beams |
+| `cinematic_confetti_field.png` | Floating purple/white rectangular shard field | `ImageLabel` | Full-screen overlay, around 105% x 105% | Optional | Lightweight confetti layer during reveal | Transparent outside shards |
+| `cinematic_floor_glow.png` | Purple oval floor/base glow under the NPC lineup | `ImageLabel` | Lower center, around 86% x 32% | Yes | Grounds the silhouette row and final NPC | Soft transparent edges |
+| `silhouette_rim_glow.png` | Generic purple rim glow for mystery silhouettes | `ImageLabel` | Over each roll silhouette/card | Yes | Adds the screenshot-like purple outline to unknown NPCs | Transparent outside generic aura |
 | `sparkle_particle_1.png` | Diamond shard particle | `ImageLabel` | 12-34 px | Yes | Animated reveal confetti/sparkles | Transparent background |
 | `sparkle_particle_2.png` | Tilted rectangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
 | `sparkle_particle_3.png` | Triangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
