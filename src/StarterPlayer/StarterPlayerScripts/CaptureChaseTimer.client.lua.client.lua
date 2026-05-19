@@ -568,15 +568,21 @@ local function setStunnedMode(data, npc)
 	data.lastMode = "stunned"
 
 	data.clock.row.Visible = false
-	data.eggName.Visible = false
-	data.luckText.Visible = false
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
+	data.eggName.Visible = isEgg
+	data.luckText.Visible = isEgg
 
-	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
-	data.hpBar.outer.Size = UDim2.fromOffset(165, 23)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(38, 110, 26)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(120, 255, 70)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(220, 255, 185)
-	data.hpBar.text.Text = npc:GetAttribute("EggBrainrot") == true and "READY TO HATCH" or "READY TO PICKUP"
+	if isEgg then
+		data.eggName.Text = tostring(npc:GetAttribute("DisplayName") or npc.Name)
+		data.luckText.Text = "Press E to Hatch"
+	end
+
+	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
+	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
+	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(120, 78, 16)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 210, 60)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 245, 160)
+	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
 end
 
 local function setPanicMode(data)

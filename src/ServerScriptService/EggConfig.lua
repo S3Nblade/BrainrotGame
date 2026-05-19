@@ -11,6 +11,13 @@ EggConfig.LuckScaling = {
 	MutationLuckScale = 0.016,
 }
 
+EggConfig.EvadeSuccessFullHeal = true
+EggConfig.EvadeSuccessSpeedBoostDuration = 3
+EggConfig.EvadeSuccessInvulnerableDuration = 2
+EggConfig.EvadeSuccessSpeedMultiplier = 1.4
+EggConfig.StunDuration = 20
+EggConfig.HatchPromptText = "Press E to Hatch"
+
 EggConfig.RarityOrder = {
 	Common = 1,
 	Rare = 2,

@@ -333,7 +333,7 @@ local function getBrainrotName(instance)
 		return "Brainrot"
 	end
 
-	return tostring(
+	local name = tostring(
 		instance:GetAttribute("DisplayName")
 			or instance:GetAttribute("BrainrotName")
 			or instance:GetAttribute("BaseBrainrotName")
@@ -342,6 +342,10 @@ local function getBrainrotName(instance)
 			or instance.Name
 			or "Brainrot"
 	)
+
+	name = string.gsub(name, "^%s*Desert%s*[:%-|]*%s*", "")
+	name = string.gsub(name, "%s*[:%-|]*%s*Desert%s*$", "")
+	return name
 end
 
 local function getMutation(npc)
@@ -737,7 +741,7 @@ local function ensureNpcGui(npc)
 	gui.Name = NPC_GUI_NAME
 	gui.Adornee = root
 	gui.AlwaysOnTop = true
-	gui.Size = UDim2.fromOffset(150, 42)
+	gui.Size = UDim2.fromOffset(160, 54)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, height / 2 + 1.2, 0)
 	gui.MaxDistance = 80
 	gui.Parent = root
@@ -884,10 +888,11 @@ local function updateNpcInfo(npc)
 	end
 
 	local text = getBrainrotName(npc)
+		.. "\n"
+		.. getMutation(npc)
 		.. "\n$"
 		.. formatMoney(getMps(npc))
-		.. "/s  •  "
-		.. getMutation(npc)
+		.. "/s"
 
 	setSurfaceGuiText(gui, text)
 end

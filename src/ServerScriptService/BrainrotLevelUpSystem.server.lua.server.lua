@@ -263,6 +263,9 @@ local function getBrainrotName(model)
 		name = "Brainrot"
 	end
 
+	name = string.gsub(name, "^%s*Desert%s*[:%-|]*%s*", "")
+	name = string.gsub(name, "%s*[:%-|]*%s*Desert%s*$", "")
+
 	return name
 end
 
@@ -725,13 +728,10 @@ local function updateNpcInfoGui(npc)
 	local rarityLabel = holder:FindFirstChild("RarityText")
 	local mpsLabel = holder:FindFirstChild("MpsText")
 
-	local level = getCurrentLevel(npc)
-	local mps = calculateMps(npc, level)
+	local mps = calculateMps(npc, getCurrentLevel(npc))
 	local name = getBrainrotName(npc)
-	local rarity = getRarity(npc)
 	local mutation = getMutation(npc)
 
-	local rarityColor = RARITY_COLORS[rarity] or Color3.fromRGB(255, 255, 255)
 	local mutationColor = MUTATION_COLORS[mutation] or Color3.fromRGB(255, 255, 255)
 
 	if nameLabel then
@@ -740,13 +740,8 @@ local function updateNpcInfoGui(npc)
 	end
 
 	if rarityLabel then
-		if mutation ~= "Normal" then
-			rarityLabel.Text = rarity .. " • " .. mutation .. " • L" .. tostring(level)
-			rarityLabel.TextColor3 = mutationColor
-		else
-			rarityLabel.Text = rarity .. " • L" .. tostring(level)
-			rarityLabel.TextColor3 = rarityColor
-		end
+		rarityLabel.Text = mutation ~= "" and mutation or "Normal"
+		rarityLabel.TextColor3 = mutationColor
 	end
 
 	if mpsLabel then

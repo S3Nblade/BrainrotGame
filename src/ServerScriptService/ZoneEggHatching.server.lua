@@ -28,6 +28,8 @@ local rng = Random.new()
 local activeById = {}
 local lastDamageAt = {}
 local zoneRuntime = {}
+local hatchStunnedEgg = nil
+local getPlayerRoot = nil
 
 local function ensureFolder(parent, name)
 	local folder = parent:FindFirstChild(name)
@@ -605,6 +607,8 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	model:SetAttribute("CaptureShielded", false)
 	model:SetAttribute("CaptureShieldEndTime", 0)
 	model:SetAttribute("CaptureStunned", false)
+	model:SetAttribute("EggInvulnerable", false)
+	model:SetAttribute("EggStunEndTime", 0)
 	model:SetAttribute("HatchInProgress", false)
 	model:SetAttribute("CanPickup", false)
 	model:SetAttribute("PickupReady", false)
@@ -676,6 +680,23 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	highlight.OutlineTransparency = eggDef.Rarity == "Common" and 0.45 or 0.2
 	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 	highlight.Parent = model
+
+	local hatchPrompt = Instance.new("ProximityPrompt")
+	hatchPrompt.Name = "EggHatchPrompt"
+	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
+	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
+	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	hatchPrompt.HoldDuration = 0.15
+	hatchPrompt.MaxActivationDistance = 10
+	hatchPrompt.RequiresLineOfSight = false
+	hatchPrompt.Enabled = false
+	hatchPrompt.Parent = root
+	hatchPrompt.Triggered:Connect(function(player)
+		if hatchStunnedEgg then
+			hatchStunnedEgg(player, model)
+		end
+	end)
 
 	createBillboard(model, eggDef)
 
@@ -842,12 +863,147 @@ local function playBreakEffect(egg)
 	Debris:AddItem(attachment, 1.2)
 end
 
+local function setHatchPromptEnabled(egg, enabled)
+	local root = getRoot(egg)
+	local prompt = root and root:FindFirstChild("EggHatchPrompt")
+	if prompt and prompt:IsA("ProximityPrompt") then
+		prompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+		prompt.Enabled = enabled == true
+	end
+end
+
+local function clearEggChaseState(egg)
+	egg:SetAttribute("CaptureChaseActive", false)
+	egg:SetAttribute("CaptureChaseStartTime", 0)
+	egg:SetAttribute("CaptureChaseEndTime", 0)
+	egg:SetAttribute("CaptureChaseDuration", 0)
+	egg:SetAttribute("CaptureHunterUserId", 0)
+	egg:SetAttribute("CaptureHunterName", "")
+end
+
+local function healEggToFull(egg)
+	local maxHP = tonumber(egg:GetAttribute("EggMaxHP")) or 100
+	egg:SetAttribute("EggHP", maxHP)
+	egg:SetAttribute("CaptureHP", maxHP)
+
+	local humanoid = egg:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.MaxHealth = maxHP
+		humanoid.Health = maxHP
+	end
+end
+
+local function resetEggForAttack(eggData)
+	local egg = eggData.Model
+	if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
+		return
+	end
+
+	clearEggChaseState(egg)
+	healEggToFull(egg)
+	egg:SetAttribute("CapturePanic", false)
+	egg:SetAttribute("CaptureShielded", false)
+	egg:SetAttribute("CaptureShieldEndTime", 0)
+	egg:SetAttribute("CaptureStunned", false)
+	egg:SetAttribute("EggInvulnerable", false)
+	egg:SetAttribute("EggStunEndTime", 0)
+	egg:SetAttribute("CanPickup", false)
+	egg:SetAttribute("PickupReady", false)
+	setHatchPromptEnabled(egg, false)
+
+	eggData.ChaseTarget = nil
+	eggData.SpeedMultiplier = 1
+	eggData.SpeedBoostUntil = 0
+	eggData.InvulnerableUntil = 0
+	eggData.StuckTime = 0
+end
+
+local function showStunEffect(egg)
+	local root = getRoot(egg)
+	if not root then
+		return
+	end
+
+	local old = root:FindFirstChild("EggStunGlow")
+	if old then
+		old:Destroy()
+	end
+
+	local glow = Instance.new("PointLight")
+	glow.Name = "EggStunGlow"
+	glow.Color = Color3.fromRGB(255, 234, 92)
+	glow.Brightness = 1.15
+	glow.Range = 10
+	glow.Parent = root
+	Debris:AddItem(glow, tonumber(EggConfig.StunDuration) or 20)
+
+	for _, part in ipairs(egg:GetDescendants()) do
+		if part:IsA("BasePart") then
+			local original = part.CFrame
+			TweenService:Create(part, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+				CFrame = original * CFrame.Angles(0, 0, math.rad(4)),
+			}):Play()
+			task.delay(0.08, function()
+				if part and part.Parent then
+					TweenService:Create(part, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+						CFrame = original,
+					}):Play()
+				end
+			end)
+		end
+	end
+end
+
+local function stunEgg(player, egg, eggData)
+	if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
+		return
+	end
+
+	clearEggChaseState(egg)
+	egg:SetAttribute("CapturePanic", false)
+	egg:SetAttribute("CaptureShielded", false)
+	egg:SetAttribute("EggInvulnerable", true)
+	egg:SetAttribute("CaptureStunned", true)
+	egg:SetAttribute("CanPickup", true)
+	egg:SetAttribute("PickupReady", true)
+	egg:SetAttribute("EggHP", 0)
+	egg:SetAttribute("CaptureHP", 0)
+
+	local stunDuration = tonumber(EggConfig.StunDuration) or 20
+	local stunEnd = Workspace:GetServerTimeNow() + stunDuration
+	egg:SetAttribute("EggStunEndTime", stunEnd)
+	eggData.ChaseTarget = nil
+	eggData.SpeedMultiplier = 1
+	eggData.SpeedBoostUntil = 0
+	setHatchPromptEnabled(egg, true)
+	showStunEffect(egg)
+
+	local humanoid = egg:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.Health = 1
+	end
+
+	task.delay(stunDuration, function()
+		if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
+			return
+		end
+		if egg:GetAttribute("CaptureStunned") == true and tonumber(egg:GetAttribute("EggStunEndTime")) == stunEnd then
+			resetEggForAttack(eggData)
+		end
+	end)
+end
+
 local function finishEgg(player, egg, eggData)
 	if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
 		return
 	end
 
 	egg:SetAttribute("HatchInProgress", true)
+	setHatchPromptEnabled(egg, false)
+	clearEggChaseState(egg)
+	egg:SetAttribute("CaptureStunned", false)
+	egg:SetAttribute("CapturePanic", false)
+	egg:SetAttribute("CaptureShielded", false)
 	local api = getZoneApi()
 	if not api then
 		warn("[ZoneEggHatching] Zone template API unavailable.")
@@ -939,6 +1095,35 @@ local function finishEgg(player, egg, eggData)
 	end)
 end
 
+hatchStunnedEgg = function(player, egg)
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return
+	end
+	if typeof(egg) ~= "Instance" or not egg:IsA("Model") then
+		return
+	end
+	if egg:GetAttribute("EggSpawnerId") ~= EGG_SPAWNER_ID then
+		return
+	end
+	if egg:GetAttribute("CaptureStunned") ~= true or egg:GetAttribute("HatchInProgress") == true then
+		return
+	end
+
+	local root = getRoot(egg)
+	local playerRoot = getPlayerRoot(player)
+	if not root or not playerRoot or (root.Position - playerRoot.Position).Magnitude > 12 then
+		return
+	end
+
+	local eggId = tostring(egg:GetAttribute("EggId") or "")
+	local eggData = activeById[eggId]
+	if not eggData then
+		return
+	end
+
+	finishEgg(player, egg, eggData)
+end
+
 local function damageEgg(player, egg, amount)
 	if typeof(egg) ~= "Instance" then
 		return false
@@ -950,6 +1135,11 @@ local function damageEgg(player, egg, amount)
 		return false
 	end
 	if egg:GetAttribute("HatchInProgress") == true then
+		return true
+	end
+	if egg:GetAttribute("EggInvulnerable") == true
+		or egg:GetAttribute("CaptureShielded") == true
+		or egg:GetAttribute("CaptureStunned") == true then
 		return true
 	end
 
@@ -972,6 +1162,8 @@ local function damageEgg(player, egg, amount)
 	if eggDataForChase and egg:GetAttribute("CaptureChaseActive") ~= true then
 		local chaseDuration = tonumber(eggDataForChase.EggDef.ChaseTime) or 16
 		local serverTime = Workspace:GetServerTimeNow()
+		egg:SetAttribute("CapturePanic", false)
+		egg:SetAttribute("CaptureShielded", false)
 		egg:SetAttribute("CaptureChaseActive", true)
 		egg:SetAttribute("CaptureChaseStartTime", serverTime)
 		egg:SetAttribute("CaptureChaseEndTime", serverTime + chaseDuration)
@@ -1010,7 +1202,7 @@ local function damageEgg(player, egg, amount)
 		local eggId = tostring(egg:GetAttribute("EggId") or "")
 		local eggData = activeById[eggId]
 		if eggData then
-			finishEgg(player, egg, eggData)
+			stunEgg(player, egg, eggData)
 		else
 			egg:Destroy()
 		end
@@ -1019,7 +1211,7 @@ local function damageEgg(player, egg, amount)
 	return true
 end
 
-local function getPlayerRoot(player)
+getPlayerRoot = function(player)
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart")
 end
@@ -1070,27 +1262,51 @@ local function escapeEgg(eggData)
 		return
 	end
 
-	egg:SetAttribute("HatchInProgress", true)
-	egg:SetAttribute("CaptureChaseActive", false)
+	clearEggChaseState(egg)
+	if EggConfig.EvadeSuccessFullHeal ~= false then
+		healEggToFull(egg)
+	end
 	egg:SetAttribute("CapturePanic", true)
+	egg:SetAttribute("CaptureShielded", true)
+	egg:SetAttribute("EggInvulnerable", true)
+	egg:SetAttribute("CaptureStunned", false)
+	setHatchPromptEnabled(egg, false)
 
-	for _, part in ipairs(egg:GetDescendants()) do
-		if part:IsA("BasePart") then
-			TweenService:Create(part, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				Transparency = 1,
-				Size = part.Size * 0.82,
-			}):Play()
-		end
+	local now = Workspace:GetServerTimeNow()
+	local invulnerableDuration = tonumber(EggConfig.EvadeSuccessInvulnerableDuration) or 2
+	local boostDuration = tonumber(EggConfig.EvadeSuccessSpeedBoostDuration) or 3
+	local shieldEnd = now + invulnerableDuration
+	egg:SetAttribute("CaptureShieldEndTime", shieldEnd)
+	eggData.InvulnerableUntil = shieldEnd
+	eggData.SpeedBoostUntil = now + boostDuration
+	eggData.SpeedMultiplier = tonumber(EggConfig.EvadeSuccessSpeedMultiplier) or 1.4
+
+	local root = getRoot(egg)
+	if root then
+		local escapeLight = Instance.new("PointLight")
+		escapeLight.Name = "EggEvadeSuccessGlow"
+		escapeLight.Color = getRarityColor(egg:GetAttribute("Rarity"))
+		escapeLight.Brightness = 1.25
+		escapeLight.Range = 12
+		escapeLight.Parent = root
+		Debris:AddItem(escapeLight, boostDuration)
 	end
 
-	local eggId = egg:GetAttribute("EggId")
-	if eggId then
-		activeById[tostring(eggId)] = nil
-	end
-
-	task.delay(0.25, function()
+	task.delay(invulnerableDuration, function()
 		if egg and egg.Parent then
-			egg:Destroy()
+			egg:SetAttribute("CaptureShielded", false)
+			egg:SetAttribute("EggInvulnerable", false)
+			egg:SetAttribute("CaptureShieldEndTime", 0)
+		end
+	end)
+
+	task.delay(boostDuration, function()
+		if egg and egg.Parent and egg:GetAttribute("CaptureChaseActive") ~= true then
+			egg:SetAttribute("CapturePanic", false)
+		end
+		if eggData then
+			eggData.SpeedMultiplier = 1
+			eggData.ChaseTarget = nil
 		end
 	end)
 end
@@ -1151,8 +1367,13 @@ local function moveEggAway(eggData, dt)
 
 	local now = Workspace:GetServerTimeNow()
 	local chaseActive = egg:GetAttribute("CaptureChaseActive") == true
+	local panicActive = egg:GetAttribute("CapturePanic") == true and (tonumber(eggData.SpeedBoostUntil) or 0) > now
 	if chaseActive and now >= (tonumber(egg:GetAttribute("CaptureChaseEndTime")) or 0) then
 		escapeEgg(eggData)
+		return
+	end
+
+	if egg:GetAttribute("CaptureStunned") == true or egg:GetAttribute("HatchInProgress") == true then
 		return
 	end
 
@@ -1165,9 +1386,7 @@ local function moveEggAway(eggData, dt)
 	end
 
 	if not chaseActive then
-		if targetRoot and (targetRoot.Position - root.Position).Magnitude <= radius then
-			startEggChase(eggData, targetPlayer)
-		else
+		if not panicActive then
 			return
 		end
 	end
@@ -1188,6 +1407,7 @@ local function moveEggAway(eggData, dt)
 	local strafe = Vector3.new(-away.Z, 0, away.X).Unit * math.sin(now * 1.6 + eggData.MoveSeed) * 0.42
 	local direction = chooseSafeDirection(eggData, root.Position, (away.Unit + strafe).Unit)
 	local speed = tonumber(eggData.EggDef.Speed) or tonumber(egg:GetAttribute("EggSpeed")) or 12
+	speed *= tonumber(eggData.SpeedMultiplier) or 1
 	local nextPosition = root.Position + direction * speed * dt
 	nextPosition = clampToZone(eggData.Zone, nextPosition)
 	nextPosition = Vector3.new(nextPosition.X, eggData.BaseY or nextPosition.Y, nextPosition.Z)

@@ -1135,7 +1135,6 @@ local function placeNpcOnSlot(player, slot)
 
 	updateCollectAttributesForPlot(plot)
 
-	notify(player, "Brainrot placed!", "success")
 end
 
 local function returnNpcFromSlot(player, slot)
@@ -1177,7 +1176,6 @@ local function returnNpcFromSlot(player, slot)
 
 	updateCollectAttributesForPlot(plot)
 
-	notify(player, "Brainrot returned.", "success")
 end
 
 local function setupStandPrompt(slot)

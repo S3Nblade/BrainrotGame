@@ -923,7 +923,6 @@ local function placeNpc(player, standPart)
 	cleanupDuplicatePlacedNpcs()
 	saveSnapshot(player)
 
-	notify(player, "Brainrot placed!", "success")
 	print("[BrainrotToolPlacement] Placed", npc.Name, "on", slotId, "floor", floorIndex, "for", player.Name)
 end
 
@@ -956,7 +955,6 @@ local function returnNpc(player, standPart)
 
 	saveSnapshot(player)
 
-	notify(player, "Brainrot returned to inventory.", "success")
 	print("[BrainrotToolPlacement] Returned", npc.Name, "for", player.Name)
 end
 
