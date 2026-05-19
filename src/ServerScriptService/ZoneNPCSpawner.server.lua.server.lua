@@ -95,8 +95,10 @@ local ZONES = {
 		InitialAlive = 6,
 		WalkSpeed = 14,
 		SpawnYOffset = 5,
-		AreaNames = { "ForestMap1", "Forest", "ForestZone", "ForestMap" },
-		MarkerPrefixes = { "ForestNPC", "Forest_HideSpot", "ForestHideSpot" },
+		AreaNames = { "ForestMap1", "Forest", "forest", "ForestZone", "ForestArea", "ForestMap" },
+		MarkerPrefixes = { "ForestNPC", "Forest_HideSpot", "ForestHideSpot", "ForestSpawn" },
+		FallbackCenter = Vector3.new(0, 6, -165),
+		FallbackSize = Vector3.new(124, 18, 124),
 		Rarities = {
 			{ "Rare", 55 },
 			{ "Epic", 35 },
@@ -873,6 +875,68 @@ local function makeArea(root)
 	}
 end
 
+local function makeScatterArea(position, size, sourceName)
+	return {
+		root = Workspace,
+		parts = {},
+		cframe = CFrame.new(position),
+		size = size,
+		synthetic = true,
+		sourceName = sourceName or "Fallback",
+	}
+end
+
+local function areaIsTooSmall(area, zoneConfig)
+	if not area or not zoneConfig.FallbackSize then
+		return false
+	end
+
+	return area.size.X < math.min(42, zoneConfig.FallbackSize.X * 0.35)
+		or area.size.Z < math.min(42, zoneConfig.FallbackSize.Z * 0.35)
+end
+
+local function findPortalDestinationArea(zoneName, zoneConfig)
+	local portals = Workspace:FindFirstChild("ZonePortals")
+	if not portals then
+		return nil
+	end
+
+	for _, portal in ipairs(portals:GetChildren()) do
+		if portal:GetAttribute("ZoneId") == zoneName then
+			local destination = portal:FindFirstChild("Destination")
+			if destination and destination:IsA("BasePart") then
+				return makeScatterArea(destination.Position, zoneConfig.FallbackSize or Vector3.new(100, 18, 100), "PortalDestination")
+			end
+
+			if portal:IsA("BasePart") then
+				return makeScatterArea(portal.Position, zoneConfig.FallbackSize or Vector3.new(100, 18, 100), "Portal")
+			end
+		end
+	end
+
+	return nil
+end
+
+local function getExpandedArea(area, zoneConfig)
+	if not area or not zoneConfig.FallbackSize then
+		return area
+	end
+
+	if areaIsTooSmall(area, zoneConfig) then
+		return makeScatterArea(area.cframe.Position, zoneConfig.FallbackSize, "ExpandedSmallZone")
+	end
+
+	return area
+end
+
+local function getFallbackArea(zoneConfig)
+	if not zoneConfig.FallbackCenter then
+		return nil
+	end
+
+	return makeScatterArea(zoneConfig.FallbackCenter, zoneConfig.FallbackSize or Vector3.new(100, 18, 100), "ConfiguredFallback")
+end
+
 local function findWorkspaceChildByNames(names)
 	for _, wantedName in ipairs(names) do
 		local direct = Workspace:FindFirstChild(wantedName)
@@ -929,6 +993,8 @@ local function refreshAreas(force)
 	for zoneName, zoneConfig in pairs(ZONES) do
 		local root = findWorkspaceChildByNames(zoneConfig.AreaNames)
 		local area = root and makeArea(root) or nil
+		area = getExpandedArea(area, zoneConfig)
+		area = area or findPortalDestinationArea(zoneName, zoneConfig) or getFallbackArea(zoneConfig)
 		local markers = findMarkerParts(zoneConfig)
 
 		areaCache[zoneName] = {
@@ -949,10 +1015,29 @@ local function raycastToArea(area, origin)
 	end
 
 	local params = RaycastParams.new()
+	local distance = math.max(350, area.size.Y + 260)
+
+	if area.synthetic == true then
+		local exclude = { NPC_FOLDER }
+		local portals = Workspace:FindFirstChild("ZonePortals")
+		local spawnMap = Workspace:FindFirstChild("SpawnMap")
+		local zoneGates = spawnMap and spawnMap:FindFirstChild("ZoneGates")
+
+		if portals then
+			table.insert(exclude, portals)
+		end
+
+		if zoneGates then
+			table.insert(exclude, zoneGates)
+		end
+
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = exclude
+		return Workspace:Raycast(origin, Vector3.new(0, -distance, 0), params)
+	end
+
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { area.root }
-
-	local distance = math.max(350, area.size.Y + 260)
 	return Workspace:Raycast(origin, Vector3.new(0, -distance, 0), params)
 end
 
