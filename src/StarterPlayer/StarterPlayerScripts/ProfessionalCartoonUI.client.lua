@@ -30,27 +30,6 @@ local THEME = {
 	Locked = Color3.fromRGB(114, 126, 148),
 }
 
--- Upload assets/ui/generated/brainrot-pro-ui-spritesheet.png to Roblox, then
--- put the id here or in ReplicatedStorage.GUI.ProUIAssets.SpriteSheet.
-local ASSET_CONFIG = {
-	SpriteSheet = "",
-	ShopIcon = "",
-	IndexIcon = "",
-	RebirthIcon = "",
-	CatchIcon = "",
-	ForestIcon = "",
-	MoneyIcon = "",
-}
-
-local SPRITE_CELLS = {
-	Shop = { Offset = Vector2.new(0, 0), Size = Vector2.new(418, 627), Fallback = "$" },
-	Index = { Offset = Vector2.new(418, 0), Size = Vector2.new(418, 627), Fallback = "IDX" },
-	Rebirth = { Offset = Vector2.new(836, 0), Size = Vector2.new(418, 627), Fallback = "RB" },
-	Catch = { Offset = Vector2.new(0, 627), Size = Vector2.new(418, 627), Fallback = "!" },
-	Forest = { Offset = Vector2.new(418, 627), Size = Vector2.new(418, 627), Fallback = "LF" },
-	Money = { Offset = Vector2.new(836, 627), Size = Vector2.new(418, 627), Fallback = "x" },
-}
-
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(235, 239, 245),
 	Rare = Color3.fromRGB(78, 172, 255),
@@ -100,57 +79,6 @@ local updateUpgradesRemote = ReplicatedStorage:FindFirstChild("UpdateUpgrades")
 local rebirthRequestRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthRequest")
 local rebirthUpdateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthUpdate")
 local rebirthGetStateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthGetState")
-
-local function normalizeAssetId(value)
-	local text = tostring(value or "")
-	if text == "" or text == "0" then
-		return ""
-	end
-
-	if string.find(text, "rbxasset", 1, true) then
-		return text
-	end
-
-	if tonumber(text) then
-		return "rbxassetid://" .. text
-	end
-
-	return text
-end
-
-local function getAssetOverride(name)
-	local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
-	local assetFolder = guiFolder and guiFolder:FindFirstChild("ProUIAssets")
-	local value = assetFolder and assetFolder:FindFirstChild(name)
-
-	if value and value:IsA("StringValue") then
-		return normalizeAssetId(value.Value)
-	end
-
-	return ""
-end
-
-local function getAssetImage(name)
-	local override = getAssetOverride(name)
-	if override ~= "" then
-		return override
-	end
-
-	return normalizeAssetId(ASSET_CONFIG[name])
-end
-
-local function getSpriteSheetImage()
-	local override = getAssetOverride("SpriteSheet")
-	if override == "" then
-		override = getAssetOverride("BrainrotProUISpriteSheet")
-	end
-
-	if override ~= "" then
-		return override
-	end
-
-	return normalizeAssetId(ASSET_CONFIG.SpriteSheet)
-end
 
 local function formatNumber(value)
 	value = tonumber(value) or 0
@@ -333,75 +261,6 @@ local function makeButton(parent, name, text, colorTop, colorBottom, zIndex)
 	return button
 end
 
-local function applyIconTo(image, fallback, iconKey)
-	local cell = SPRITE_CELLS[iconKey] or SPRITE_CELLS.Catch
-	local directImage = getAssetImage(iconKey .. "Icon")
-	local sheetImage = getSpriteSheetImage()
-	local imageId = directImage ~= "" and directImage or sheetImage
-
-	if imageId ~= "" then
-		image.Image = imageId
-		image.Visible = true
-
-		if directImage ~= "" then
-			image.ImageRectOffset = Vector2.new(0, 0)
-			image.ImageRectSize = Vector2.new(0, 0)
-		else
-			image.ImageRectOffset = cell.Offset
-			image.ImageRectSize = cell.Size
-		end
-
-		if fallback then
-			fallback.Visible = false
-		end
-	else
-		image.Visible = false
-		if fallback then
-			fallback.Visible = true
-			fallback.Text = cell.Fallback or "?"
-		end
-	end
-end
-
-local function setIconBadge(badge, iconKey)
-	local image = badge:FindFirstChild("Art")
-	local fallback = badge:FindFirstChild("Fallback")
-
-	if image and image:IsA("ImageLabel") then
-		applyIconTo(image, fallback, iconKey)
-	end
-end
-
-local function createIconBadge(parent, name, iconKey, position, size, zIndex)
-	local badge = makePanel(parent, name, Color3.fromRGB(255, 248, 224), Color3.fromRGB(255, 216, 124), 16, zIndex or 40)
-	badge.Position = position
-	badge.Size = size
-	badge.ClipsDescendants = true
-
-	local image = Instance.new("ImageLabel")
-	image.Name = "Art"
-	image.BackgroundTransparency = 1
-	image.Position = UDim2.new(0, 4, 0, 4)
-	image.Size = UDim2.new(1, -8, 1, -8)
-	image.ScaleType = Enum.ScaleType.Fit
-	image.ZIndex = (zIndex or 40) + 3
-	image.Parent = badge
-
-	local fallback = makeLabel(
-		badge,
-		"Fallback",
-		"?",
-		UDim2.new(1, -8, 1, -8),
-		UDim2.new(0, 4, 0, 4),
-		18,
-		THEME.Ink,
-		(zIndex or 40) + 4
-	)
-
-	setIconBadge(badge, iconKey)
-	return badge
-end
-
 local screenGui = playerGui:FindFirstChild("BrainrotProfessionalUI")
 if screenGui then
 	screenGui:Destroy()
@@ -478,15 +337,6 @@ local closeButton = makeButton(modal, "Close", "X", THEME.Red, Color3.fromRGB(19
 closeButton.AnchorPoint = Vector2.new(1, 0)
 closeButton.Position = UDim2.new(1, -20, 0, 20)
 closeButton.Size = UDim2.fromOffset(50, 50)
-
-local headerIcon = createIconBadge(
-	modal,
-	"HeaderIcon",
-	"Shop",
-	UDim2.new(1, -144, 0, 18),
-	UDim2.fromOffset(74, 74),
-	28
-)
 
 local tabRail = Instance.new("Frame")
 tabRail.Name = "TabRail"
@@ -611,10 +461,7 @@ local function makeUpgradeCard(parent, data, order)
 	card.LayoutOrder = order
 	card.Size = UDim2.new(0, 255, 0, 175)
 
-	local iconKey = tostring(data.key or "") == "AutoTrainRate" and "Rebirth" or "Money"
-	createIconBadge(card, "UpgradeIcon", iconKey, UDim2.new(1, -62, 0, 12), UDim2.fromOffset(48, 48), 34)
-
-	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -76, 0, 36), UDim2.new(0, 10, 0, 14), 24, Color3.fromRGB(255, 255, 255), 34)
+	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -20, 0, 36), UDim2.new(0, 10, 0, 14), 24, Color3.fromRGB(255, 255, 255), 34)
 	name.TextXAlignment = Enum.TextXAlignment.Left
 
 	local desc = makeLabel(card, "Description", tostring(data.desc or ""), UDim2.new(1, -20, 0, 45), UDim2.new(0, 10, 0, 55), 16, Color3.fromRGB(255, 252, 223), 34)
@@ -671,7 +518,6 @@ end
 
 local function renderShop()
 	clearBody()
-	setIconBadge(headerIcon, "Shop")
 	title.Text = "SHOP"
 	subtitle.Text = "Upgrade training, speed, and earning power."
 
@@ -806,7 +652,6 @@ end
 
 local function renderIndex()
 	clearBody()
-	setIconBadge(headerIcon, "Index")
 	scanSeenNpcs()
 	title.Text = "INDEX"
 	subtitle.Text = "Track the Brainrots you have discovered by zone."
@@ -870,12 +715,8 @@ local function renderIndex()
 		silhouette.Position = UDim2.new(0, 12, 0, 12)
 		silhouette.Size = UDim2.fromOffset(52, 52)
 
-		if found then
-			createIconBadge(silhouette, "IndexIcon", item.zone == "Forest" and "Forest" or "Catch", UDim2.fromOffset(2, 2), UDim2.new(1, -4, 1, -4), 34)
-		else
-			local icon = makeLabel(silhouette, "Icon", "?", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 22, Color3.fromRGB(180, 190, 210), 34)
-			icon.TextStrokeTransparency = 0.15
-		end
+		local icon = makeLabel(silhouette, "Icon", found and "NPC" or "?", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 18, found and rarityColor or Color3.fromRGB(180, 190, 210), 34)
+		icon.TextStrokeTransparency = 0.15
 
 		local name = makeLabel(card, "Name", found and item.name or "Unknown", UDim2.new(1, -78, 0, 40), UDim2.new(0, 72, 0, 15), 18, Color3.fromRGB(255, 255, 255), 34)
 		name.TextXAlignment = Enum.TextXAlignment.Left
@@ -908,7 +749,6 @@ end
 
 local function renderRebirth()
 	clearBody()
-	setIconBadge(headerIcon, "Rebirth")
 	requestRebirthState()
 
 	local state = latestRebirthPayload or {
@@ -931,7 +771,6 @@ local function renderRebirth()
 
 	local hero = makePanel(body, "RebirthHero", THEME.Pink, Color3.fromRGB(190, 42, 119), 22, 30)
 	hero.Size = UDim2.new(1, 0, 0, 152)
-	createIconBadge(hero, "RebirthIcon", "Rebirth", UDim2.new(1, -126, 0, 24), UDim2.fromOffset(94, 94), 34)
 
 	local count = makeLabel(
 		hero,
@@ -950,7 +789,7 @@ local function renderRebirth()
 		hero,
 		"Benefit",
 		"x" .. tostring(state.moneyMultiplier or 1) .. " -> x" .. tostring(state.nextMoneyMultiplier or 2) .. " MONEY",
-		UDim2.new(1, -260, 0, 50),
+		UDim2.new(1, -170, 0, 50),
 		UDim2.new(0, 152, 0, 38),
 		34,
 		Color3.fromRGB(255, 255, 255),
@@ -962,7 +801,7 @@ local function renderRebirth()
 		hero,
 		"Desc",
 		"Every rebirth doubles Brainrot plot income.",
-		UDim2.new(1, -260, 0, 34),
+		UDim2.new(1, -170, 0, 34),
 		UDim2.new(0, 154, 0, 92),
 		20,
 		Color3.fromRGB(255, 236, 245),
@@ -1040,9 +879,6 @@ local function renderTabs()
 		)
 		button.LayoutOrder = order
 		button.Size = UDim2.fromOffset(148, 56)
-		button.Text = "     " .. mode
-		button.TextXAlignment = Enum.TextXAlignment.Left
-		createIconBadge(button, "TabIcon", mode, UDim2.new(0, 8, 0.5, -18), UDim2.fromOffset(36, 36), 28)
 		button.Activated:Connect(function()
 			currentMode = mode
 			if mode == "Shop" then

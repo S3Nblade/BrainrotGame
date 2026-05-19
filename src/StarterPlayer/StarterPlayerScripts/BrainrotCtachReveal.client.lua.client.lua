@@ -26,73 +26,8 @@ local RARITY_COLORS = {
 	Godly = Color3.fromRGB(255, 70, 70),
 }
 
-local ASSET_CONFIG = {
-	SpriteSheet = "",
-	CatchIcon = "",
-}
-
-local CATCH_SPRITE_OFFSET = Vector2.new(0, 627)
-local CATCH_SPRITE_SIZE = Vector2.new(418, 627)
-
 local lastPopupAt = 0
 local shownRecently = {}
-
-local function normalizeAssetId(value)
-	local text = tostring(value or "")
-	if text == "" or text == "0" then
-		return ""
-	end
-
-	if string.find(text, "rbxasset", 1, true) then
-		return text
-	end
-
-	if tonumber(text) then
-		return "rbxassetid://" .. text
-	end
-
-	return text
-end
-
-local function getAssetOverride(name)
-	local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
-	local assetFolder = guiFolder and guiFolder:FindFirstChild("ProUIAssets")
-	local value = assetFolder and assetFolder:FindFirstChild(name)
-
-	if value and value:IsA("StringValue") then
-		return normalizeAssetId(value.Value)
-	end
-
-	return ""
-end
-
-local function getCatchArt()
-	local direct = getAssetOverride("CatchIcon")
-	if direct ~= "" then
-		return direct, nil, nil
-	end
-
-	direct = normalizeAssetId(ASSET_CONFIG.CatchIcon)
-	if direct ~= "" then
-		return direct, nil, nil
-	end
-
-	local sheet = getAssetOverride("SpriteSheet")
-	if sheet == "" then
-		sheet = getAssetOverride("BrainrotProUISpriteSheet")
-	end
-
-	if sheet ~= "" then
-		return sheet, CATCH_SPRITE_OFFSET, CATCH_SPRITE_SIZE
-	end
-
-	sheet = normalizeAssetId(ASSET_CONFIG.SpriteSheet)
-	if sheet ~= "" then
-		return sheet, CATCH_SPRITE_OFFSET, CATCH_SPRITE_SIZE
-	end
-
-	return "", nil, nil
-end
 
 local function formatMoney(n)
 	n = math.floor(tonumber(n) or 0)
@@ -158,30 +93,6 @@ local function makeText(parent, name, text, pos, size, maxSize, color, z)
 	addStroke(label, Color3.fromRGB(0, 0, 0), math.max(2, maxSize / 10))
 
 	return label
-end
-
-local function makeCatchArt(parent, pos, size, z)
-	local imageId, rectOffset, rectSize = getCatchArt()
-	if imageId == "" then
-		return false
-	end
-
-	local image = Instance.new("ImageLabel")
-	image.Name = "CatchArt"
-	image.BackgroundTransparency = 1
-	image.Position = pos
-	image.Size = size
-	image.Image = imageId
-	image.ScaleType = Enum.ScaleType.Fit
-	image.ZIndex = z or 260
-	image.Parent = parent
-
-	if rectOffset and rectSize then
-		image.ImageRectOffset = rectOffset
-		image.ImageRectSize = rectSize
-	end
-
-	return true
 end
 
 local function getRarityColor(rarity)
@@ -347,9 +258,6 @@ local function showFound(data)
 	shine.Parent = card
 	addCorner(shine, 14)
 
-	local hasCatchArt = makeCatchArt(card, UDim2.new(0, 26, 0, 90), UDim2.fromOffset(72, 76), 254)
-	local nameX = hasCatchArt and 108 or 28
-
 	local scale = Instance.new("UIScale")
 	scale.Scale = 0.55
 	scale.Parent = card
@@ -369,8 +277,8 @@ local function showFound(data)
 		card,
 		"NPCName",
 		npcName,
-		UDim2.new(0, nameX, 0, 92),
-		UDim2.new(1, -(nameX + 26), 0, 42),
+		UDim2.new(0, 28, 0, 92),
+		UDim2.new(1, -40, 0, 42),
 		30,
 		Color3.fromRGB(46, 53, 80),
 		252
@@ -467,10 +375,6 @@ local function showFound(data)
 			elseif obj:IsA("UIStroke") then
 				TweenService:Create(obj, TweenInfo.new(0.18), {
 					Transparency = 1,
-				}):Play()
-			elseif obj:IsA("ImageLabel") then
-				TweenService:Create(obj, TweenInfo.new(0.18), {
-					ImageTransparency = 1,
 				}):Play()
 			end
 		end
