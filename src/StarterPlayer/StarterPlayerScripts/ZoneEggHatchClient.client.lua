@@ -117,6 +117,37 @@ local playing = false
 local queue = {}
 local seenRevealIds = {}
 local AssetIds = {}
+local GuiAssetFolder = ReplicatedStorage:FindFirstChild("GUI")
+
+local ASSET_NAME_ALIASES = {
+	RevealPanelBg = { "RevealPanelBg", "reveal_panel_bg", "reveal_panel_bg.png" },
+	RevealPanelShadow = { "RevealPanelShadow", "reveal_panel_shadow", "reveal_panel_shadow.png" },
+	NPCCardBg = { "NPCCardBg", "npc_card_bg", "npc_card_bg.png" },
+	NPCCardOutline = { "NPCCardOutline", "npc_card_outline", "npc_card_outline.png" },
+	NPCCardShadow = { "NPCCardShadow", "npc_card_shadow", "npc_card_shadow.png" },
+	SilhouetteOverlay = { "SilhouetteOverlay", "silhouette_overlay", "silhouette_overlay.png" },
+	QuestionMarkGlow = { "QuestionMarkGlow", "question_mark_glow", "question_mark_glow.png" },
+	CenterSpotlight = { "CenterSpotlight", "center_spotlight", "center_spotlight.png" },
+	RevealBurst = { "RevealBurst", "reveal_burst", "reveal_burst.png" },
+	CinematicEnergyBeams = { "CinematicEnergyBeams", "cinematic_energy_beams", "cinematic_energy_beams.png" },
+	CinematicConfettiField = { "CinematicConfettiField", "cinematic_confetti_field", "cinematic_confetti_field.png" },
+	CinematicFloorGlow = { "CinematicFloorGlow", "cinematic_floor_glow", "cinematic_floor_glow.png" },
+	SilhouetteRimGlow = { "SilhouetteRimGlow", "silhouette_rim_glow", "silhouette_rim_glow.png" },
+	Sparkle1 = { "Sparkle1", "sparkle_particle_1", "sparkle_particle_1.png" },
+	Sparkle2 = { "Sparkle2", "sparkle_particle_2", "sparkle_particle_2.png" },
+	Sparkle3 = { "Sparkle3", "sparkle_particle_3", "sparkle_particle_3.png" },
+	RarityGlowCommon = { "RarityGlowCommon", "rarity_glow_common", "rarity_glow_common.png" },
+	RarityGlowRare = { "RarityGlowRare", "rarity_glow_rare", "rarity_glow_rare.png" },
+	RarityGlowEpic = { "RarityGlowEpic", "rarity_glow_epic", "rarity_glow_epic.png" },
+	RarityGlowLegendary = { "RarityGlowLegendary", "rarity_glow_legendary", "rarity_glow_legendary.png" },
+	RarityGlowMythic = { "RarityGlowMythic", "rarity_glow_mythic", "rarity_glow_mythic.png" },
+	RarityGlowSecret = { "RarityGlowSecret", "rarity_glow_secret", "rarity_glow_secret.png" },
+	ContinueButtonBg = { "ContinueButtonBg", "continue_button_bg", "continue_button_bg.png" },
+	ContinueButtonHoverGlow = { "ContinueButtonHoverGlow", "continue_button_hover_glow", "continue_button_hover_glow.png" },
+	TitleBannerBg = { "TitleBannerBg", "title_banner_bg", "title_banner_bg.png" },
+	WhiteFlash = { "WhiteFlash", "white_flash", "white_flash.png" },
+	DarkVignette = { "DarkVignette", "dark_vignette", "dark_vignette.png" },
+}
 
 local function loadAssetIds()
 	local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
@@ -141,18 +172,39 @@ AssetIds = loadAssetIds()
 local function getAssetId(key)
 	local value = AssetIds[key]
 	if type(value) ~= "string" then
+		value = nil
+	end
+
+	if value and value ~= "" and not string.find(value, "PASTE_ID_HERE", 1, true) and string.find(value, "rbxassetid://", 1, true) then
+		return value
+	end
+
+	local aliases = ASSET_NAME_ALIASES[key] or { key }
+	local searchRoot = GuiAssetFolder or ReplicatedStorage:FindFirstChild("GUI")
+	if not searchRoot then
 		return nil
 	end
 
-	if value == "" or string.find(value, "PASTE_ID_HERE", 1, true) then
-		return nil
+	for _, alias in ipairs(aliases) do
+		local assetObject = searchRoot:FindFirstChild(alias, true)
+		if assetObject then
+			if assetObject:IsA("ImageLabel") or assetObject:IsA("ImageButton") then
+				if assetObject.Image ~= "" then
+					return assetObject.Image
+				end
+			elseif assetObject:IsA("Decal") or assetObject:IsA("Texture") then
+				if assetObject.Texture ~= "" then
+					return assetObject.Texture
+				end
+			elseif assetObject:IsA("StringValue") then
+				if assetObject.Value ~= "" and string.find(assetObject.Value, "rbxassetid://", 1, true) then
+					return assetObject.Value
+				end
+			end
+		end
 	end
 
-	if not string.find(value, "rbxassetid://", 1, true) then
-		return nil
-	end
-
-	return value
+	return nil
 end
 
 local function createImageLayer(parent, name, assetKey, zIndex, transparency, color)

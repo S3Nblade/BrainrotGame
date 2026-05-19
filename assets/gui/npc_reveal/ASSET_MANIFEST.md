@@ -1,6 +1,10 @@
 # NPC Reveal GUI Asset Manifest
 
-These assets are decorative layers only. Do not bake dynamic text, buttons, NPC names, rarity labels, or click logic into these images. The current style is a full-screen cinematic simulator reveal: dark vignette, purple rarity rays, shadow NPC silhouettes, big real Roblox text, and a separate green Continue button. Upload the PNGs to Roblox, then paste the IDs into `ReplicatedStorage/GUI/NPCRevealAssets/AssetIds`.
+These assets are decorative layers only. Do not bake dynamic text, buttons, NPC names, rarity labels, or click logic into these images. The current style is a full-screen cinematic simulator reveal: dark vignette, purple rarity rays, shadow NPC silhouettes, big real Roblox text, and a separate green Continue button.
+
+The reveal client now supports two asset setup styles:
+- Put uploaded `ImageLabel`, `ImageButton`, `Decal`, `Texture`, or `StringValue` objects anywhere under `ReplicatedStorage/GUI` and name them with either the manifest key or PNG filename, such as `RevealBurst` or `reveal_burst.png`.
+- Or paste IDs into `ReplicatedStorage/GUI/NPCRevealAssets/AssetIds`.
 
 | Filename | Purpose | Roblox object | Suggested size/scale | Tintable | Reveal usage | Transparency notes |
 |---|---|---|---|---|---|---|
@@ -35,14 +39,16 @@ These assets are decorative layers only. Do not bake dynamic text, buttons, NPC 
 ## Upload Instructions
 
 1. Upload every PNG in `assets/gui/npc_reveal/` to Roblox.
-2. In Studio, create this structure if it is not already present:
+2. Put the uploaded image objects under `ReplicatedStorage/GUI`. The code searches this folder recursively.
+3. Name each uploaded image object using either the key-style name or the original filename, for example `CinematicEnergyBeams` or `cinematic_energy_beams.png`.
+4. Optional fallback: in Studio, create this structure if it is not already present:
    - `ReplicatedStorage`
    - `GUI`
    - `NPCRevealAssets`
    - `AssetIds` ModuleScript
-3. Paste the returned image IDs into `AssetIds` using the matching keys.
-4. Keep all labels and buttons as real Roblox UI objects. The images are visual layers only.
+5. Paste the returned image IDs into `AssetIds` using the matching keys if you prefer a ModuleScript lookup.
+6. Keep all labels and buttons as real Roblox UI objects. The images are visual layers only.
 
 ## Runtime Notes
 
-The reveal controller tries to require `ReplicatedStorage.GUI.NPCRevealAssets.AssetIds`. If IDs are still placeholders, it falls back to the existing Roblox UI frame/gradient layers so the reveal remains functional while you upload assets.
+The reveal controller first tries `ReplicatedStorage.GUI.NPCRevealAssets.AssetIds`. If IDs are placeholders, it searches `ReplicatedStorage.GUI` recursively for matching uploaded image instances. If no asset is found, it falls back to the existing Roblox UI frame/gradient layers so the reveal remains functional while you upload assets.

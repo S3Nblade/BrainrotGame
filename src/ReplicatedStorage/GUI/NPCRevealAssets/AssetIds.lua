@@ -1,6 +1,9 @@
 --!nonstrict
 -- ReplicatedStorage/GUI/NPCRevealAssets/AssetIds
 -- Replace each placeholder after uploading assets/gui/npc_reveal/*.png to Roblox.
+-- Optional: the reveal client can also use uploaded ImageLabels/ImageButtons/Decals
+-- placed anywhere under ReplicatedStorage/GUI when their names match these keys
+-- or the original PNG filenames, for example RevealBurst or reveal_burst.png.
 
 return {
 	RevealPanelBg = "rbxassetid://PASTE_ID_HERE",
