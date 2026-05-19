@@ -116,6 +116,65 @@ local activeGui = nil
 local playing = false
 local queue = {}
 local seenRevealIds = {}
+local AssetIds = {}
+
+local function loadAssetIds()
+	local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
+	local revealAssets = guiFolder and guiFolder:FindFirstChild("NPCRevealAssets")
+	local assetModule = revealAssets and revealAssets:FindFirstChild("AssetIds")
+
+	if not assetModule or not assetModule:IsA("ModuleScript") then
+		return {}
+	end
+
+	local ok, result = pcall(require, assetModule)
+	if ok and type(result) == "table" then
+		return result
+	end
+
+	warn("[NPCRevealRoll] Could not load NPCRevealAssets.AssetIds:", result)
+	return {}
+end
+
+AssetIds = loadAssetIds()
+
+local function getAssetId(key)
+	local value = AssetIds[key]
+	if type(value) ~= "string" then
+		return nil
+	end
+
+	if value == "" or string.find(value, "PASTE_ID_HERE", 1, true) then
+		return nil
+	end
+
+	if not string.find(value, "rbxassetid://", 1, true) then
+		return nil
+	end
+
+	return value
+end
+
+local function createImageLayer(parent, name, assetKey, zIndex, transparency, color)
+	local assetId = getAssetId(assetKey)
+	if not assetId then
+		return nil
+	end
+
+	local image = Instance.new("ImageLabel")
+	image.Name = name
+	image.BackgroundTransparency = 1
+	image.BorderSizePixel = 0
+	image.Image = assetId
+	image.ImageTransparency = transparency or 0
+	image.ImageColor3 = color or THEME.White
+	image.ScaleType = Enum.ScaleType.Stretch
+	image.Size = UDim2.fromScale(1, 1)
+	image.Position = UDim2.fromScale(0, 0)
+	image.ZIndex = zIndex or 1
+	image.Parent = parent
+	return image
+end
 
 local function getRarityProfile(rarity)
 	return RARITY_PROFILES[tostring(rarity or "Common")] or RARITY_PROFILES.Common
@@ -462,6 +521,23 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 	card.BackgroundTransparency = transparency or 0
 	createShadow(card, 24, 30)
 
+	local cardShadow = createImageLayer(wrapper, "AssetCardShadow", "NPCCardShadow", 29, 0, Color3.fromRGB(0, 0, 0))
+	if cardShadow then
+		cardShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+		cardShadow.Position = UDim2.fromScale(0.5, 0.54)
+		cardShadow.Size = UDim2.fromScale(1.14, 1.12)
+	end
+
+	local cardBg = createImageLayer(card, "AssetCardBg", "NPCCardBg", 31, 0)
+	if cardBg then
+		card.BackgroundTransparency = 1
+	end
+
+	local cardOutline = createImageLayer(card, "AssetCardOutline", "NPCCardOutline", 39, 0)
+	if cardOutline then
+		cardOutline.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	end
+
 	local pad = Instance.new("UIPadding")
 	pad.PaddingTop = UDim.new(0.06, 0)
 	pad.PaddingBottom = UDim.new(0.06, 0)
@@ -491,8 +567,29 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 	viewportHolder.ZIndex = 33
 	viewportHolder.Parent = card
 
+	local silhouetteOverlay = createImageLayer(card, "AssetSilhouetteOverlay", "SilhouetteOverlay", 40, 0)
+	if silhouetteOverlay then
+		silhouetteOverlay.AnchorPoint = Vector2.new(0.5, 0.5)
+		silhouetteOverlay.Position = UDim2.fromScale(0.5, 0.43)
+		silhouetteOverlay.Size = UDim2.fromScale(0.72, 0.6)
+		silhouetteOverlay.ImageColor3 = Color3.fromRGB(0, 0, 0)
+		silhouetteOverlay.ImageTransparency = 0.08
+	end
+
 	local question = createTextLabel(card, "Question", "?", UDim2.fromScale(0.44, 0.32), UDim2.fromScale(0.28, 0.2), 42, THEME.Cream, 42)
 	question.AnchorPoint = Vector2.new(0, 0)
+
+	local questionImage = createImageLayer(card, "AssetQuestionMarkGlow", "QuestionMarkGlow", 43, 0)
+	if questionImage then
+		questionImage.AnchorPoint = Vector2.new(0.5, 0.5)
+		questionImage.Position = UDim2.fromScale(0.5, 0.35)
+		questionImage.Size = UDim2.fromScale(0.46, 0.32)
+		question.TextTransparency = 1
+		local stroke = question:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Transparency = 1
+		end
+	end
 
 	local nameLabel = createTextLabel(card, "Name", "???", UDim2.fromScale(0.92, 0.16), UDim2.fromScale(0.04, 0.76), 18, Color3.fromRGB(225, 233, 255), 36)
 	local rarityLabel = createTextLabel(card, "Rarity", "???", UDim2.fromScale(0.92, 0.1), UDim2.fromScale(0.04, 0.9), 13, Color3.fromRGB(177, 194, 232), 36)
@@ -509,6 +606,9 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 		glow = glow,
 		viewportHolder = viewportHolder,
 		question = question,
+		questionImage = questionImage,
+		silhouetteOverlay = silhouetteOverlay,
+		cardOutline = cardOutline,
 		nameLabel = nameLabel,
 		rarityLabel = rarityLabel,
 		viewData = nil,
@@ -518,9 +618,23 @@ end
 local function updateShadowCard(cardData, npc, revealed)
 	local profile = getRarityProfile(npc.rarity)
 	cardData.glow.BackgroundColor3 = profile.glow
+	if cardData.cardOutline then
+		cardData.cardOutline.ImageColor3 = profile.color
+	end
+	if cardData.silhouetteOverlay then
+		cardData.silhouetteOverlay.Visible = not revealed
+	end
 	cardData.rarityLabel.TextColor3 = profile.color
 	cardData.question.Text = revealed and "!" or "?"
 	cardData.question.TextColor3 = revealed and profile.color or THEME.Cream
+	if cardData.questionImage then
+		cardData.questionImage.Visible = not revealed
+		cardData.question.TextTransparency = not revealed and 1 or 0
+		local stroke = cardData.question:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Transparency = not revealed and 1 or 0.04
+		end
+	end
 	cardData.nameLabel.Text = revealed and npc.displayName or "???"
 	cardData.rarityLabel.Text = revealed and ("[" .. string.upper(npc.rarity) .. "]") or string.upper(npc.rarity)
 
@@ -540,6 +654,15 @@ local function createRarityRays(parent, profile)
 	rays.Size = UDim2.fromScale(0.72, 1.08)
 	rays.ZIndex = 20
 	rays.Parent = parent
+
+	local burst = createImageLayer(rays, "AssetRevealBurst", "RevealBurst", 20, 0, profile.color)
+	if burst then
+		burst.AnchorPoint = Vector2.new(0.5, 0.5)
+		burst.Position = UDim2.fromScale(0.5, 0.5)
+		burst.Size = UDim2.fromScale(1.15, 1.15)
+		burst.ImageTransparency = 0.18
+		playTween(burst, 0.7, { Rotation = 42, ImageTransparency = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	end
 
 	local rayCount = math.floor(10 + profile.intensity * 5)
 	for i = 1, rayCount do
@@ -573,27 +696,41 @@ local function createSparkles(parent, profile, amount)
 	holder.Parent = parent
 
 	for i = 1, amount do
-		local sparkle = Instance.new("Frame")
+		local sparkleAssetKey = "Sparkle" .. tostring(((i - 1) % 3) + 1)
+		local sparkle = createImageLayer(holder, "Sparkle", sparkleAssetKey, 81, 0, i % 3 == 0 and THEME.Cream or profile.color)
+		local useImage = sparkle ~= nil
+
+		if not sparkle then
+			sparkle = Instance.new("Frame")
+			sparkle.Name = "Sparkle"
+			sparkle.BackgroundColor3 = i % 3 == 0 and THEME.Cream or profile.color
+			sparkle.BorderSizePixel = 0
+			sparkle.ZIndex = 81
+			sparkle.Parent = holder
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = sparkle
+		end
+
 		sparkle.Name = "Sparkle"
 		sparkle.AnchorPoint = Vector2.new(0.5, 0.5)
-		sparkle.BackgroundColor3 = i % 3 == 0 and THEME.Cream or profile.color
-		sparkle.BorderSizePixel = 0
 		sparkle.Position = UDim2.fromScale(0.5, 0.49)
 		sparkle.Size = UDim2.fromOffset(i % 2 == 0 and 11 or 8, i % 2 == 0 and 11 or 8)
 		sparkle.Rotation = i * 19
-		sparkle.ZIndex = 81
-		sparkle.Parent = holder
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(1, 0)
-		corner.Parent = sparkle
 
 		local angle = (math.pi * 2 / amount) * i
 		local distance = 120 + (i % 6) * 18 + profile.intensity * 16
-		playTween(sparkle, 0.62, {
+		local props = {
 			Position = UDim2.new(0.5, math.cos(angle) * distance, 0.49, math.sin(angle) * distance),
 			Rotation = sparkle.Rotation + 180,
-			BackgroundTransparency = 1,
-		}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		}
+		if useImage then
+			props.ImageTransparency = 1
+		else
+			props.BackgroundTransparency = 1
+		end
+		playTween(sparkle, 0.62, props, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	end
 
 	Debris:AddItem(holder, 0.9)
@@ -701,12 +838,30 @@ local function playRevealSequence(rawPayload)
 	overlay.ZIndex = 1
 	overlay.Parent = gui
 
+	local vignette = createImageLayer(gui, "AssetDarkVignette", "DarkVignette", 2, 1, Color3.fromRGB(255, 255, 255))
+	if vignette then
+		vignette.Size = UDim2.fromScale(1, 1)
+		playTween(vignette, 0.26, { ImageTransparency = 0.08 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
 	local stage = createRoundedPanel(gui, "RevealStage", THEME.PanelTop, THEME.PanelBottom, 30, 10)
 	stage.AnchorPoint = Vector2.new(0.5, 0.5)
 	stage.Position = UDim2.fromScale(0.5, 0.5)
 	stage.Size = UDim2.fromScale(0.74, 0.66)
 	stage.ClipsDescendants = false
 	createShadow(stage, 32, 9)
+
+	local panelShadow = createImageLayer(stage, "AssetPanelShadow", "RevealPanelShadow", 9, 0, Color3.fromRGB(0, 0, 0))
+	if panelShadow then
+		panelShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+		panelShadow.Position = UDim2.fromScale(0.5, 0.53)
+		panelShadow.Size = UDim2.fromScale(1.09, 1.1)
+	end
+
+	local panelBg = createImageLayer(stage, "AssetPanelBg", "RevealPanelBg", 10, 0)
+	if panelBg then
+		stage.BackgroundTransparency = 1
+	end
 
 	local maxSize = Instance.new("UISizeConstraint")
 	maxSize.MaxSize = Vector2.new(920, 620)
@@ -741,6 +896,13 @@ local function playRevealSequence(rawPayload)
 	local shineCorner = Instance.new("UICorner")
 	shineCorner.CornerRadius = UDim.new(1, 0)
 	shineCorner.Parent = shine
+
+	local titleBanner = createImageLayer(stage, "AssetTitleBanner", "TitleBannerBg", 16, 0)
+	if titleBanner then
+		titleBanner.AnchorPoint = Vector2.new(0.5, 0.5)
+		titleBanner.Position = UDim2.fromScale(0.5, 0.095)
+		titleBanner.Size = UDim2.fromScale(0.58, 0.19)
+	end
 
 	local title = createTextLabel(stage, "Title", "WHO DID YOU GET?", UDim2.fromScale(0.9, 0.12), UDim2.fromScale(0.05, 0.035), 42, THEME.Cream, 18)
 	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.8, 0.06), UDim2.fromScale(0.1, 0.14), 21, Color3.fromRGB(255, 252, 226), 18)
@@ -827,6 +989,17 @@ local function playRevealSequence(rawPayload)
 
 	task.wait(0.24)
 
+	local spotlight = createImageLayer(stage, "AssetCenterSpotlight", "CenterSpotlight", 19, 1, profile.glow)
+	if spotlight then
+		spotlight.AnchorPoint = Vector2.new(0.5, 0.5)
+		spotlight.Position = UDim2.fromScale(0.5, 0.49)
+		spotlight.Size = UDim2.fromScale(0.12, 0.18)
+		playTween(spotlight, 0.38, {
+			Size = UDim2.fromScale(0.72, 0.9),
+			ImageTransparency = 0.1,
+		}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	end
+
 	for shake = 1, 8 do
 		cards[3].wrapper.Position = UDim2.new(0.5, (math.random() * 2 - 1) * 5, 0.5, (math.random() * 2 - 1) * 3)
 		task.wait(0.035)
@@ -834,6 +1007,31 @@ local function playRevealSequence(rawPayload)
 	cards[3].wrapper.Position = UDim2.fromScale(0.5, 0.5)
 
 	createRarityRays(stage, profile)
+
+	local rarityKey = "RarityGlowCommon"
+	local rarity = tostring(selected.rarity or "Common")
+	if rarity == "Rare" then
+		rarityKey = "RarityGlowRare"
+	elseif rarity == "Epic" then
+		rarityKey = "RarityGlowEpic"
+	elseif rarity == "Legendary" or rarity == "Divine" or rarity == "Celestial" then
+		rarityKey = "RarityGlowLegendary"
+	elseif rarity == "Mythic" then
+		rarityKey = "RarityGlowMythic"
+	elseif rarity == "Godly" or rarity == "Secret" then
+		rarityKey = "RarityGlowSecret"
+	end
+
+	local rarityGlow = createImageLayer(stage, "AssetRarityGlow", rarityKey, 18, 1, Color3.fromRGB(255, 255, 255))
+	if rarityGlow then
+		rarityGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+		rarityGlow.Position = UDim2.fromScale(0.5, 0.48)
+		rarityGlow.Size = UDim2.fromScale(0.2, 0.28)
+		playTween(rarityGlow, 0.36, {
+			Size = UDim2.fromScale(0.76, 0.98),
+			ImageTransparency = 0.04,
+		}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	end
 
 	local flash = Instance.new("Frame")
 	flash.Name = "RevealFlash"
@@ -845,6 +1043,12 @@ local function playRevealSequence(rawPayload)
 	flash.Parent = gui
 	playTween(flash, 0.36, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	Debris:AddItem(flash, 0.44)
+
+	local flashImage = createImageLayer(gui, "AssetWhiteFlash", "WhiteFlash", 101, 0.12, profile.color)
+	if flashImage then
+		playTween(flashImage, 0.34, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		Debris:AddItem(flashImage, 0.42)
+	end
 
 	playSound(FINAL_SOUND_ID, 0.55, 1)
 	if profile.confetti > 0 then
@@ -894,6 +1098,7 @@ local function playRevealSequence(rawPayload)
 	continue.Name = "Continue"
 	continue.AnchorPoint = Vector2.new(0.5, 1)
 	continue.BackgroundColor3 = THEME.Green
+	continue.BackgroundTransparency = getAssetId("ContinueButtonBg") and 1 or 0
 	continue.BorderSizePixel = 0
 	continue.Position = UDim2.fromScale(0.5, 1.105)
 	continue.Size = UDim2.fromScale(0.32, 0.085)
@@ -910,6 +1115,20 @@ local function playRevealSequence(rawPayload)
 	continueCorner.Parent = continue
 	createStroke(continue, THEME.Ink, 3, 0)
 	createGradient(continue, THEME.Green, Color3.fromRGB(32, 163, 71), 90)
+
+	local buttonBg = createImageLayer(continue, "AssetContinueButtonBg", "ContinueButtonBg", 90, 0)
+	if buttonBg then
+		buttonBg.ZIndex = 89
+		buttonBg.Size = UDim2.fromScale(1, 1)
+	end
+
+	local hoverGlow = createImageLayer(continue, "AssetContinueHoverGlow", "ContinueButtonHoverGlow", 89, 1, THEME.Green)
+	if hoverGlow then
+		hoverGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+		hoverGlow.Position = UDim2.fromScale(0.5, 0.5)
+		hoverGlow.Size = UDim2.fromScale(1.2, 1.55)
+	end
+
 	local continueTextSize = Instance.new("UITextSizeConstraint")
 	continueTextSize.MaxTextSize = 24
 	continueTextSize.MinTextSize = 10
@@ -919,6 +1138,18 @@ local function playRevealSequence(rawPayload)
 	table.insert(state.connections, continue.Activated:Connect(function()
 		closeRequested = true
 	end))
+
+	if hoverGlow then
+		table.insert(state.connections, continue.MouseEnter:Connect(function()
+			playTween(hoverGlow, 0.12, { ImageTransparency = 0.15 })
+		end))
+		table.insert(state.connections, continue.MouseLeave:Connect(function()
+			playTween(hoverGlow, 0.16, { ImageTransparency = 1 })
+		end))
+		table.insert(state.connections, continue.MouseButton1Down:Connect(function()
+			playTween(hoverGlow, 0.08, { ImageTransparency = 0.02 })
+		end))
+	end
 
 	task.delay(0.2, function()
 		if continue.Parent then
