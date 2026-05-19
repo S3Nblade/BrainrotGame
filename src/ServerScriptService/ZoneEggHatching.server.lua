@@ -24,6 +24,31 @@ local rng = Random.new()
 local activeByEggId = {}
 local lastHatchByPlayer = {}
 
+local function ensureRemotesFolder()
+	local folder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Remotes"
+		folder.Parent = ReplicatedStorage
+	end
+	return folder
+end
+
+local function ensureRemoteEvent(parent, name)
+	local existing = parent:FindFirstChild(name)
+	if existing then
+		if existing:IsA("RemoteEvent") then
+			return existing
+		end
+		existing:Destroy()
+	end
+
+	local remote = Instance.new("RemoteEvent")
+	remote.Name = name
+	remote.Parent = parent
+	return remote
+end
+
 local STYLE_COLORS = {
 	Starter = {
 		Body = Color3.fromRGB(86, 207, 255),
@@ -102,19 +127,11 @@ if not eggFolder then
 	eggFolder.Parent = Workspace
 end
 
-local hatchResultRemote = ReplicatedStorage:FindFirstChild(HATCH_RESULT_REMOTE)
-if not hatchResultRemote then
-	hatchResultRemote = Instance.new("RemoteEvent")
-	hatchResultRemote.Name = HATCH_RESULT_REMOTE
-	hatchResultRemote.Parent = ReplicatedStorage
-end
+local remotesFolder = ensureRemotesFolder()
+local startNPCRevealRemote = ensureRemoteEvent(remotesFolder, "StartNPCReveal")
+local hatchResultRemote = ensureRemoteEvent(ReplicatedStorage, HATCH_RESULT_REMOTE)
 
-local hatchRequestRemote = ReplicatedStorage:FindFirstChild(HATCH_REQUEST_REMOTE)
-if not hatchRequestRemote then
-	hatchRequestRemote = Instance.new("RemoteEvent")
-	hatchRequestRemote.Name = HATCH_REQUEST_REMOTE
-	hatchRequestRemote.Parent = ReplicatedStorage
-end
+local hatchRequestRemote = ensureRemoteEvent(ReplicatedStorage, HATCH_REQUEST_REMOTE)
 
 local function getApi()
 	local started = os.clock()
@@ -574,6 +591,33 @@ local function getRollNames(api, zoneName)
 	return names
 end
 
+local function getRevealPool(api, zoneName)
+	local summaries = api.GetTemplateSummaries and api.GetTemplateSummaries(zoneName) or {}
+	local pool = {}
+
+	for index, summary in ipairs(summaries) do
+		table.insert(pool, {
+			id = tostring(summary.Name or ("Brainrot_" .. tostring(index))),
+			name = tostring(summary.Name or "Brainrot"),
+			displayName = tostring(summary.Name or "Brainrot"),
+			rarity = tostring(summary.Rarity or "Common"),
+			zoneName = zoneName,
+		})
+	end
+
+	if #pool <= 0 then
+		table.insert(pool, {
+			id = "Mystery Brainrot",
+			name = "Mystery Brainrot",
+			displayName = "Mystery Brainrot",
+			rarity = "Common",
+			zoneName = zoneName,
+		})
+	end
+
+	return pool
+end
+
 local function hatchEgg(player, egg)
 	local api = _G.BrainrotZoneEggApi
 	if not api or not egg or not egg.Parent then
@@ -644,7 +688,22 @@ local function hatchEgg(player, egg)
 	end
 
 	local mutationColor = mutation.Color or Color3.fromRGB(255, 255, 255)
+	local revealId = HttpService:GenerateGUID(false)
+	local possibleNPCs = getRevealPool(api, zoneName)
+	local selectedNPC = {
+		id = tostring(tool:GetAttribute("TemplateName") or tool:GetAttribute("DisplayName") or tool.Name),
+		name = tostring(tool:GetAttribute("BrainrotName") or tool.Name),
+		displayName = tostring(tool:GetAttribute("DisplayName") or tool.Name),
+		rarity = rarity,
+		zoneName = zoneName,
+		mps = finalMps,
+		mutation = tostring(tool:GetAttribute("Mutation") or "Normal"),
+		mutationDisplayName = tostring(tool:GetAttribute("MutationDisplayName") or tool:GetAttribute("Mutation") or "Normal"),
+	}
+
 	local payload = {
+		RevealId = revealId,
+		revealId = revealId,
 		EggId = tostring(egg:GetAttribute("EggId") or ""),
 		ZoneName = zoneName,
 		ZoneDisplayName = tostring(zoneConfig.DisplayName or zoneName),
@@ -657,9 +716,14 @@ local function hatchEgg(player, egg)
 		MutationMultiplier = tonumber(tool:GetAttribute("MutationMultiplier")) or 1,
 		MutationColor = mutationColor,
 		RollNames = getRollNames(api, zoneName),
+		possibleNPCs = possibleNPCs,
+		selectedNPC = selectedNPC,
+		selectedRarity = rarity,
+		revealSource = "ZoneEgg",
 		Tool = tool,
 	}
 
+	startNPCRevealRemote:FireClient(player, payload)
 	hatchResultRemote:FireClient(player, payload)
 	fireCatchFeedback(player, tool)
 	playEggBurst(egg)
