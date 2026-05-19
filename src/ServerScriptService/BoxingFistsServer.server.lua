@@ -83,6 +83,12 @@ hitRemote.OnServerEvent:Connect(function(player, punchName)
 					local neededFacing = punchName == "Hook" and -0.15 or 0.05
 
 					if facing >= neededFacing then
+						local eggApi = _G.CleanEggDamageApi
+						if eggApi and eggApi.IsEgg and eggApi.IsEgg(targetCharacter) then
+							eggApi.DamageEgg(player, targetCharacter, DAMAGE[punchName])
+							continue
+						end
+
 						targetHumanoid:TakeDamage(DAMAGE[punchName])
 
 						if targetRoot:IsA("BasePart") and not targetRoot.Anchored then
