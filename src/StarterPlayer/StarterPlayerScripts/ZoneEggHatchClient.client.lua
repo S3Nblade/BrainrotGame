@@ -508,7 +508,7 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 	wrapper.AnchorPoint = Vector2.new(0.5, 0.5)
 	wrapper.BackgroundTransparency = 1
 	wrapper.Position = UDim2.fromScale(xScale, 0.5)
-	wrapper.Size = UDim2.fromScale(0.18, 0.88)
+	wrapper.Size = UDim2.fromScale(0.14, 0.98)
 	wrapper.ZIndex = 30
 	wrapper.Parent = parent
 
@@ -593,6 +593,16 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 
 	local nameLabel = createTextLabel(card, "Name", "???", UDim2.fromScale(0.92, 0.16), UDim2.fromScale(0.04, 0.76), 18, Color3.fromRGB(225, 233, 255), 36)
 	local rarityLabel = createTextLabel(card, "Rarity", "???", UDim2.fromScale(0.92, 0.1), UDim2.fromScale(0.04, 0.9), 13, Color3.fromRGB(177, 194, 232), 36)
+	nameLabel.TextTransparency = 1
+	rarityLabel.TextTransparency = 1
+	local nameStroke = nameLabel:FindFirstChildOfClass("UIStroke")
+	if nameStroke then
+		nameStroke.Transparency = 1
+	end
+	local rarityStroke = rarityLabel:FindFirstChildOfClass("UIStroke")
+	if rarityStroke then
+		rarityStroke.Transparency = 1
+	end
 
 	local aspect = Instance.new("UIAspectRatioConstraint")
 	aspect.AspectRatio = 0.8
@@ -910,19 +920,23 @@ local function playRevealSequence(rawPayload)
 	reel.Parent = stage
 
 	local cards = {
-		createShadowCard(reel, "Card_1", 0.06, 0.82, 0.62),
-		createShadowCard(reel, "Card_2", 0.22, 0.96, 0.38),
-		createShadowCard(reel, "Card_3", 0.5, 1.26, 0.1),
-		createShadowCard(reel, "Card_4", 0.78, 0.96, 0.38),
-		createShadowCard(reel, "Card_5", 0.94, 0.82, 0.62),
+		createShadowCard(reel, "Card_1", 0.03, 0.66, 0.76),
+		createShadowCard(reel, "Card_2", 0.17, 0.78, 0.58),
+		createShadowCard(reel, "Card_3", 0.32, 0.96, 0.34),
+		createShadowCard(reel, "Card_4", 0.5, 1.32, 0.08),
+		createShadowCard(reel, "Card_5", 0.68, 0.96, 0.34),
+		createShadowCard(reel, "Card_6", 0.83, 0.78, 0.58),
+		createShadowCard(reel, "Card_7", 0.97, 0.66, 0.76),
 	}
 
 	local slots = {
-		{ x = 0.06, scale = 0.82, alpha = 0.62, rot = -8 },
-		{ x = 0.22, scale = 0.96, alpha = 0.38, rot = -4 },
-		{ x = 0.5, scale = 1.26, alpha = 0.1, rot = 0 },
-		{ x = 0.78, scale = 0.96, alpha = 0.38, rot = 4 },
-		{ x = 0.94, scale = 0.82, alpha = 0.62, rot = 8 },
+		{ x = 0.03, scale = 0.66, alpha = 0.76, rot = -10 },
+		{ x = 0.17, scale = 0.78, alpha = 0.58, rot = -7 },
+		{ x = 0.32, scale = 0.96, alpha = 0.34, rot = -3 },
+		{ x = 0.5, scale = 1.32, alpha = 0.08, rot = 0 },
+		{ x = 0.68, scale = 0.96, alpha = 0.34, rot = 3 },
+		{ x = 0.83, scale = 0.78, alpha = 0.58, rot = 7 },
+		{ x = 0.97, scale = 0.66, alpha = 0.76, rot = 10 },
 	}
 
 	playTween(overlay, 0.26, { BackgroundTransparency = 0.18 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -949,8 +963,8 @@ local function playRevealSequence(rawPayload)
 			playTween(card.card, 0.08, { BackgroundTransparency = slot.alpha }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		end
 
-		local pulseScale = 1.14 + (1 - ratio) * 0.08
-		playTween(cards[3].scale, 0.05, { Scale = pulseScale }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		local pulseScale = 1.32 + (1 - ratio) * 0.08
+		playTween(cards[4].scale, 0.05, { Scale = pulseScale }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 		local shakePower = math.max(0, (1 - ratio) * 6 + profile.intensity * 0.9)
 		stage.Position = UDim2.new(
@@ -968,14 +982,14 @@ local function playRevealSequence(rawPayload)
 	title.Text = "REVEALING..."
 
 	for i, card in ipairs(cards) do
-		if i == 3 then
+		if i == 4 then
 			updateShadowCard(card, selected, false)
-			playTween(card.scale, 0.2, { Scale = 1.28 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			playTween(card.scale, 0.2, { Scale = 1.38 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			playTween(card.glow, 0.2, { BackgroundTransparency = 0.48 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		else
 			playTween(card.wrapper, 0.24, {
-				Position = UDim2.fromScale(i < 3 and -0.08 or 1.08, 0.5),
-				Rotation = i < 3 and -14 or 14,
+				Position = UDim2.fromScale(i < 4 and -0.08 or 1.08, 0.5),
+				Rotation = i < 4 and -14 or 14,
 			}, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
 			playTween(card.card, 0.2, { BackgroundTransparency = 1 })
 		end
@@ -995,10 +1009,10 @@ local function playRevealSequence(rawPayload)
 	end
 
 	for shake = 1, 8 do
-		cards[3].wrapper.Position = UDim2.new(0.5, (math.random() * 2 - 1) * 5, 0.5, (math.random() * 2 - 1) * 3)
+		cards[4].wrapper.Position = UDim2.new(0.5, (math.random() * 2 - 1) * 5, 0.5, (math.random() * 2 - 1) * 3)
 		task.wait(0.035)
 	end
-	cards[3].wrapper.Position = UDim2.fromScale(0.5, 0.5)
+	cards[4].wrapper.Position = UDim2.fromScale(0.5, 0.5)
 
 	createRarityRays(stage, profile)
 
@@ -1051,7 +1065,7 @@ local function playRevealSequence(rawPayload)
 		createSparkles(stage, profile, 10)
 	end
 
-	cards[3].wrapper.Visible = false
+	cards[4].wrapper.Visible = false
 	state.rotateCleanup = createFinalViewport(stage, selected, profile)
 
 	title.Text = "YOU GOT!"
