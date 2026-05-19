@@ -698,16 +698,33 @@ local function renderShop()
 end
 
 local function scanSeenNpcs()
-	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
-	if not npcFolder then
-		return
+	local function markSeenFromInstance(instance)
+		local name = tostring(instance:GetAttribute("DisplayName") or instance:GetAttribute("BrainrotName") or instance.Name)
+		if name ~= "" then
+			seenNpcs[name] = true
+		end
 	end
 
-	for _, npc in ipairs(npcFolder:GetChildren()) do
-		if npc:IsA("Model") then
-			local name = tostring(npc:GetAttribute("DisplayName") or npc:GetAttribute("BrainrotName") or npc.Name)
-			if name ~= "" then
-				seenNpcs[name] = true
+	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
+
+	if npcFolder then
+		for _, npc in ipairs(npcFolder:GetChildren()) do
+			if npc:IsA("Model") then
+				markSeenFromInstance(npc)
+			end
+		end
+	end
+
+	for _, container in ipairs({
+		player:FindFirstChild("Backpack"),
+		player.Character,
+		player:FindFirstChild("StarterGear"),
+	}) do
+		if container then
+			for _, child in ipairs(container:GetChildren()) do
+				if child:IsA("Tool") and (child:GetAttribute("BrainrotTool") == true or child:GetAttribute("InventoryOnly") == true) then
+					markSeenFromInstance(child)
+				end
 			end
 		end
 	end
@@ -1142,20 +1159,43 @@ local function polishGuiTree(root)
 end
 
 local function bindNpcIndexTracking()
-	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
-	if not npcFolder then
-		return
+	local function markSeenFromInstance(instance)
+		local name = tostring(instance:GetAttribute("DisplayName") or instance:GetAttribute("BrainrotName") or instance.Name)
+		if name ~= "" then
+			seenNpcs[name] = true
+		end
 	end
+
+	local function bindToolContainer(container)
+		if not container then
+			return
+		end
+
+		container.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") and (child:GetAttribute("BrainrotTool") == true or child:GetAttribute("InventoryOnly") == true) then
+				markSeenFromInstance(child)
+			end
+		end)
+	end
+
+	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
 
 	scanSeenNpcs()
 
-	npcFolder.ChildAdded:Connect(function(npc)
-		if npc:IsA("Model") then
-			local name = tostring(npc:GetAttribute("DisplayName") or npc:GetAttribute("BrainrotName") or npc.Name)
-			if name ~= "" then
-				seenNpcs[name] = true
+	if npcFolder then
+		npcFolder.ChildAdded:Connect(function(npc)
+			if npc:IsA("Model") then
+				markSeenFromInstance(npc)
 			end
 		end
+	end
+
+	bindToolContainer(player:FindFirstChild("Backpack"))
+	bindToolContainer(player:FindFirstChild("StarterGear"))
+
+	player.CharacterAdded:Connect(function(character)
+		bindToolContainer(character)
+		task.defer(scanSeenNpcs)
 	end)
 end
 

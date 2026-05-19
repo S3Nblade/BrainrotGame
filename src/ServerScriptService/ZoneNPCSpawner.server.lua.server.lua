@@ -16,6 +16,7 @@ local SPAWNER_ID = "ZoneThemedNPCSpawner_v2"
 local GLOBAL_SPAWN_INTERVAL = 4
 local AREA_REFRESH_INTERVAL = 10
 local INITIAL_DELAY = 2.5
+local DIRECT_NPC_SPAWNING_ENABLED = false
 
 local rng = Random.new()
 local areaCache = {}
@@ -1152,6 +1153,27 @@ local function chooseTemplate(zoneName, rarity)
 	return pick(templates)
 end
 
+local function getTemplateSummaries(zoneName)
+	local folder = TEMPLATE_ROOT:FindFirstChild(zoneName)
+	local summaries = {}
+
+	if not folder then
+		return summaries
+	end
+
+	for _, obj in ipairs(folder:GetChildren()) do
+		if obj:IsA("Model") then
+			table.insert(summaries, {
+				Name = tostring(obj:GetAttribute("DisplayName") or obj:GetAttribute("BrainrotName") or obj.Name),
+				Rarity = tostring(obj:GetAttribute("Rarity") or "Common"),
+				ZoneName = zoneName,
+			})
+		end
+	end
+
+	return summaries
+end
+
 local function isWildNpc(npc)
 	if not npc:IsA("Model") then
 		return false
@@ -1377,20 +1399,40 @@ end
 
 buildTemplates()
 
-task.delay(INITIAL_DELAY, function()
-	spawnInitialBatch()
-end)
+_G.BrainrotZoneEggApi = {
+	SpawnerId = SPAWNER_ID,
+	Zones = ZONES,
+	NPCFolder = NPC_FOLDER,
+	TemplateRoot = TEMPLATE_ROOT,
+	ChooseSpawnPosition = chooseSpawnPosition,
+	ChooseWeightedRarity = chooseWeightedRarity,
+	ChooseTemplate = chooseTemplate,
+	PrepareNPC = prepareNPC,
+	GetRandomMPS = getRandomMPS,
+	GetSellPriceFromMPS = getSellPriceFromMPS,
+	GetZoneRuntime = getZoneRuntime,
+	GetTemplateSummaries = getTemplateSummaries,
+	RefreshAreas = refreshAreas,
+}
 
-task.spawn(function()
-	while true do
-		for zoneName, _zoneConfig in pairs(ZONES) do
-			spawnNPCInZone(zoneName)
-			task.wait(0.15)
+if DIRECT_NPC_SPAWNING_ENABLED then
+	task.delay(INITIAL_DELAY, function()
+		spawnInitialBatch()
+	end)
+
+	task.spawn(function()
+		while true do
+			for zoneName, _zoneConfig in pairs(ZONES) do
+				spawnNPCInZone(zoneName)
+				task.wait(0.15)
+			end
+
+			task.wait(GLOBAL_SPAWN_INTERVAL)
 		end
-
-		task.wait(GLOBAL_SPAWN_INTERVAL)
-	end
-end)
+	end)
+else
+	print("[ZoneNPCSpawner] Direct wild NPC spawning disabled. Zone egg hatching uses these templates.")
+end
 
 NPC_FOLDER.ChildAdded:Connect(function(child)
 	if child:IsA("Model")
@@ -1403,4 +1445,4 @@ NPC_FOLDER.ChildAdded:Connect(function(child)
 	end
 end)
 
-print("[ZoneNPCSpawner] loaded. Zone-themed NPCs scatter by real map areas.")
+print("[ZoneNPCSpawner] loaded. Zone-themed NPC templates are ready for eggs.")
