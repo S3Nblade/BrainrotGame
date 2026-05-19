@@ -133,6 +133,12 @@ local ASSET_NAME_ALIASES = {
 	CinematicConfettiField = { "CinematicConfettiField", "cinematic_confetti_field", "cinematic_confetti_field.png" },
 	CinematicFloorGlow = { "CinematicFloorGlow", "cinematic_floor_glow", "cinematic_floor_glow.png" },
 	SilhouetteRimGlow = { "SilhouetteRimGlow", "silhouette_rim_glow", "silhouette_rim_glow.png" },
+	RollingCardFrame = { "RollingCardFrame", "rolling_card_frame", "rolling_card_frame.png" },
+	RollingCenterCardFrame = { "RollingCenterCardFrame", "rolling_center_card_frame", "rolling_center_card_frame.png" },
+	RarityBadgeBg = { "RarityBadgeBg", "rarity_badge_bg", "rarity_badge_bg.png" },
+	RollingBarBg = { "RollingBarBg", "rolling_bar_bg", "rolling_bar_bg.png" },
+	RollingBarFill = { "RollingBarFill", "rolling_bar_fill", "rolling_bar_fill.png" },
+	RollingChevrons = { "RollingChevrons", "rolling_chevrons", "rolling_chevrons.png" },
 	Sparkle1 = { "Sparkle1", "sparkle_particle_1", "sparkle_particle_1.png" },
 	Sparkle2 = { "Sparkle2", "sparkle_particle_2", "sparkle_particle_2.png" },
 	Sparkle3 = { "Sparkle3", "sparkle_particle_3", "sparkle_particle_3.png" },
@@ -590,6 +596,12 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 		cardOutline.ImageColor3 = Color3.fromRGB(255, 255, 255)
 	end
 
+	local rollingFrame = createImageLayer(card, "AssetRollingCardFrame", "RollingCardFrame", 44, 0)
+	local centerRollingFrame = createImageLayer(card, "AssetRollingCenterCardFrame", "RollingCenterCardFrame", 45, 0)
+	if centerRollingFrame then
+		centerRollingFrame.Visible = false
+	end
+
 	local pad = Instance.new("UIPadding")
 	pad.PaddingTop = UDim.new(0.06, 0)
 	pad.PaddingBottom = UDim.new(0.06, 0)
@@ -673,12 +685,16 @@ local function createShadowCard(parent, name, xScale, scaleValue, transparency)
 		card = card,
 		scale = scaler,
 		glow = glow,
+		cardBg = cardBg,
+		cardShadow = cardShadow,
 		viewportHolder = viewportHolder,
 		question = question,
 		questionImage = questionImage,
 		silhouetteOverlay = silhouetteOverlay,
 		rimGlow = rimGlow,
 		cardOutline = cardOutline,
+		rollingFrame = rollingFrame,
+		centerRollingFrame = centerRollingFrame,
 		nameLabel = nameLabel,
 		rarityLabel = rarityLabel,
 		viewData = nil,
@@ -989,8 +1005,9 @@ local function playRevealSequence(rawPayload)
 		titleBanner.Size = UDim2.fromScale(0.5, 0.12)
 	end
 
-	local title = createTextLabel(stage, "Title", "WHO DID YOU GET?", UDim2.fromScale(0.86, 0.09), UDim2.fromScale(0.07, 0.075), 42, THEME.Cream, 18)
-	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.7, 0.045), UDim2.fromScale(0.15, 0.165), 20, Color3.fromRGB(232, 223, 255), 18)
+	local preTitle = createTextLabel(stage, "PreTitle", "RARITY REVEAL!", UDim2.fromScale(0.7, 0.055), UDim2.fromScale(0.15, 0.055), 34, THEME.White, 78)
+	local title = createTextLabel(stage, "Title", "YOU GOT?", UDim2.fromScale(0.86, 0.105), UDim2.fromScale(0.07, 0.105), 56, THEME.White, 78)
+	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.7, 0.045), UDim2.fromScale(0.15, 0.22), 20, Color3.fromRGB(232, 223, 255), 18)
 	local bigRarity = createTextLabel(stage, "BigRarity", string.upper(selected.rarity), UDim2.fromScale(0.82, 0.17), UDim2.fromScale(0.09, 0.17), 72, profile.color, 76)
 	bigRarity.TextTransparency = 1
 	local bigStroke = bigRarity:FindFirstChildOfClass("UIStroke")
@@ -1002,8 +1019,8 @@ local function playRevealSequence(rawPayload)
 	local reel = Instance.new("Frame")
 	reel.Name = "ShadowCarousel"
 	reel.BackgroundTransparency = 1
-	reel.Position = UDim2.fromScale(0.055, 0.39)
-	reel.Size = UDim2.fromScale(0.89, 0.28)
+	reel.Position = UDim2.fromScale(0.03, 0.29)
+	reel.Size = UDim2.fromScale(0.94, 0.37)
 	reel.ZIndex = 20
 	reel.Parent = stage
 
@@ -1027,6 +1044,59 @@ local function playRevealSequence(rawPayload)
 		{ x = 0.97, scale = 0.66, alpha = 0.76, rot = 10 },
 	}
 
+	local rarityBadge = Instance.new("Frame")
+	rarityBadge.Name = "RollingRarityBadge"
+	rarityBadge.AnchorPoint = Vector2.new(0.5, 0.5)
+	rarityBadge.BackgroundTransparency = 1
+	rarityBadge.Position = UDim2.fromScale(0.5, 0.69)
+	rarityBadge.Size = UDim2.fromScale(0.22, 0.075)
+	rarityBadge.ZIndex = 82
+	rarityBadge.Parent = stage
+
+	local rarityBadgeBg = createImageLayer(rarityBadge, "AssetRarityBadgeBg", "RarityBadgeBg", 82, 0, profile.color)
+	if rarityBadgeBg then
+		rarityBadgeBg.Size = UDim2.fromScale(1, 1)
+	end
+
+	local rarityBadgeText = createTextLabel(rarityBadge, "RarityText", selected.rarity, UDim2.fromScale(0.86, 0.8), UDim2.fromScale(0.07, 0.1), 34, profile.color, 83)
+
+	local rollingFooter = Instance.new("Frame")
+	rollingFooter.Name = "RollingFooter"
+	rollingFooter.AnchorPoint = Vector2.new(0.5, 0.5)
+	rollingFooter.BackgroundTransparency = 1
+	rollingFooter.Position = UDim2.fromScale(0.5, 0.84)
+	rollingFooter.Size = UDim2.fromScale(0.56, 0.12)
+	rollingFooter.ZIndex = 82
+	rollingFooter.Parent = stage
+
+	local barBg = createImageLayer(rollingFooter, "AssetRollingBarBg", "RollingBarBg", 82, 0, profile.color)
+	if barBg then
+		barBg.Position = UDim2.fromScale(0, 0)
+		barBg.Size = UDim2.fromScale(1, 0.5)
+	end
+
+	local barFill = createImageLayer(rollingFooter, "AssetRollingBarFill", "RollingBarFill", 83, 0, profile.color)
+	if barFill then
+		barFill.Position = UDim2.fromScale(0, 0)
+		barFill.Size = UDim2.fromScale(0.04, 0.5)
+	end
+
+	local leftChevrons = createImageLayer(rollingFooter, "LeftChevrons", "RollingChevrons", 83, 0, profile.color)
+	if leftChevrons then
+		leftChevrons.AnchorPoint = Vector2.new(1, 0)
+		leftChevrons.Position = UDim2.fromScale(0.42, 0.54)
+		leftChevrons.Size = UDim2.fromScale(0.18, 0.44)
+	end
+
+	local rightChevrons = createImageLayer(rollingFooter, "RightChevrons", "RollingChevrons", 83, 0, profile.color)
+	if rightChevrons then
+		rightChevrons.AnchorPoint = Vector2.new(0, 0)
+		rightChevrons.Position = UDim2.fromScale(0.58, 0.54)
+		rightChevrons.Size = UDim2.fromScale(0.18, 0.44)
+	end
+
+	local rollingText = createTextLabel(rollingFooter, "RollingText", "ROLLING...", UDim2.fromScale(0.36, 0.5), UDim2.fromScale(0.32, 0.5), 28, THEME.White, 84)
+
 	playTween(overlay, 0.26, { BackgroundTransparency = 0.18 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	playTween(blur, 0.28, { Size = 12 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	playTween(stageScale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -1043,6 +1113,9 @@ local function playRevealSequence(rawPayload)
 			local npc = possible[((rollIndex + i - 2) % #possible) + 1]
 			updateShadowCard(card, npc, false)
 			local slot = slots[i]
+			if card.centerRollingFrame then
+				card.centerRollingFrame.Visible = i == 4
+			end
 			playTween(card.wrapper, 0.08, {
 				Position = UDim2.fromScale(slot.x, 0.5),
 				Rotation = slot.rot,
@@ -1053,6 +1126,9 @@ local function playRevealSequence(rawPayload)
 
 		local pulseScale = 1.32 + (1 - ratio) * 0.08
 		playTween(cards[4].scale, 0.05, { Scale = pulseScale }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		if barFill then
+			playTween(barFill, 0.08, { Size = UDim2.fromScale(math.clamp(ratio, 0.04, 1), 0.5) }, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+		end
 
 		local shakePower = math.max(0, (1 - ratio) * 6 + profile.intensity * 0.9)
 		stage.Position = UDim2.new(
@@ -1068,6 +1144,7 @@ local function playRevealSequence(rawPayload)
 
 	stage.Position = UDim2.fromScale(0.5, 0.5)
 	title.Text = "REVEALING..."
+	preTitle.Text = "FINAL ROLL!"
 
 	for i, card in ipairs(cards) do
 		if i == 4 then
@@ -1075,11 +1152,8 @@ local function playRevealSequence(rawPayload)
 			playTween(card.scale, 0.2, { Scale = 1.38 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			playTween(card.glow, 0.2, { BackgroundTransparency = 0.48 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		else
-			playTween(card.wrapper, 0.24, {
-				Position = UDim2.fromScale(i < 4 and -0.08 or 1.08, 0.5),
-				Rotation = i < 4 and -14 or 14,
-			}, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
-			playTween(card.card, 0.2, { BackgroundTransparency = 1 })
+			playTween(card.scale, 0.24, { Scale = slots[i].scale * 0.92 }, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+			playTween(card.card, 0.2, { BackgroundTransparency = 0.78 })
 		end
 	end
 
@@ -1153,13 +1227,54 @@ local function playRevealSequence(rawPayload)
 		createSparkles(stage, profile, 10)
 	end
 
+	playTween(rollingFooter, 0.18, { Position = UDim2.fromScale(0.5, 0.9) }, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+	playTween(rarityBadge, 0.18, { Position = UDim2.fromScale(0.5, 0.73) }, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+	task.delay(0.18, function()
+		if rollingFooter.Parent then
+			rollingFooter.Visible = false
+		end
+		if rarityBadge.Parent then
+			rarityBadge.Visible = false
+		end
+	end)
+
+	for i, card in ipairs(cards) do
+		if i ~= 4 then
+			if card.questionImage then
+				card.questionImage.Visible = false
+			end
+			card.question.Visible = false
+			if card.rollingFrame then
+				card.rollingFrame.Visible = false
+			end
+			if card.centerRollingFrame then
+				card.centerRollingFrame.Visible = false
+			end
+			if card.cardOutline then
+				card.cardOutline.Visible = false
+			end
+			if card.cardBg then
+				playTween(card.cardBg, 0.22, { ImageTransparency = 0.72 })
+			end
+			playTween(card.glow, 0.22, { BackgroundTransparency = 0.86 })
+			playTween(card.card, 0.22, { BackgroundTransparency = 1 })
+		end
+	end
+
 	cards[4].wrapper.Visible = false
 	state.rotateCleanup = createFinalViewport(stage, selected, profile)
 
 	title.Text = "YOU GOT!"
 	title.TextColor3 = THEME.White
-	title.Position = UDim2.fromScale(0.07, 0.08)
-	title.Size = UDim2.fromScale(0.86, 0.08)
+	title.Position = UDim2.fromScale(0.07, 0.055)
+	title.Size = UDim2.fromScale(0.86, 0.075)
+	preTitle.TextTransparency = 1
+	local preTitleStroke = preTitle:FindFirstChildOfClass("UIStroke")
+	if preTitleStroke then
+		preTitleStroke.Transparency = 1
+	end
+	bigRarity.Position = UDim2.fromScale(0.09, 0.115)
+	bigRarity.Size = UDim2.fromScale(0.82, 0.2)
 	subtitle.TextTransparency = 1
 	local subtitleStroke = subtitle:FindFirstChildOfClass("UIStroke")
 	if subtitleStroke then

@@ -21,6 +21,12 @@ The reveal client now supports two asset setup styles:
 | `cinematic_confetti_field.png` | Floating purple/white rectangular shard field | `ImageLabel` | Full-screen overlay, around 105% x 105% | Optional | Lightweight confetti layer during reveal | Transparent outside shards |
 | `cinematic_floor_glow.png` | Purple oval floor/base glow under the NPC lineup | `ImageLabel` | Lower center, around 86% x 32% | Yes | Grounds the silhouette row and final NPC | Soft transparent edges |
 | `silhouette_rim_glow.png` | Generic purple rim glow for mystery silhouettes | `ImageLabel` | Over each roll silhouette/card | Yes | Adds the screenshot-like purple outline to unknown NPCs | Transparent outside generic aura |
+| `rolling_card_frame.png` | Purple glowing card frame for side roll slots | `ImageLabel` | Same as each roll card | Yes | Rolling phase mystery card frames | Transparent outside frame |
+| `rolling_center_card_frame.png` | Brighter purple frame for the center roll slot | `ImageLabel` | Same as center roll card | Yes | Center card highlight while rolling | Transparent outside frame |
+| `rarity_badge_bg.png` | Decorative badge behind rarity text | `ImageLabel` | Center under roll card | Yes | Rolling phase rarity badge; text stays real Roblox text | Transparent outside badge |
+| `rolling_bar_bg.png` | Decorative progress bar track | `ImageLabel` | Lower center footer | Yes | Rolling phase progress bar background | Transparent outside rounded bar |
+| `rolling_bar_fill.png` | Glowing rolling progress fill | `ImageLabel` | Cropped/scaled over bar track | Yes | Rolling phase progress fill | Transparent outside rounded bar |
+| `rolling_chevrons.png` | Purple chevron decoration | `ImageLabel` | Beside `ROLLING...` text | Yes | Rolling footer directional accents | Transparent outside chevrons |
 | `sparkle_particle_1.png` | Diamond shard particle | `ImageLabel` | 12-34 px | Yes | Animated reveal confetti/sparkles | Transparent background |
 | `sparkle_particle_2.png` | Tilted rectangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
 | `sparkle_particle_3.png` | Triangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
