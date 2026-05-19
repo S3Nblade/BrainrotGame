@@ -471,7 +471,8 @@ local function updateHPBar(data, npc)
 	local maxHP = tonumber(npc:GetAttribute("CaptureMaxHP")) or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
 
-	data.hpBar.text.Text = npc.Name .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
+	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
+	data.hpBar.text.Text = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
 		return
@@ -537,7 +538,7 @@ local function setStunnedMode(data, npc)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(38, 110, 26)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(120, 255, 70)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(220, 255, 185)
-	data.hpBar.text.Text = "READY TO PICKUP"
+	data.hpBar.text.Text = npc:GetAttribute("EggBrainrot") == true and "READY TO HATCH" or "READY TO PICKUP"
 end
 
 local function setPanicMode(data)

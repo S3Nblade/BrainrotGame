@@ -254,6 +254,114 @@ local function showHatch(payload)
 		10
 	)
 
+	local slamStage = Instance.new("Frame")
+	slamStage.Name = "SlamStage"
+	slamStage.BackgroundTransparency = 1
+	slamStage.Position = UDim2.new(0, 0, 0, 98)
+	slamStage.Size = UDim2.new(1, 0, 0, 292)
+	slamStage.ZIndex = 30
+	slamStage.Parent = holder
+
+	local floor = Instance.new("Frame")
+	floor.Name = "ImpactFloor"
+	floor.AnchorPoint = Vector2.new(0.5, 1)
+	floor.BackgroundColor3 = Color3.fromRGB(255, 232, 118)
+	floor.BorderSizePixel = 0
+	floor.Position = UDim2.new(0.5, 0, 1, -16)
+	floor.Size = UDim2.fromOffset(520, 18)
+	floor.ZIndex = 31
+	floor.Parent = slamStage
+	addCorner(floor, 12)
+	addStroke(floor, THEME.Ink, 3)
+
+	local block = makePanel(slamStage, "LuckyEggBlock", THEME.Gold, Color3.fromRGB(245, 118, 42), 26, 36)
+	block.AnchorPoint = Vector2.new(0.5, 0.5)
+	block.Position = UDim2.new(0.5, 0, 0, -96)
+	block.Size = UDim2.fromOffset(180, 180)
+	block.Rotation = -10
+
+	local blockScale = Instance.new("UIScale")
+	blockScale.Scale = 1
+	blockScale.Parent = block
+
+	local q = makeLabel(block, "Question", "?", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 98, Color3.fromRGB(255, 249, 216), 40)
+	q.Rotation = 4
+
+	local sparkleHolder = Instance.new("Frame")
+	sparkleHolder.Name = "ImpactBursts"
+	sparkleHolder.BackgroundTransparency = 1
+	sparkleHolder.Size = UDim2.fromScale(1, 1)
+	sparkleHolder.ZIndex = 45
+	sparkleHolder.Parent = slamStage
+
+	local crackLines = {}
+	for i = 1, 7 do
+		local line = Instance.new("Frame")
+		line.Name = "Crack_" .. tostring(i)
+		line.AnchorPoint = Vector2.new(0.5, 0.5)
+		line.BackgroundColor3 = Color3.fromRGB(42, 33, 42)
+		line.BackgroundTransparency = 1
+		line.BorderSizePixel = 0
+		line.Position = UDim2.new(0.5, (i - 4) * 26, 1, -31 - math.abs(i - 4) * 3)
+		line.Size = UDim2.fromOffset(58 + math.abs(i - 4) * 8, 6)
+		line.Rotation = (i - 4) * 13
+		line.ZIndex = 35
+		line.Parent = sparkleHolder
+		addCorner(line, 6)
+		table.insert(crackLines, line)
+	end
+
+	local function burstShard(index, color)
+		local shard = Instance.new("Frame")
+		shard.Name = "ImpactShard"
+		shard.AnchorPoint = Vector2.new(0.5, 0.5)
+		shard.BackgroundColor3 = color
+		shard.BorderSizePixel = 0
+		shard.Position = UDim2.new(0.5, 0, 1, -82)
+		shard.Size = UDim2.fromOffset(18, 18)
+		shard.Rotation = index * 23
+		shard.ZIndex = 44
+		shard.Parent = sparkleHolder
+		addCorner(shard, 5)
+
+		local angle = (math.pi * 2 / 12) * index
+		tween(shard, 0.38, {
+			Position = UDim2.new(0.5, math.cos(angle) * 190, 1, -82 + math.sin(angle) * 92),
+			Rotation = shard.Rotation + 120,
+			BackgroundTransparency = 1,
+		}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
+	task.wait(0.12)
+	tween(block, 0.34, {
+		Position = UDim2.new(0.5, 0, 1, -104),
+		Rotation = 7,
+	}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.wait(0.34)
+	tween(blockScale, 0.08, { Scale = 1.15 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	tween(floor, 0.08, { Size = UDim2.fromOffset(610, 16) })
+	for _, line in ipairs(crackLines) do
+		tween(line, 0.08, { BackgroundTransparency = 0.05 })
+	end
+	for i = 1, 12 do
+		burstShard(i, i % 2 == 0 and THEME.Pink or THEME.Blue)
+	end
+	task.wait(0.09)
+	tween(blockScale, 0.16, { Scale = 0.96 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	tween(block, 0.16, { Position = UDim2.new(0.5, 0, 1, -126), Rotation = -5 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	task.wait(0.16)
+	tween(blockScale, 0.12, { Scale = 1.04 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	tween(block, 0.12, { Position = UDim2.new(0.5, 0, 1, -108), Rotation = 2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.wait(0.16)
+	tween(slamStage, 0.22, { BackgroundTransparency = 1 })
+	for _, child in ipairs(slamStage:GetDescendants()) do
+		if child:IsA("GuiObject") then
+			tween(child, 0.2, { BackgroundTransparency = 1 })
+		end
+	end
+	task.wait(0.2)
+	slamStage.Visible = false
+
 	local reel = Instance.new("Frame")
 	reel.Name = "ShadowReel"
 	reel.BackgroundTransparency = 1

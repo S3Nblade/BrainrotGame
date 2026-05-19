@@ -124,6 +124,10 @@ local function isWildNpc(npc)
 		return false
 	end
 
+	if npc:GetAttribute("EggBrainrot") == true then
+		return false
+	end
+
 	if isPlacedOrInventory(npc) then
 		return false
 	end

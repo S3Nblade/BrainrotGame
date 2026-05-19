@@ -9,7 +9,7 @@ local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
-local EGG_FOLDER_NAME = "ZoneBrainrotEggs"
+local NPC_FOLDER_NAME = "BrainrotNPCs"
 local HATCH_RESULT_REMOTE = "ZoneEggHatchResult"
 local HATCH_REQUEST_REMOTE = "ZoneEggHatchRequest"
 local EGG_SPAWNER_ID = "ZoneEggHatching_v1"
@@ -63,6 +63,17 @@ local STYLE_COLORS = {
 	},
 }
 
+local RARITY_CAPTURE_HP = {
+	Common = 45,
+	Rare = 80,
+	Epic = 140,
+	Mythic = 230,
+	Legendary = 360,
+	Divine = 550,
+	Celestial = 800,
+	Godly = 1150,
+}
+
 local BLOCKED_TOOL_ATTRIBUTES = {
 	CanPickup = true,
 	CanPickUp = true,
@@ -84,10 +95,10 @@ local BLOCKED_TOOL_ATTRIBUTES = {
 	AssignedSlotPath = true,
 }
 
-local eggFolder = Workspace:FindFirstChild(EGG_FOLDER_NAME)
+local eggFolder = Workspace:FindFirstChild(NPC_FOLDER_NAME)
 if not eggFolder then
 	eggFolder = Instance.new("Folder")
-	eggFolder.Name = EGG_FOLDER_NAME
+	eggFolder.Name = NPC_FOLDER_NAME
 	eggFolder.Parent = Workspace
 end
 
@@ -162,10 +173,11 @@ local function getStyle(zoneConfig)
 end
 
 local function setCommonPartProps(part)
-	part.Anchored = true
+	part.Anchored = false
 	part.CanCollide = false
-	part.CanTouch = false
+	part.CanTouch = true
 	part.CanQuery = true
+	part.Massless = true
 	part.CastShadow = true
 end
 
@@ -219,9 +231,10 @@ local function addEggBillboard(model, zoneConfig)
 	stroke.Parent = label
 end
 
-local function createEggModel(zoneName, zoneConfig, position)
+local function createEggModel(zoneName, zoneConfig, position, eggRarity)
 	local style = getStyle(zoneConfig)
 	local eggId = HttpService:GenerateGUID(false)
+	local captureHP = RARITY_CAPTURE_HP[eggRarity] or RARITY_CAPTURE_HP.Common
 	local model = Instance.new("Model")
 	model.Name = zoneName .. " Egg"
 	model:SetAttribute("EggId", eggId)
@@ -229,12 +242,40 @@ local function createEggModel(zoneName, zoneConfig, position)
 	model:SetAttribute("ZoneDisplayName", zoneConfig.DisplayName or zoneName)
 	model:SetAttribute("ZoneStyle", zoneConfig.Style or zoneName)
 	model:SetAttribute("EggSpawnerId", EGG_SPAWNER_ID)
+	model:SetAttribute("EggBrainrot", true)
+	model:SetAttribute("IsBrainrot", true)
+	model:SetAttribute("BrainrotName", tostring(zoneConfig.DisplayName or zoneName) .. " Egg")
+	model:SetAttribute("DisplayName", tostring(zoneConfig.DisplayName or zoneName) .. " Egg")
+	model:SetAttribute("Rarity", eggRarity or "Common")
+	model:SetAttribute("EggRewardRarity", eggRarity or "Common")
+	model:SetAttribute("CaptureMaxHP", captureHP)
+	model:SetAttribute("CaptureHP", captureHP)
+	model:SetAttribute("CaptureStunned", false)
+	model:SetAttribute("CapturePanic", false)
+	model:SetAttribute("CaptureShielded", false)
+	model:SetAttribute("CaptureShieldEndTime", 0)
+	model:SetAttribute("CanPickup", false)
+	model:SetAttribute("PickupReady", false)
+	model:SetAttribute("ReadyToPickup", false)
+	model:SetAttribute("IsPlaced", false)
+	model:SetAttribute("Placed", false)
+	model:SetAttribute("InventoryOnly", false)
 	model:SetAttribute("HatchInProgress", false)
 
 	local baseCFrame = CFrame.new(position)
-	local root = makeEggPart(model, "EggRoot", Vector3.new(2.35, 2.9, 2.35), baseCFrame, style.Body, Enum.PartType.Ball, style.Material)
+	local root = makeEggPart(model, "HumanoidRootPart", Vector3.new(2.35, 2.9, 2.35), baseCFrame, style.Body, Enum.PartType.Ball, style.Material)
 	root.Transparency = 1
+	root.Massless = false
 	model.PrimaryPart = root
+
+	local humanoid = Instance.new("Humanoid")
+	humanoid.Name = "Humanoid"
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	humanoid.WalkSpeed = zoneConfig.WalkSpeed or 14
+	humanoid.AutoRotate = true
+	humanoid.MaxHealth = 100
+	humanoid.Health = 100
+	humanoid.Parent = model
 
 	local body = makeEggPart(model, "EggBody", Vector3.new(2.28, 2.9, 2.28), baseCFrame, style.Body, Enum.PartType.Ball, style.Material)
 	body.TopSurface = Enum.SurfaceType.Smooth
@@ -285,8 +326,9 @@ local function createEggModel(zoneName, zoneConfig, position)
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.MaxActivationDistance = HATCH_DISTANCE
-	prompt.HoldDuration = 1.15
+	prompt.HoldDuration = 0.4
 	prompt.RequiresLineOfSight = false
+	prompt.Enabled = false
 	prompt.Parent = root
 
 	addEggBillboard(model, zoneConfig)
@@ -294,6 +336,12 @@ local function createEggModel(zoneName, zoneConfig, position)
 	model:PivotTo(baseCFrame * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
 	model.Parent = eggFolder
 	activeByEggId[eggId] = model
+
+	model:GetAttributeChangedSignal("CaptureStunned"):Connect(function()
+		if model.Parent and prompt.Parent then
+			prompt.Enabled = model:GetAttribute("CaptureStunned") == true and model:GetAttribute("HatchInProgress") ~= true
+		end
+	end)
 
 	return model, prompt
 end
@@ -536,6 +584,10 @@ local function hatchEgg(player, egg)
 		return
 	end
 
+	if egg:GetAttribute("CaptureStunned") ~= true then
+		return
+	end
+
 	local now = os.clock()
 	if lastHatchByPlayer[player.UserId] and now - lastHatchByPlayer[player.UserId] < PLAYER_HATCH_COOLDOWN then
 		return
@@ -562,7 +614,7 @@ local function hatchEgg(player, egg)
 		return
 	end
 
-	local rarity = api.ChooseWeightedRarity(zoneConfig)
+	local rarity = tostring(egg:GetAttribute("EggRewardRarity") or api.ChooseWeightedRarity(zoneConfig))
 	local template = api.ChooseTemplate(zoneName, rarity)
 	if not template then
 		warn("[ZoneEggHatching] No reward template for zone:", zoneName, "rarity:", rarity)
@@ -639,7 +691,8 @@ local function spawnEggInZone(api, zoneName)
 		return false
 	end
 
-	local egg, prompt = createEggModel(zoneName, zoneConfig, position)
+	local eggRarity = api.ChooseWeightedRarity(zoneConfig)
+	local egg, prompt = createEggModel(zoneName, zoneConfig, position, eggRarity)
 	prompt.Triggered:Connect(function(player)
 		hatchEgg(player, egg)
 	end)
