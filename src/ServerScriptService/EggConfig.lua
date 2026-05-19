@@ -15,8 +15,9 @@ EggConfig.EvadeSuccessFullHeal = true
 EggConfig.EvadeSuccessSpeedBoostDuration = 3
 EggConfig.EvadeSuccessInvulnerableDuration = 2
 EggConfig.EvadeSuccessSpeedMultiplier = 1.4
-EggConfig.StunDuration = 20
+EggConfig.StunDuration = 60
 EggConfig.HatchPromptText = "Press E to Hatch"
+EggConfig.ChasePromptText = "Press E to Chase"
 
 EggConfig.RarityOrder = {
 	Common = 1,

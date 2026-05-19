@@ -29,6 +29,7 @@ local activeById = {}
 local lastDamageAt = {}
 local zoneRuntime = {}
 local hatchStunnedEgg = nil
+local interactEggPrompt = nil
 local getPlayerRoot = nil
 
 local function ensureFolder(parent, name)
@@ -204,6 +205,25 @@ local function rangeRatio(value, range)
 	return math.clamp((value - minValue) / (maxValue - minValue), 0, 1)
 end
 
+local function chooseSizeCategory(rarity, luckBonus)
+	local rarityOrder = EggConfig.RarityOrder[tostring(rarity or "Common")] or 1
+	local luck = tonumber(luckBonus) or 0
+	local hugeChance = math.clamp(0.01 + rarityOrder * 0.006 + luck * 0.0015, 0.01, 0.16)
+	local largeChance = math.clamp(0.08 + rarityOrder * 0.045 + luck * 0.003, 0.08, 0.48)
+	local mediumChance = math.clamp(0.42 + rarityOrder * 0.025, 0.42, 0.64)
+	local roll = rng:NextNumber()
+
+	if roll <= hugeChance then
+		return "Huge", rng:NextNumber(1.45, 1.72)
+	elseif roll <= hugeChance + largeChance then
+		return "Large", rng:NextNumber(1.18, 1.36)
+	elseif roll <= hugeChance + largeChance + mediumChance then
+		return "Medium", rng:NextNumber(0.98, 1.12)
+	end
+
+	return "Small", rng:NextNumber(0.84, 0.96)
+end
+
 local function rollEggStats(baseDef)
 	local hp = rangeInteger(baseDef.HpRange, tonumber(baseDef.HP) or 100)
 	local size = rangeNumber(baseDef.SizeRange, tonumber(baseDef.Size) or 1)
@@ -213,6 +233,7 @@ local function rollEggStats(baseDef)
 	local hpBonus = math.floor(hpRatio * (EggConfig.LuckScaling.HPBonusMax or 10) + 0.5)
 	local sizeBonus = math.floor(sizeRatio * (EggConfig.LuckScaling.SizeBonusMax or 12) + 0.5)
 	local finalLuck = math.max(0, baseLuck + hpBonus + sizeBonus)
+	local sizeCategory, sizeFactor = chooseSizeCategory(baseDef.Rarity, finalLuck)
 
 	local rolled = {}
 	for key, value in pairs(baseDef) do
@@ -221,7 +242,8 @@ local function rollEggStats(baseDef)
 
 	rolled.BaseDef = baseDef
 	rolled.HP = hp
-	rolled.Size = size
+	rolled.Size = math.clamp(size * sizeFactor, 0.72, 2.85)
+	rolled.SizeCategory = sizeCategory
 	rolled.BaseLuck = baseLuck
 	rolled.HPBonus = hpBonus
 	rolled.SizeBonus = sizeBonus
@@ -448,8 +470,8 @@ local function createBillboard(model, eggDef)
 
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "EggBillboard"
-	gui.Size = UDim2.fromOffset(150, 82)
-	gui.StudsOffset = Vector3.new(0, 3.25 * (tonumber(eggDef.Size) or 1), 0)
+	gui.Size = UDim2.fromOffset(160, 64)
+	gui.StudsOffset = Vector3.new(0, 3.05 * (tonumber(eggDef.Size) or 1), 0)
 	gui.MaxDistance = 55
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
@@ -471,64 +493,26 @@ local function createBillboard(model, eggDef)
 	nameStroke.Thickness = 2
 	nameStroke.Parent = name
 
-	local timerText = Instance.new("TextLabel")
-	timerText.Name = "TimerText"
-	timerText.BackgroundTransparency = 1
-	timerText.Position = UDim2.fromScale(0, 0.25)
-	timerText.Size = UDim2.fromScale(1, 0.22)
-	timerText.Font = Enum.Font.GothamBold
-	timerText.Text = ""
-	timerText.TextColor3 = Color3.fromRGB(255, 245, 196)
-	timerText.TextScaled = true
-	timerText.Visible = false
-	timerText.Parent = gui
-	local timerStroke = Instance.new("UIStroke")
-	timerStroke.Color = Color3.fromRGB(10, 12, 18)
-	timerStroke.Thickness = 2
-	timerStroke.Parent = timerText
-
-	local hpText = Instance.new("TextLabel")
-	hpText.Name = "HPText"
-	hpText.BackgroundTransparency = 1
-	hpText.Position = UDim2.fromScale(0.08, 0.4)
-	hpText.Size = UDim2.fromScale(0.84, 0.16)
-	hpText.Font = Enum.Font.GothamMedium
-	hpText.Text = "HP: " .. tostring(eggDef.HP) .. "/" .. tostring(eggDef.HP)
-	hpText.TextColor3 = Color3.fromRGB(225, 232, 244)
-	hpText.TextScaled = true
-	hpText.Parent = gui
-	local hpStroke = Instance.new("UIStroke")
-	hpStroke.Color = Color3.fromRGB(10, 12, 18)
-	hpStroke.Thickness = 1.5
-	hpStroke.Parent = hpText
-
-	local barBack = Instance.new("Frame")
-	barBack.Name = "HPBarBack"
-	barBack.BackgroundColor3 = Color3.fromRGB(14, 16, 24)
-	barBack.BackgroundTransparency = 0.12
-	barBack.BorderSizePixel = 0
-	barBack.Position = UDim2.fromScale(0.18, 0.59)
-	barBack.Size = UDim2.fromScale(0.64, 0.08)
-	barBack.Parent = gui
-	local barCorner = Instance.new("UICorner")
-	barCorner.CornerRadius = UDim.new(1, 0)
-	barCorner.Parent = barBack
-
-	local fill = Instance.new("Frame")
-	fill.Name = "Fill"
-	fill.BackgroundColor3 = getRarityColor(eggDef.Rarity)
-	fill.BorderSizePixel = 0
-	fill.Size = UDim2.fromScale(1, 1)
-	fill.Parent = barBack
-	local fillCorner = Instance.new("UICorner")
-	fillCorner.CornerRadius = UDim.new(1, 0)
-	fillCorner.Parent = fill
+	local rarity = Instance.new("TextLabel")
+	rarity.Name = "RarityText"
+	rarity.BackgroundTransparency = 1
+	rarity.Position = UDim2.fromScale(0, 0.3)
+	rarity.Size = UDim2.fromScale(1, 0.28)
+	rarity.Font = Enum.Font.GothamBold
+	rarity.Text = tostring(eggDef.Rarity or "Common")
+	rarity.TextColor3 = getRarityColor(eggDef.Rarity)
+	rarity.TextScaled = true
+	rarity.Parent = gui
+	local rarityStroke = Instance.new("UIStroke")
+	rarityStroke.Color = Color3.fromRGB(10, 12, 18)
+	rarityStroke.Thickness = 2
+	rarityStroke.Parent = rarity
 
 	local luck = Instance.new("TextLabel")
 	luck.Name = "LuckText"
 	luck.BackgroundTransparency = 1
-	luck.Position = UDim2.fromScale(0, 0.69)
-	luck.Size = UDim2.fromScale(1, 0.22)
+	luck.Position = UDim2.fromScale(0, 0.62)
+	luck.Size = UDim2.fromScale(1, 0.26)
 	luck.Font = Enum.Font.GothamBold
 	luck.Text = "Luck +" .. tostring(eggDef.LuckBonus or 0) .. "%"
 	luck.TextColor3 = getRarityColor(eggDef.Rarity)
@@ -540,27 +524,25 @@ local function createBillboard(model, eggDef)
 	luckStroke.Parent = luck
 
 	local function refresh()
-		local maxHP = tonumber(model:GetAttribute("EggMaxHP")) or tonumber(eggDef.HP) or 1
-		local hp = math.clamp(tonumber(model:GetAttribute("EggHP")) or maxHP, 0, maxHP)
-		hpText.Text = "HP: " .. tostring(math.ceil(hp)) .. "/" .. tostring(math.ceil(maxHP))
-		fill.Size = UDim2.fromScale(maxHP > 0 and hp / maxHP or 0, 1)
-
 		local active = model:GetAttribute("CaptureChaseActive") == true
-		timerText.Visible = active
-		if active then
-			local timeLeft = math.max(0, (tonumber(model:GetAttribute("CaptureChaseEndTime")) or 0) - Workspace:GetServerTimeNow())
-			timerText.Text = string.format("%.1fs", timeLeft)
-			timerText.TextColor3 = timeLeft <= 5 and Color3.fromRGB(255, 88, 88) or Color3.fromRGB(255, 245, 196)
-		end
+		local busy = active
+			or model:GetAttribute("CaptureStunned") == true
+			or model:GetAttribute("CapturePanic") == true
+			or model:GetAttribute("CaptureShielded") == true
+		gui.Enabled = not busy
+		rarity.Text = tostring(model:GetAttribute("Rarity") or eggDef.Rarity or "Common")
+		luck.Text = "Luck +" .. tostring(math.floor(tonumber(model:GetAttribute("LuckBonus")) or tonumber(eggDef.LuckBonus) or 0)) .. "%"
 	end
 
-	model:GetAttributeChangedSignal("EggHP"):Connect(refresh)
 	model:GetAttributeChangedSignal("CaptureChaseActive"):Connect(refresh)
-	model:GetAttributeChangedSignal("CaptureChaseEndTime"):Connect(refresh)
+	model:GetAttributeChangedSignal("CaptureStunned"):Connect(refresh)
+	model:GetAttributeChangedSignal("CapturePanic"):Connect(refresh)
+	model:GetAttributeChangedSignal("CaptureShielded"):Connect(refresh)
+	model:GetAttributeChangedSignal("LuckBonus"):Connect(refresh)
 	task.spawn(function()
 		while model.Parent and gui.Parent do
 			refresh()
-			task.wait(0.08)
+			task.wait(0.2)
 		end
 	end)
 	refresh()
@@ -596,6 +578,7 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	model:SetAttribute("EggHPLuckBonus", tonumber(eggDef.HPBonus) or 0)
 	model:SetAttribute("EggSizeLuckBonus", tonumber(eggDef.SizeBonus) or 0)
 	model:SetAttribute("EggSize", tonumber(eggDef.Size) or 1)
+	model:SetAttribute("EggSizeCategory", tostring(eggDef.SizeCategory or "Medium"))
 	model:SetAttribute("EggSpeed", tonumber(eggDef.Speed) or 12)
 	model:SetAttribute("CaptureChaseActive", false)
 	model:SetAttribute("CaptureChaseStartTime", 0)
@@ -683,18 +666,18 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 
 	local hatchPrompt = Instance.new("ProximityPrompt")
 	hatchPrompt.Name = "EggHatchPrompt"
-	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+	hatchPrompt.ActionText = tostring(EggConfig.ChasePromptText or "Press E to Chase")
 	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
 	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
 	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	hatchPrompt.HoldDuration = 0.15
 	hatchPrompt.MaxActivationDistance = 10
 	hatchPrompt.RequiresLineOfSight = false
-	hatchPrompt.Enabled = false
+	hatchPrompt.Enabled = true
 	hatchPrompt.Parent = root
 	hatchPrompt.Triggered:Connect(function(player)
-		if hatchStunnedEgg then
-			hatchStunnedEgg(player, model)
+		if interactEggPrompt then
+			interactEggPrompt(player, model)
 		end
 	end)
 
@@ -863,12 +846,24 @@ local function playBreakEffect(egg)
 	Debris:AddItem(attachment, 1.2)
 end
 
-local function setHatchPromptEnabled(egg, enabled)
+local function refreshEggPrompt(egg)
 	local root = getRoot(egg)
 	local prompt = root and root:FindFirstChild("EggHatchPrompt")
 	if prompt and prompt:IsA("ProximityPrompt") then
-		prompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
-		prompt.Enabled = enabled == true
+		local stunned = egg:GetAttribute("CaptureStunned") == true
+		local busy = egg:GetAttribute("HatchInProgress") == true
+			or egg:GetAttribute("CaptureChaseActive") == true
+			or egg:GetAttribute("CapturePanic") == true
+			or egg:GetAttribute("CaptureShielded") == true
+			or egg:GetAttribute("EggInvulnerable") == true and not stunned
+
+		if stunned then
+			prompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+			prompt.Enabled = true
+		else
+			prompt.ActionText = tostring(EggConfig.ChasePromptText or "Press E to Chase")
+			prompt.Enabled = not busy
+		end
 	end
 end
 
@@ -909,13 +904,13 @@ local function resetEggForAttack(eggData)
 	egg:SetAttribute("EggStunEndTime", 0)
 	egg:SetAttribute("CanPickup", false)
 	egg:SetAttribute("PickupReady", false)
-	setHatchPromptEnabled(egg, false)
 
 	eggData.ChaseTarget = nil
 	eggData.SpeedMultiplier = 1
 	eggData.SpeedBoostUntil = 0
 	eggData.InvulnerableUntil = 0
 	eggData.StuckTime = 0
+	refreshEggPrompt(egg)
 end
 
 local function showStunEffect(egg)
@@ -935,7 +930,7 @@ local function showStunEffect(egg)
 	glow.Brightness = 1.15
 	glow.Range = 10
 	glow.Parent = root
-	Debris:AddItem(glow, tonumber(EggConfig.StunDuration) or 20)
+	Debris:AddItem(glow, tonumber(EggConfig.StunDuration) or 60)
 
 	for _, part in ipairs(egg:GetDescendants()) do
 		if part:IsA("BasePart") then
@@ -969,13 +964,13 @@ local function stunEgg(player, egg, eggData)
 	egg:SetAttribute("EggHP", 0)
 	egg:SetAttribute("CaptureHP", 0)
 
-	local stunDuration = tonumber(EggConfig.StunDuration) or 20
+	local stunDuration = tonumber(EggConfig.StunDuration) or 60
 	local stunEnd = Workspace:GetServerTimeNow() + stunDuration
 	egg:SetAttribute("EggStunEndTime", stunEnd)
 	eggData.ChaseTarget = nil
 	eggData.SpeedMultiplier = 1
 	eggData.SpeedBoostUntil = 0
-	setHatchPromptEnabled(egg, true)
+	refreshEggPrompt(egg)
 	showStunEffect(egg)
 
 	local humanoid = egg:FindFirstChildOfClass("Humanoid")
@@ -988,7 +983,11 @@ local function stunEgg(player, egg, eggData)
 			return
 		end
 		if egg:GetAttribute("CaptureStunned") == true and tonumber(egg:GetAttribute("EggStunEndTime")) == stunEnd then
-			resetEggForAttack(eggData)
+			local eggId = egg:GetAttribute("EggId")
+			if eggId then
+				activeById[tostring(eggId)] = nil
+			end
+			egg:Destroy()
 		end
 	end)
 end
@@ -999,11 +998,11 @@ local function finishEgg(player, egg, eggData)
 	end
 
 	egg:SetAttribute("HatchInProgress", true)
-	setHatchPromptEnabled(egg, false)
 	clearEggChaseState(egg)
 	egg:SetAttribute("CaptureStunned", false)
 	egg:SetAttribute("CapturePanic", false)
 	egg:SetAttribute("CaptureShielded", false)
+	refreshEggPrompt(egg)
 	local api = getZoneApi()
 	if not api then
 		warn("[ZoneEggHatching] Zone template API unavailable.")
@@ -1050,6 +1049,7 @@ local function finishEgg(player, egg, eggData)
 		LuckHint = "Better odds for Rare Brainrots",
 		EggHP = tonumber(eggDef.HP) or 100,
 		EggSize = tonumber(eggDef.Size) or 1,
+		EggSizeCategory = tostring(eggDef.SizeCategory or "Medium"),
 		EggBaseLuck = tonumber(eggDef.BaseLuck) or 0,
 		EggHPLuckBonus = tonumber(eggDef.HPBonus) or 0,
 		EggSizeLuckBonus = tonumber(eggDef.SizeBonus) or 0,
@@ -1172,6 +1172,7 @@ local function damageEgg(player, egg, amount)
 		egg:SetAttribute("CaptureHunterName", player.Name)
 		eggDataForChase.ChaseTarget = player
 		eggDataForChase.NextWanderAt = 0
+		refreshEggPrompt(egg)
 	end
 
 	local maxHP = tonumber(egg:GetAttribute("EggMaxHP")) or 100
@@ -1208,7 +1209,32 @@ local function damageEgg(player, egg, amount)
 		end
 	end
 
+	refreshEggPrompt(egg)
 	return true
+end
+
+interactEggPrompt = function(player, egg)
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return
+	end
+	if typeof(egg) ~= "Instance" or not egg:IsA("Model") then
+		return
+	end
+	if egg:GetAttribute("CaptureStunned") == true then
+		hatchStunnedEgg(player, egg)
+		return
+	end
+	if egg:GetAttribute("HatchInProgress") == true
+		or egg:GetAttribute("CaptureChaseActive") == true
+		or egg:GetAttribute("CapturePanic") == true
+		or egg:GetAttribute("CaptureShielded") == true
+		or egg:GetAttribute("EggInvulnerable") == true then
+		refreshEggPrompt(egg)
+		return
+	end
+
+	damageEgg(player, egg, DEFAULT_DAMAGE)
+	refreshEggPrompt(egg)
 end
 
 getPlayerRoot = function(player)
@@ -1254,6 +1280,7 @@ local function startEggChase(eggData, player)
 	egg:SetAttribute("CaptureHunterName", player and player.Name or "")
 	eggData.ChaseTarget = player
 	eggData.NextWanderAt = 0
+	refreshEggPrompt(egg)
 end
 
 local function escapeEgg(eggData)
@@ -1270,7 +1297,7 @@ local function escapeEgg(eggData)
 	egg:SetAttribute("CaptureShielded", true)
 	egg:SetAttribute("EggInvulnerable", true)
 	egg:SetAttribute("CaptureStunned", false)
-	setHatchPromptEnabled(egg, false)
+	refreshEggPrompt(egg)
 
 	local now = Workspace:GetServerTimeNow()
 	local invulnerableDuration = tonumber(EggConfig.EvadeSuccessInvulnerableDuration) or 2
@@ -1297,12 +1324,14 @@ local function escapeEgg(eggData)
 			egg:SetAttribute("CaptureShielded", false)
 			egg:SetAttribute("EggInvulnerable", false)
 			egg:SetAttribute("CaptureShieldEndTime", 0)
+			refreshEggPrompt(egg)
 		end
 	end)
 
 	task.delay(boostDuration, function()
 		if egg and egg.Parent and egg:GetAttribute("CaptureChaseActive") ~= true then
 			egg:SetAttribute("CapturePanic", false)
+			refreshEggPrompt(egg)
 		end
 		if eggData then
 			eggData.SpeedMultiplier = 1

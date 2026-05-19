@@ -205,6 +205,9 @@ local function buildOverhead(npc)
 	if not npc:IsA("Model") then
 		return
 	end
+	if npc:GetAttribute("EggBrainrot") == true then
+		return
+	end
 
 	local root = getRoot(npc)
 	if not root then
@@ -259,6 +262,9 @@ end
 
 local function bindNpc(npc)
 	if not npc:IsA("Model") then
+		return
+	end
+	if npc:GetAttribute("EggBrainrot") == true then
 		return
 	end
 

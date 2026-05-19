@@ -166,11 +166,33 @@ local function createClockTimerRow(parent)
 
 	timerText.TextXAlignment = Enum.TextXAlignment.Left
 
+	local timerBack = Instance.new("Frame")
+	timerBack.Name = "TimerBack"
+	timerBack.Position = UDim2.new(0, 54, 0, 39)
+	timerBack.Size = UDim2.fromOffset(64, 6)
+	timerBack.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
+	timerBack.BackgroundTransparency = 0.1
+	timerBack.BorderSizePixel = 0
+	timerBack.ZIndex = 21
+	timerBack.Parent = row
+	addCorner(timerBack, 6)
+
+	local timerFill = Instance.new("Frame")
+	timerFill.Name = "TimerFill"
+	timerFill.Size = UDim2.fromScale(1, 1)
+	timerFill.BackgroundColor3 = Color3.fromRGB(255, 220, 72)
+	timerFill.BorderSizePixel = 0
+	timerFill.ZIndex = 22
+	timerFill.Parent = timerBack
+	addCorner(timerFill, 6)
+
 	return {
 		row = row,
 		clockHolder = clockHolder,
 		image = clockImageLabel,
 		timerText = timerText,
+		timerBack = timerBack,
+		timerFill = timerFill,
 		basePosition = UDim2.new(0, 16, 0.5, 0),
 	}
 end
@@ -468,6 +490,9 @@ end
 
 local function updateClock(data, timeLeft)
 	data.clock.timerText.Text = string.format("%.1fs", math.max(0, timeLeft))
+	local duration = math.max(tonumber(data.currentDuration) or timeLeft, 0.1)
+	local ratio = math.clamp(timeLeft / duration, 0, 1)
+	data.clock.timerFill.Size = UDim2.fromScale(ratio, 1)
 
 	if timeLeft <= LOW_TIME_SECONDS then
 		local t = os.clock()
@@ -475,8 +500,10 @@ local function updateClock(data, timeLeft)
 
 		if flashRed then
 			data.clock.timerText.TextColor3 = Color3.fromRGB(255, 55, 55)
+			data.clock.timerFill.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
 		else
 			data.clock.timerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+			data.clock.timerFill.BackgroundColor3 = Color3.fromRGB(255, 220, 72)
 		end
 
 		local jitterX = math.sin(t * 58) * 2.3 + math.sin(t * 111) * 1.2
@@ -487,14 +514,18 @@ local function updateClock(data, timeLeft)
 		data.clock.image.Rotation = jitterRotation
 	else
 		data.clock.timerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		data.clock.timerFill.BackgroundColor3 = Color3.fromRGB(255, 220, 72)
 		data.clock.clockHolder.Position = data.clock.basePosition
 		data.clock.image.Rotation = 0
 	end
 end
 
 local function updateHPBar(data, npc)
-	local hp = tonumber(npc:GetAttribute("CaptureHP")) or 0
-	local maxHP = tonumber(npc:GetAttribute("CaptureMaxHP")) or 1
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
+	local hp = isEgg and tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP"))
+	local maxHP = isEgg and tonumber(npc:GetAttribute("EggMaxHP")) or tonumber(npc:GetAttribute("CaptureMaxHP"))
+	hp = hp or tonumber(npc:GetAttribute("CaptureHP")) or 0
+	maxHP = maxHP or tonumber(npc:GetAttribute("CaptureMaxHP")) or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
 
 	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
@@ -529,6 +560,8 @@ local function setCaptureMode(data, npc)
 
 	local endTime = tonumber(npc:GetAttribute("CaptureChaseEndTime")) or 0
 	local timeLeft = math.max(0, endTime - getServerTime())
+	local duration = tonumber(npc:GetAttribute("CaptureChaseDuration")) or timeLeft
+	data.currentDuration = math.max(duration, timeLeft, 0.1)
 
 	local isEgg = npc:GetAttribute("EggBrainrot") == true
 	data.clock.row.Visible = true
@@ -541,6 +574,7 @@ local function setCaptureMode(data, npc)
 	end
 
 	data.clock.row.Position = isEgg and UDim2.new(0.5, 0, 0, 22) or UDim2.new(0.5, 0, 0, 2)
+	data.clock.timerBack.Visible = true
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(20, 22, 34)
@@ -568,6 +602,7 @@ local function setStunnedMode(data, npc)
 	data.lastMode = "stunned"
 
 	data.clock.row.Visible = false
+	data.clock.timerBack.Visible = false
 	local isEgg = npc:GetAttribute("EggBrainrot") == true
 	data.eggName.Visible = isEgg
 	data.luckText.Visible = isEgg
@@ -595,6 +630,7 @@ local function setPanicMode(data)
 	data.stunPopupShown = false
 
 	data.clock.row.Visible = false
+	data.clock.timerBack.Visible = false
 	data.eggName.Visible = false
 	data.luckText.Visible = false
 
