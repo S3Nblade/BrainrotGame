@@ -650,8 +650,8 @@ local function createRarityRays(parent, profile)
 	rays.Name = "RarityRays"
 	rays.AnchorPoint = Vector2.new(0.5, 0.5)
 	rays.BackgroundTransparency = 1
-	rays.Position = UDim2.fromScale(0.5, 0.48)
-	rays.Size = UDim2.fromScale(0.72, 1.08)
+	rays.Position = UDim2.fromScale(0.5, 0.54)
+	rays.Size = UDim2.fromScale(1.25, 1.25)
 	rays.ZIndex = 20
 	rays.Parent = parent
 
@@ -659,9 +659,9 @@ local function createRarityRays(parent, profile)
 	if burst then
 		burst.AnchorPoint = Vector2.new(0.5, 0.5)
 		burst.Position = UDim2.fromScale(0.5, 0.5)
-		burst.Size = UDim2.fromScale(1.15, 1.15)
-		burst.ImageTransparency = 0.18
-		playTween(burst, 0.7, { Rotation = 42, ImageTransparency = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		burst.Size = UDim2.fromScale(1.35, 1.35)
+		burst.ImageTransparency = 0.04
+		playTween(burst, 0.9, { Rotation = 42, ImageTransparency = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	end
 
 	local rayCount = math.floor(10 + profile.intensity * 5)
@@ -673,18 +673,18 @@ local function createRarityRays(parent, profile)
 		ray.BackgroundTransparency = 0.55
 		ray.BorderSizePixel = 0
 		ray.Position = UDim2.fromScale(0.5, 0.5)
-		ray.Size = UDim2.fromScale(0.014, 0.44 + profile.intensity * 0.06)
+		ray.Size = UDim2.fromScale(0.011, 0.58 + profile.intensity * 0.08)
 		ray.Rotation = (360 / rayCount) * i
 		ray.ZIndex = 21
 		ray.Parent = rays
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(1, 0)
 		corner.Parent = ray
-		playTween(ray, 0.55, { BackgroundTransparency = 1, Size = UDim2.fromScale(0.006, 0.55) })
+		playTween(ray, 0.72, { BackgroundTransparency = 1, Size = UDim2.fromScale(0.004, 0.72) })
 	end
 
-	playTween(rays, 0.7, { Rotation = 34 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-	Debris:AddItem(rays, 0.85)
+	playTween(rays, 0.9, { Rotation = 34 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	Debris:AddItem(rays, 1.1)
 end
 
 local function createSparkles(parent, profile, amount)
@@ -720,7 +720,7 @@ local function createSparkles(parent, profile, amount)
 		sparkle.Rotation = i * 19
 
 		local angle = (math.pi * 2 / amount) * i
-		local distance = 120 + (i % 6) * 18 + profile.intensity * 16
+		local distance = 190 + (i % 6) * 26 + profile.intensity * 26
 		local props = {
 			Position = UDim2.new(0.5, math.cos(angle) * distance, 0.49, math.sin(angle) * distance),
 			Rotation = sparkle.Rotation + 180,
@@ -730,10 +730,10 @@ local function createSparkles(parent, profile, amount)
 		else
 			props.BackgroundTransparency = 1
 		end
-		playTween(sparkle, 0.62, props, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		playTween(sparkle, 0.78, props, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	end
 
-	Debris:AddItem(holder, 0.9)
+	Debris:AddItem(holder, 1.05)
 end
 
 local function createFinalViewport(parent, npc, profile)
@@ -741,8 +741,8 @@ local function createFinalViewport(parent, npc, profile)
 	holder.Name = "FinalViewportHolder"
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.47)
-	holder.Size = UDim2.fromScale(0.34, 0.5)
+	holder.Position = UDim2.fromScale(0.5, 0.57)
+	holder.Size = UDim2.fromScale(0.34, 0.44)
 	holder.ZIndex = 70
 	holder.Parent = parent
 
@@ -844,91 +844,85 @@ local function playRevealSequence(rawPayload)
 		playTween(vignette, 0.26, { ImageTransparency = 0.08 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end
 
-	local stage = createRoundedPanel(gui, "RevealStage", THEME.PanelTop, THEME.PanelBottom, 30, 10)
+	local ambientBurst = createImageLayer(gui, "AmbientRarityBurst", "RevealBurst", 3, 1, profile.color)
+	if ambientBurst then
+		ambientBurst.AnchorPoint = Vector2.new(0.5, 0.5)
+		ambientBurst.Position = UDim2.fromScale(0.5, 0.56)
+		ambientBurst.Size = UDim2.fromScale(1.18, 1.18)
+		ambientBurst.ImageTransparency = 1
+		playTween(ambientBurst, 0.42, { ImageTransparency = 0.36, Rotation = 8 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
+	local stage = Instance.new("Frame")
+	stage.Name = "RevealStage"
 	stage.AnchorPoint = Vector2.new(0.5, 0.5)
 	stage.Position = UDim2.fromScale(0.5, 0.5)
-	stage.Size = UDim2.fromScale(0.74, 0.66)
+	stage.Size = UDim2.fromScale(1, 1)
+	stage.BackgroundTransparency = 1
+	stage.BorderSizePixel = 0
+	stage.ZIndex = 10
+	stage.Parent = gui
 	stage.ClipsDescendants = false
-	createShadow(stage, 32, 9)
 
 	local panelShadow = createImageLayer(stage, "AssetPanelShadow", "RevealPanelShadow", 9, 0, Color3.fromRGB(0, 0, 0))
 	if panelShadow then
 		panelShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-		panelShadow.Position = UDim2.fromScale(0.5, 0.53)
-		panelShadow.Size = UDim2.fromScale(1.09, 1.1)
+		panelShadow.Position = UDim2.fromScale(0.5, 0.59)
+		panelShadow.Size = UDim2.fromScale(0.95, 0.62)
+		panelShadow.ImageTransparency = 0.18
 	end
 
 	local panelBg = createImageLayer(stage, "AssetPanelBg", "RevealPanelBg", 10, 0)
 	if panelBg then
-		stage.BackgroundTransparency = 1
+		panelBg.AnchorPoint = Vector2.new(0.5, 0.5)
+		panelBg.Position = UDim2.fromScale(0.5, 0.58)
+		panelBg.Size = UDim2.fromScale(0.78, 0.46)
+		panelBg.ImageTransparency = 0.34
 	end
 
-	local maxSize = Instance.new("UISizeConstraint")
-	maxSize.MaxSize = Vector2.new(920, 620)
-	maxSize.MinSize = Vector2.new(320, 300)
-	maxSize.Parent = stage
-
-	local aspect = Instance.new("UIAspectRatioConstraint")
-	aspect.AspectRatio = 1.52
-	aspect.DominantAxis = Enum.DominantAxis.Width
-	aspect.Parent = stage
-
 	local stageScale = Instance.new("UIScale")
-	stageScale.Scale = 0.75
+	stageScale.Scale = 0.92
 	stageScale.Parent = stage
-
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0.035, 0)
-	padding.PaddingBottom = UDim.new(0.035, 0)
-	padding.PaddingLeft = UDim.new(0.035, 0)
-	padding.PaddingRight = UDim.new(0.035, 0)
-	padding.Parent = stage
-
-	local shine = Instance.new("Frame")
-	shine.Name = "TopShine"
-	shine.BackgroundColor3 = THEME.White
-	shine.BackgroundTransparency = 0.76
-	shine.BorderSizePixel = 0
-	shine.Position = UDim2.fromScale(0.03, 0.03)
-	shine.Size = UDim2.fromScale(0.94, 0.11)
-	shine.ZIndex = 13
-	shine.Parent = stage
-	local shineCorner = Instance.new("UICorner")
-	shineCorner.CornerRadius = UDim.new(1, 0)
-	shineCorner.Parent = shine
 
 	local titleBanner = createImageLayer(stage, "AssetTitleBanner", "TitleBannerBg", 16, 0)
 	if titleBanner then
 		titleBanner.AnchorPoint = Vector2.new(0.5, 0.5)
-		titleBanner.Position = UDim2.fromScale(0.5, 0.095)
-		titleBanner.Size = UDim2.fromScale(0.58, 0.19)
+		titleBanner.Position = UDim2.fromScale(0.5, 0.13)
+		titleBanner.Size = UDim2.fromScale(0.5, 0.12)
 	end
 
-	local title = createTextLabel(stage, "Title", "WHO DID YOU GET?", UDim2.fromScale(0.9, 0.12), UDim2.fromScale(0.05, 0.035), 42, THEME.Cream, 18)
-	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.8, 0.06), UDim2.fromScale(0.1, 0.14), 21, Color3.fromRGB(255, 252, 226), 18)
+	local title = createTextLabel(stage, "Title", "WHO DID YOU GET?", UDim2.fromScale(0.86, 0.09), UDim2.fromScale(0.07, 0.075), 42, THEME.Cream, 18)
+	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.7, 0.045), UDim2.fromScale(0.15, 0.165), 20, Color3.fromRGB(232, 223, 255), 18)
+	local bigRarity = createTextLabel(stage, "BigRarity", string.upper(selected.rarity), UDim2.fromScale(0.82, 0.17), UDim2.fromScale(0.09, 0.17), 72, profile.color, 76)
+	bigRarity.TextTransparency = 1
+	local bigStroke = bigRarity:FindFirstChildOfClass("UIStroke")
+	if bigStroke then
+		bigStroke.Transparency = 1
+		bigStroke.Thickness = 5
+	end
 
 	local reel = Instance.new("Frame")
 	reel.Name = "ShadowCarousel"
 	reel.BackgroundTransparency = 1
-	reel.Position = UDim2.fromScale(0.025, 0.24)
-	reel.Size = UDim2.fromScale(0.95, 0.42)
+	reel.Position = UDim2.fromScale(0.055, 0.39)
+	reel.Size = UDim2.fromScale(0.89, 0.28)
 	reel.ZIndex = 20
 	reel.Parent = stage
 
 	local cards = {
-		createShadowCard(reel, "Card_1", 0.08, 0.72, 0.5),
-		createShadowCard(reel, "Card_2", 0.25, 0.86, 0.22),
-		createShadowCard(reel, "Card_3", 0.5, 1.14, 0),
-		createShadowCard(reel, "Card_4", 0.75, 0.86, 0.22),
-		createShadowCard(reel, "Card_5", 0.92, 0.72, 0.5),
+		createShadowCard(reel, "Card_1", 0.06, 0.82, 0.62),
+		createShadowCard(reel, "Card_2", 0.22, 0.96, 0.38),
+		createShadowCard(reel, "Card_3", 0.5, 1.26, 0.1),
+		createShadowCard(reel, "Card_4", 0.78, 0.96, 0.38),
+		createShadowCard(reel, "Card_5", 0.94, 0.82, 0.62),
 	}
 
 	local slots = {
-		{ x = 0.08, scale = 0.72, alpha = 0.5, rot = -8 },
-		{ x = 0.25, scale = 0.86, alpha = 0.22, rot = -4 },
-		{ x = 0.5, scale = 1.14, alpha = 0, rot = 0 },
-		{ x = 0.75, scale = 0.86, alpha = 0.22, rot = 4 },
-		{ x = 0.92, scale = 0.72, alpha = 0.5, rot = 8 },
+		{ x = 0.06, scale = 0.82, alpha = 0.62, rot = -8 },
+		{ x = 0.22, scale = 0.96, alpha = 0.38, rot = -4 },
+		{ x = 0.5, scale = 1.26, alpha = 0.1, rot = 0 },
+		{ x = 0.78, scale = 0.96, alpha = 0.38, rot = 4 },
+		{ x = 0.94, scale = 0.82, alpha = 0.62, rot = 8 },
 	}
 
 	playTween(overlay, 0.26, { BackgroundTransparency = 0.18 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -992,10 +986,10 @@ local function playRevealSequence(rawPayload)
 	local spotlight = createImageLayer(stage, "AssetCenterSpotlight", "CenterSpotlight", 19, 1, profile.glow)
 	if spotlight then
 		spotlight.AnchorPoint = Vector2.new(0.5, 0.5)
-		spotlight.Position = UDim2.fromScale(0.5, 0.49)
-		spotlight.Size = UDim2.fromScale(0.12, 0.18)
+		spotlight.Position = UDim2.fromScale(0.5, 0.56)
+		spotlight.Size = UDim2.fromScale(0.12, 0.16)
 		playTween(spotlight, 0.38, {
-			Size = UDim2.fromScale(0.72, 0.9),
+			Size = UDim2.fromScale(0.92, 0.92),
 			ImageTransparency = 0.1,
 		}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 	end
@@ -1025,10 +1019,10 @@ local function playRevealSequence(rawPayload)
 	local rarityGlow = createImageLayer(stage, "AssetRarityGlow", rarityKey, 18, 1, Color3.fromRGB(255, 255, 255))
 	if rarityGlow then
 		rarityGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-		rarityGlow.Position = UDim2.fromScale(0.5, 0.48)
-		rarityGlow.Size = UDim2.fromScale(0.2, 0.28)
+		rarityGlow.Position = UDim2.fromScale(0.5, 0.56)
+		rarityGlow.Size = UDim2.fromScale(0.2, 0.24)
 		playTween(rarityGlow, 0.36, {
-			Size = UDim2.fromScale(0.76, 0.98),
+			Size = UDim2.fromScale(0.92, 0.92),
 			ImageTransparency = 0.04,
 		}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 	end
@@ -1060,39 +1054,53 @@ local function playRevealSequence(rawPayload)
 	cards[3].wrapper.Visible = false
 	state.rotateCleanup = createFinalViewport(stage, selected, profile)
 
-	local resultPanel = createRoundedPanel(stage, "ResultPanel", profile.color:Lerp(THEME.White, 0.16), profile.deep, 24, 70)
+	title.Text = "YOU GOT!"
+	title.TextColor3 = THEME.White
+	title.Position = UDim2.fromScale(0.07, 0.08)
+	title.Size = UDim2.fromScale(0.86, 0.08)
+	subtitle.TextTransparency = 1
+	local subtitleStroke = subtitle:FindFirstChildOfClass("UIStroke")
+	if subtitleStroke then
+		subtitleStroke.Transparency = 1
+	end
+	playTween(bigRarity, 0.28, { TextTransparency = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	if bigStroke then
+		playTween(bigStroke, 0.28, { Transparency = 0.02 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
+	local resultPanel = Instance.new("Frame")
+	resultPanel.Name = "ResultTextStack"
 	resultPanel.AnchorPoint = Vector2.new(0.5, 1)
-	resultPanel.Position = UDim2.fromScale(0.5, 0.975)
-	resultPanel.Size = UDim2.fromScale(0.72, 0.22)
 	resultPanel.BackgroundTransparency = 1
-	createShadow(resultPanel, 24, 69)
+	resultPanel.Position = UDim2.fromScale(0.5, 0.845)
+	resultPanel.Size = UDim2.fromScale(0.82, 0.16)
+	resultPanel.ZIndex = 70
+	resultPanel.Parent = stage
 
 	local resultScale = Instance.new("UIScale")
 	resultScale.Scale = 0.76
 	resultScale.Parent = resultPanel
 
-	createTextLabel(resultPanel, "YouGot", "YOU GOT", UDim2.fromScale(0.92, 0.24), UDim2.fromScale(0.04, 0.06), 18, THEME.Cream, 73)
-	createTextLabel(resultPanel, "NPCName", selected.displayName, UDim2.fromScale(0.92, 0.34), UDim2.fromScale(0.04, 0.27), 32, THEME.White, 73)
+	local npcNameLabel = createTextLabel(resultPanel, "NPCName", selected.displayName, UDim2.fromScale(0.96, 0.48), UDim2.fromScale(0.02, 0.02), 42, THEME.White, 73)
 
 	local mutationText = selected.mutationDisplayName
 	if mutationText == "" or mutationText == "nil" then
 		mutationText = "Normal"
 	end
 
-	local detail = "[" .. string.upper(selected.rarity) .. "]"
+	local detail = selected.rarity
 	if selected.mps then
-		detail ..= "  |  $" .. formatNumber(selected.mps) .. "/s"
+		detail ..= "  - $" .. formatNumber(selected.mps) .. "/s"
 	end
 	if mutationText ~= "" then
-		detail ..= "  |  " .. mutationText
+		detail ..= " - " .. mutationText
 	end
 
-	createTextLabel(resultPanel, "Details", detail, UDim2.fromScale(0.92, 0.24), UDim2.fromScale(0.04, 0.64), 20, THEME.Cream, 73)
+	local detailLabel = createTextLabel(resultPanel, "Details", detail, UDim2.fromScale(0.96, 0.34), UDim2.fromScale(0.02, 0.56), 26, profile.color, 73)
 
-	playTween(resultPanel, 0.18, { BackgroundTransparency = 0 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	playTween(resultScale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	title.Text = "CLAIMED!"
-	subtitle.Text = "Tap continue or wait"
+	playTween(npcNameLabel, 0.28, { TextTransparency = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	playTween(detailLabel, 0.32, { TextTransparency = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 	local continue = Instance.new("TextButton")
 	continue.Name = "Continue"
@@ -1100,8 +1108,8 @@ local function playRevealSequence(rawPayload)
 	continue.BackgroundColor3 = THEME.Green
 	continue.BackgroundTransparency = getAssetId("ContinueButtonBg") and 1 or 0
 	continue.BorderSizePixel = 0
-	continue.Position = UDim2.fromScale(0.5, 1.105)
-	continue.Size = UDim2.fromScale(0.32, 0.085)
+	continue.Position = UDim2.fromScale(0.5, 1.09)
+	continue.Size = UDim2.fromScale(0.28, 0.085)
 	continue.Font = FONT
 	continue.Text = "CONTINUE"
 	continue.TextColor3 = THEME.White
@@ -1153,7 +1161,7 @@ local function playRevealSequence(rawPayload)
 
 	task.delay(0.2, function()
 		if continue.Parent then
-			playTween(continue, 0.22, { Position = UDim2.fromScale(0.5, 0.985) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			playTween(continue, 0.22, { Position = UDim2.fromScale(0.5, 0.965) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 		end
 	end)
 

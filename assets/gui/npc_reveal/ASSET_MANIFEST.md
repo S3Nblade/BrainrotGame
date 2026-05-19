@@ -1,30 +1,30 @@
 # NPC Reveal GUI Asset Manifest
 
-These assets are decorative layers only. Do not bake dynamic text, buttons, NPC names, rarity labels, or click logic into these images. Upload the PNGs to Roblox, then paste the IDs into `ReplicatedStorage/GUI/NPCRevealAssets/AssetIds`.
+These assets are decorative layers only. Do not bake dynamic text, buttons, NPC names, rarity labels, or click logic into these images. The current style is a full-screen cinematic simulator reveal: dark vignette, purple rarity rays, shadow NPC silhouettes, big real Roblox text, and a separate green Continue button. Upload the PNGs to Roblox, then paste the IDs into `ReplicatedStorage/GUI/NPCRevealAssets/AssetIds`.
 
 | Filename | Purpose | Roblox object | Suggested size/scale | Tintable | Reveal usage | Transparency notes |
 |---|---|---|---|---|---|---|
-| `reveal_panel_bg.png` | Premium rounded main reveal panel background | `ImageLabel` | Stage size, around 74% x 66% screen | No | Main reveal container decoration | Transparent corners |
-| `reveal_panel_shadow.png` | Soft shadow behind the main panel | `ImageLabel` | Slightly larger than panel | Yes, black/rarity tint optional | Behind reveal panel | Transparent fade edges |
-| `npc_card_bg.png` | Glossy rounded NPC roll card background | `ImageLabel` | Each carousel card | No | Card base behind ViewportFrame | Transparent corners |
+| `reveal_panel_bg.png` | Subtle purple stage plate, not a full UI panel | `ImageLabel` | Center screen, around 78% x 46% | No | Low-opacity cinematic stage depth | Transparent corners/edges |
+| `reveal_panel_shadow.png` | Wide purple shadow/glow behind the stage | `ImageLabel` | Around 95% x 62% screen | Yes, black/rarity tint optional | Behind the silhouettes and final NPC | Transparent fade edges |
+| `npc_card_bg.png` | Semi-transparent glossy silhouette card base | `ImageLabel` | Each carousel card | No | Light backing for roll silhouettes | Transparent corners |
 | `npc_card_outline.png` | Decorative card outline layer | `ImageLabel` | Same as card | Yes | Rarity-colored outline overlay | Mostly transparent except outline |
-| `npc_card_shadow.png` | Card drop shadow | `ImageLabel` | Slightly larger than card | Yes, black tint | Behind every NPC card | Soft transparent edges |
-| `silhouette_overlay.png` | Generic mystery silhouette/glow | `ImageLabel` | Over shadow ViewportFrames | Yes, dark tint | Roll phase unknown NPC overlay | Transparent outside silhouette |
+| `npc_card_shadow.png` | Soft oval card/silhouette floor shadow | `ImageLabel` | Slightly larger than card | Yes, black tint | Behind every roll silhouette | Soft transparent edges |
+| `silhouette_overlay.png` | Generic mystery silhouette aura | `ImageLabel` | Over shadow ViewportFrames | Yes, dark tint | Roll phase unknown NPC overlay | Transparent outside aura |
 | `question_mark_glow.png` | Glowing mystery question mark | `ImageLabel` | Center of shadow cards | Yes | Roll phase unknown marker | Transparent background |
-| `center_spotlight.png` | Soft radial glow behind final NPC | `ImageLabel` | Center stage, large | Yes | Final selection glow build-up | Radial transparent edge |
-| `reveal_burst.png` | Radial rays for reveal burst | `ImageLabel` | Behind final card/NPC | Yes | Reveal burst, rotate/tween | Transparent between rays |
-| `sparkle_particle_1.png` | Star sparkle particle | `ImageLabel` | 12-28 px | Yes | Animated reveal sparkles | Transparent background |
-| `sparkle_particle_2.png` | Plus sparkle particle | `ImageLabel` | 10-24 px | Yes | Animated reveal sparkles | Transparent background |
-| `sparkle_particle_3.png` | Soft oval sparkle particle | `ImageLabel` | 10-26 px | Yes | Animated reveal sparkles | Transparent background |
+| `center_spotlight.png` | Bright white/purple center glow behind final NPC | `ImageLabel` | Center screen, around 92% x 92% | Yes | Final selection glow build-up | Radial transparent edge |
+| `reveal_burst.png` | Large purple radial rays like a reward explosion | `ImageLabel` | Full-screen center burst | Yes | Ambient roll energy and final burst, rotate/tween | Transparent between rays |
+| `sparkle_particle_1.png` | Diamond shard particle | `ImageLabel` | 12-34 px | Yes | Animated reveal confetti/sparkles | Transparent background |
+| `sparkle_particle_2.png` | Tilted rectangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
+| `sparkle_particle_3.png` | Triangle shard particle | `ImageLabel` | 10-32 px | Yes | Animated reveal confetti/sparkles | Transparent background |
 | `rarity_glow_common.png` | Common rarity glow layer | `ImageLabel` | Behind final NPC/card | Optional | Common final reveal glow | Radial transparent edge |
 | `rarity_glow_rare.png` | Rare rarity glow layer | `ImageLabel` | Behind final NPC/card | Optional | Rare final reveal glow | Radial transparent edge |
 | `rarity_glow_epic.png` | Epic rarity glow layer | `ImageLabel` | Behind final NPC/card | Optional | Epic final reveal glow | Radial transparent edge |
 | `rarity_glow_legendary.png` | Legendary rarity glow layer | `ImageLabel` | Behind final NPC/card | Optional | Legendary final reveal glow | Radial transparent edge |
 | `rarity_glow_mythic.png` | Mythic rarity glow layer | `ImageLabel` | Behind final NPC/card | Optional | Mythic final reveal glow | Radial transparent edge |
 | `rarity_glow_secret.png` | Secret/Godly cosmic glow layer | `ImageLabel` | Behind final NPC/card | Optional | Secret/Godly final reveal glow | Radial transparent edge |
-| `continue_button_bg.png` | Continue button background only | `ImageButton` or child `ImageLabel` | Continue button bounds | No | Button visual layer; real button text remains Roblox text | Transparent outside pill |
+| `continue_button_bg.png` | Chunky green Continue button background only | `ImageButton` or child `ImageLabel` | Continue button bounds | No | Button visual layer; real button text remains Roblox text | Transparent outside pill |
 | `continue_button_hover_glow.png` | Continue hover/press glow | `ImageLabel` | Slightly larger than button | Yes | Hover/press feedback layer | Soft transparent edge |
-| `title_banner_bg.png` | Title banner decoration | `ImageLabel` | Behind title text | No | Entry/title area | Transparent outside banner |
+| `title_banner_bg.png` | Soft purple title glow plate, no text | `ImageLabel` | Behind title text | Yes | Entry/title area | Transparent outside glow |
 | `white_flash.png` | Soft reveal flash | `ImageLabel` | Full screen or stage overlay | Yes | Reveal burst moment | Transparent radial edge |
 | `dark_vignette.png` | Full-screen cinematic vignette | `ImageLabel` | Full screen | Yes, dark tint optional | Backdrop behind reveal | Transparent center/soft dark edges |
 
