@@ -1,6 +1,7 @@
 --!nonstrict
 -- StarterPlayerScripts/ZoneEggHatchClient.client.lua
--- Clean cartoony NPC reward reveal roll. Server chooses/grants; client only displays.
+-- Premium Kick Blox NPC reveal GUI. The server chooses and grants rewards;
+-- this client only displays the server result.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,31 +22,94 @@ local FONT = Enum.Font.FredokaOne
 local TICK_SOUND_ID = ""
 local FINAL_SOUND_ID = ""
 
-local ROLL_TICKS = 24
 local QUEUE_LIMIT = 5
+local ROLL_STEPS = 30
 
 local THEME = {
-	Ink = Color3.fromRGB(25, 28, 44),
-	InkSoft = Color3.fromRGB(54, 63, 94),
-	Cream = Color3.fromRGB(255, 248, 220),
-	Panel = Color3.fromRGB(255, 241, 177),
-	PanelDeep = Color3.fromRGB(255, 178, 82),
-	Blue = Color3.fromRGB(71, 181, 255),
-	Pink = Color3.fromRGB(255, 101, 178),
-	Green = Color3.fromRGB(98, 232, 112),
+	Ink = Color3.fromRGB(19, 22, 38),
+	InkSoft = Color3.fromRGB(45, 54, 84),
+	Cream = Color3.fromRGB(255, 247, 216),
 	White = Color3.fromRGB(255, 255, 255),
+	PanelTop = Color3.fromRGB(255, 235, 120),
+	PanelBottom = Color3.fromRGB(255, 142, 68),
+	Blue = Color3.fromRGB(66, 183, 255),
+	Pink = Color3.fromRGB(255, 96, 178),
+	Green = Color3.fromRGB(92, 235, 108),
 }
 
-local RARITY = {
-	Common = { color = Color3.fromRGB(230, 236, 244), deep = Color3.fromRGB(132, 143, 162), flash = 0.16 },
-	Rare = { color = Color3.fromRGB(75, 170, 255), deep = Color3.fromRGB(37, 99, 214), flash = 0.2 },
-	Epic = { color = Color3.fromRGB(202, 91, 255), deep = Color3.fromRGB(111, 55, 202), flash = 0.24 },
-	Mythic = { color = Color3.fromRGB(255, 84, 171), deep = Color3.fromRGB(181, 45, 118), flash = 0.28 },
-	Legendary = { color = Color3.fromRGB(255, 202, 55), deep = Color3.fromRGB(222, 123, 31), flash = 0.34 },
-	Divine = { color = Color3.fromRGB(75, 236, 255), deep = Color3.fromRGB(34, 137, 214), flash = 0.38 },
-	Celestial = { color = Color3.fromRGB(168, 130, 255), deep = Color3.fromRGB(83, 59, 204), flash = 0.42 },
-	Godly = { color = Color3.fromRGB(255, 78, 78), deep = Color3.fromRGB(151, 24, 45), flash = 0.48 },
-	Secret = { color = Color3.fromRGB(44, 255, 149), deep = Color3.fromRGB(35, 61, 56), flash = 0.52 },
+local RARITY_PROFILES = {
+	Common = {
+		color = Color3.fromRGB(232, 238, 246),
+		deep = Color3.fromRGB(122, 137, 158),
+		glow = Color3.fromRGB(255, 255, 255),
+		intensity = 1,
+		confetti = 0,
+	},
+	Uncommon = {
+		color = Color3.fromRGB(93, 232, 108),
+		deep = Color3.fromRGB(33, 143, 67),
+		glow = Color3.fromRGB(164, 255, 161),
+		intensity = 1.08,
+		confetti = 0,
+	},
+	Rare = {
+		color = Color3.fromRGB(75, 170, 255),
+		deep = Color3.fromRGB(31, 89, 214),
+		glow = Color3.fromRGB(153, 218, 255),
+		intensity = 1.18,
+		confetti = 0,
+	},
+	Epic = {
+		color = Color3.fromRGB(203, 91, 255),
+		deep = Color3.fromRGB(104, 47, 197),
+		glow = Color3.fromRGB(229, 168, 255),
+		intensity = 1.35,
+		confetti = 10,
+	},
+	Mythic = {
+		color = Color3.fromRGB(255, 78, 164),
+		deep = Color3.fromRGB(181, 38, 105),
+		glow = Color3.fromRGB(255, 158, 208),
+		intensity = 1.55,
+		confetti = 16,
+	},
+	Legendary = {
+		color = Color3.fromRGB(255, 205, 54),
+		deep = Color3.fromRGB(223, 111, 30),
+		glow = Color3.fromRGB(255, 236, 128),
+		intensity = 1.8,
+		confetti = 22,
+	},
+	Divine = {
+		color = Color3.fromRGB(72, 238, 255),
+		deep = Color3.fromRGB(31, 130, 212),
+		glow = Color3.fromRGB(184, 250, 255),
+		intensity = 2,
+		confetti = 28,
+	},
+	Celestial = {
+		color = Color3.fromRGB(170, 128, 255),
+		deep = Color3.fromRGB(78, 58, 205),
+		glow = Color3.fromRGB(218, 196, 255),
+		intensity = 2.15,
+		confetti = 32,
+	},
+	Godly = {
+		color = Color3.fromRGB(255, 72, 78),
+		deep = Color3.fromRGB(139, 22, 42),
+		glow = Color3.fromRGB(255, 162, 140),
+		intensity = 2.35,
+		confetti = 38,
+		cosmic = true,
+	},
+	Secret = {
+		color = Color3.fromRGB(56, 255, 151),
+		deep = Color3.fromRGB(32, 48, 60),
+		glow = Color3.fromRGB(185, 255, 218),
+		intensity = 2.55,
+		confetti = 44,
+		cosmic = true,
+	},
 }
 
 local activeGui = nil
@@ -53,18 +117,18 @@ local playing = false
 local queue = {}
 local seenRevealIds = {}
 
-local function getProfile(rarity)
-	return RARITY[tostring(rarity or "Common")] or RARITY.Common
+local function getRarityProfile(rarity)
+	return RARITY_PROFILES[tostring(rarity or "Common")] or RARITY_PROFILES.Common
 end
 
-local function tween(instance, duration, props, style, direction)
-	local t = TweenService:Create(
+local function playTween(instance, duration, props, style, direction)
+	local tween = TweenService:Create(
 		instance,
 		TweenInfo.new(duration, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out),
 		props
 	)
-	t:Play()
-	return t
+	tween:Play()
+	return tween
 end
 
 local function playSound(soundId, volume, pitch)
@@ -81,14 +145,7 @@ local function playSound(soundId, volume, pitch)
 	Debris:AddItem(sound, 3)
 end
 
-local function addCorner(parent, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius)
-	corner.Parent = parent
-	return corner
-end
-
-local function addStroke(parent, color, thickness, transparency)
+local function createStroke(parent, color, thickness, transparency)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = color or THEME.Ink
 	stroke.Thickness = thickness or 2
@@ -98,7 +155,7 @@ local function addStroke(parent, color, thickness, transparency)
 	return stroke
 end
 
-local function addGradient(parent, top, bottom, rotation)
+local function createGradient(parent, top, bottom, rotation)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, top),
@@ -109,25 +166,44 @@ local function addGradient(parent, top, bottom, rotation)
 	return gradient
 end
 
-local function addTextStroke(label, thickness, transparency)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = THEME.Ink
-	stroke.Thickness = thickness or 2
-	stroke.Transparency = transparency or 0.08
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-	stroke.Parent = label
-	return stroke
+local function createShadow(parent, radius, zIndex)
+	local shadow = Instance.new("Frame")
+	shadow.Name = "SoftShadow"
+	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.72
+	shadow.BorderSizePixel = 0
+	shadow.Position = UDim2.new(0.5, 0, 0.5, 12)
+	shadow.Size = UDim2.new(1, 18, 1, 18)
+	shadow.ZIndex = zIndex or ((parent.ZIndex or 1) - 1)
+	shadow.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 24)
+	corner.Parent = shadow
+
+	return shadow
 end
 
-local function constrainText(label, maxSize, minSize)
-	local constraint = Instance.new("UITextSizeConstraint")
-	constraint.MaxTextSize = maxSize or 28
-	constraint.MinTextSize = minSize or 9
-	constraint.Parent = label
-	return constraint
+local function createRoundedPanel(parent, name, top, bottom, radius, zIndex)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.BackgroundColor3 = top
+	frame.BorderSizePixel = 0
+	frame.ZIndex = zIndex or 1
+	frame.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 22)
+	corner.Parent = frame
+
+	createStroke(frame, THEME.Ink, 3, 0)
+	createGradient(frame, top, bottom or top, 90)
+
+	return frame
 end
 
-local function makeLabel(parent, name, text, size, position, maxSize, color, zIndex)
+local function createTextLabel(parent, name, text, size, position, maxTextSize, color, zIndex)
 	local label = Instance.new("TextLabel")
 	label.Name = name
 	label.BackgroundTransparency = 1
@@ -142,22 +218,20 @@ local function makeLabel(parent, name, text, size, position, maxSize, color, zIn
 	label.TextYAlignment = Enum.TextYAlignment.Center
 	label.ZIndex = zIndex or 1
 	label.Parent = parent
-	addTextStroke(label, 2, 0.08)
-	constrainText(label, maxSize or 28, 9)
-	return label
-end
 
-local function makePanel(parent, name, top, bottom, radius, zIndex)
-	local frame = Instance.new("Frame")
-	frame.Name = name
-	frame.BackgroundColor3 = top
-	frame.BorderSizePixel = 0
-	frame.ZIndex = zIndex or 1
-	frame.Parent = parent
-	addCorner(frame, radius or 16)
-	addStroke(frame, THEME.Ink, 3, 0)
-	addGradient(frame, top, bottom or top)
-	return frame
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = THEME.Ink
+	stroke.Thickness = 2
+	stroke.Transparency = 0.04
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+	stroke.Parent = label
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = maxTextSize or 30
+	constraint.MinTextSize = 9
+	constraint.Parent = label
+
+	return label
 end
 
 local function formatNumber(value)
@@ -175,12 +249,11 @@ end
 local function normalizeNPC(entry)
 	if type(entry) == "table" then
 		local displayName = tostring(entry.displayName or entry.DisplayName or entry.name or entry.Name or entry.id or "Brainrot")
-		local rarity = tostring(entry.rarity or entry.Rarity or "Common")
 		return {
 			id = tostring(entry.id or entry.Id or displayName),
 			name = tostring(entry.name or entry.Name or displayName),
 			displayName = displayName,
-			rarity = rarity,
+			rarity = tostring(entry.rarity or entry.Rarity or "Common"),
 			zoneName = tostring(entry.zoneName or entry.ZoneName or ""),
 			mps = tonumber(entry.mps or entry.MPS or entry.CashPerSecond),
 			mutation = tostring(entry.mutation or entry.Mutation or ""),
@@ -196,6 +269,23 @@ local function normalizeNPC(entry)
 		rarity = "Common",
 		zoneName = "",
 	}
+end
+
+local function normalizeKey(value)
+	return string.lower(tostring(value or "")):gsub("%s+", ""):gsub("_", ""):gsub("-", "")
+end
+
+local function selectedExistsInPool(selected, pool)
+	local selectedId = normalizeKey(selected.id)
+	local selectedName = normalizeKey(selected.displayName)
+
+	for _, npc in ipairs(pool) do
+		if normalizeKey(npc.id) == selectedId or normalizeKey(npc.displayName) == selectedName then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function normalizePayload(payload)
@@ -221,6 +311,7 @@ local function normalizePayload(payload)
 	end
 
 	local selected = normalizeNPC(payload.selectedNPC or {
+		id = payload.ResultName or payload.Name or payload.BrainrotName,
 		name = payload.ResultName or payload.Name or payload.BrainrotName,
 		displayName = payload.ResultName or payload.Name or payload.BrainrotName,
 		rarity = payload.selectedRarity or payload.Rarity,
@@ -235,6 +326,11 @@ local function normalizePayload(payload)
 	selected.mutation = tostring(payload.Mutation or selected.mutation or "")
 	selected.mutationDisplayName = tostring(payload.MutationDisplayName or selected.mutationDisplayName or selected.mutation or "")
 
+	if not selectedExistsInPool(selected, possible) then
+		warn("[NPCRevealRoll] Selected NPC was not in possibleNPCs payload. Displaying server result anyway.")
+		table.insert(possible, selected)
+	end
+
 	return {
 		revealId = tostring(payload.revealId or payload.RevealId or payload.EggId or os.clock()),
 		zoneName = tostring(payload.ZoneDisplayName or payload.ZoneName or selected.zoneName or "Zone"),
@@ -244,189 +340,336 @@ local function normalizePayload(payload)
 	}
 end
 
-local function makeShadowCard(parent, name, xScale, sizeScale, transparency)
-	local card = makePanel(parent, name, Color3.fromRGB(58, 68, 104), Color3.fromRGB(28, 34, 58), 20, 20)
-	card.AnchorPoint = Vector2.new(0.5, 0.5)
-	card.Position = UDim2.fromScale(xScale, 0.5)
-	card.Size = UDim2.fromOffset(180, 210)
-	card.BackgroundTransparency = transparency or 0
-
-	local scale = Instance.new("UIScale")
-	scale.Scale = sizeScale or 1
-	scale.Parent = card
-
-	local glow = Instance.new("Frame")
-	glow.Name = "Glow"
-	glow.AnchorPoint = Vector2.new(0.5, 0.5)
-	glow.BackgroundColor3 = THEME.Blue
-	glow.BackgroundTransparency = 0.76
-	glow.BorderSizePixel = 0
-	glow.Position = UDim2.fromScale(0.5, 0.44)
-	glow.Size = UDim2.fromOffset(112, 136)
-	glow.ZIndex = 21
-	glow.Parent = card
-	addCorner(glow, 70)
-
-	local head = Instance.new("Frame")
-	head.Name = "Head"
-	head.AnchorPoint = Vector2.new(0.5, 0.5)
-	head.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
-	head.BorderSizePixel = 0
-	head.Position = UDim2.fromScale(0.5, 0.26)
-	head.Size = UDim2.fromOffset(66, 66)
-	head.ZIndex = 23
-	head.Parent = card
-	addCorner(head, 36)
-
-	local body = Instance.new("Frame")
-	body.Name = "Body"
-	body.AnchorPoint = Vector2.new(0.5, 0.5)
-	body.BackgroundColor3 = Color3.fromRGB(6, 8, 18)
-	body.BorderSizePixel = 0
-	body.Position = UDim2.fromScale(0.5, 0.52)
-	body.Size = UDim2.fromOffset(82, 92)
-	body.ZIndex = 22
-	body.Parent = card
-	addCorner(body, 42)
-
-	local question = makeLabel(card, "Question", "?", UDim2.fromOffset(54, 50), UDim2.fromScale(0.5, 0.26), 34, THEME.Cream, 26)
-	question.AnchorPoint = Vector2.new(0.5, 0.5)
-
-	local label = makeLabel(card, "Name", "???", UDim2.new(1, -18, 0, 38), UDim2.new(0, 9, 1, -48), 18, Color3.fromRGB(223, 232, 255), 26)
-	label.TextXAlignment = Enum.TextXAlignment.Center
-
-	local rarity = makeLabel(card, "Rarity", "???", UDim2.new(1, -18, 0, 22), UDim2.new(0, 9, 1, -25), 13, Color3.fromRGB(170, 185, 226), 26)
-	rarity.TextXAlignment = Enum.TextXAlignment.Center
-
-	return {
-		card = card,
-		scale = scale,
-		nameLabel = label,
-		rarityLabel = rarity,
-		question = question,
-		glow = glow,
-	}
+local function createPart(parent, name, size, cframe, color, shape, material)
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Size = size
+	part.CFrame = cframe
+	part.Color = color
+	part.Shape = shape or Enum.PartType.Block
+	part.Material = material or Enum.Material.SmoothPlastic
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
+	part.Parent = parent
+	return part
 end
 
-local function setShadowCard(entry, npc, revealed)
-	local profile = getProfile(npc.rarity)
-	entry.nameLabel.Text = revealed and npc.displayName or "???"
-	entry.rarityLabel.Text = revealed and ("[" .. string.upper(npc.rarity) .. "]") or string.upper(npc.rarity)
-	entry.rarityLabel.TextColor3 = profile.color
-	entry.question.Text = revealed and "!" or "?"
-	entry.question.TextColor3 = revealed and profile.color or THEME.Cream
-	entry.glow.BackgroundColor3 = profile.color
+local function createPreviewModel(npc, profile, shadowMode)
+	local model = Instance.new("Model")
+	model.Name = tostring(npc.displayName or "NPC") .. "_RevealPreview"
+
+	local main = shadowMode and Color3.fromRGB(4, 6, 14) or profile.color
+	local second = shadowMode and Color3.fromRGB(7, 9, 18) or profile.color:Lerp(THEME.White, 0.46)
+	local accent = shadowMode and Color3.fromRGB(2, 3, 8) or profile.deep
+	local material = shadowMode and Enum.Material.SmoothPlastic or Enum.Material.SmoothPlastic
+
+	createPart(model, "Body", Vector3.new(1.55, 1.9, 0.95), CFrame.new(0, 0.25, 0), main, Enum.PartType.Ball, material)
+	createPart(model, "Head", Vector3.new(1.35, 1.35, 1.35), CFrame.new(0, 1.58, 0), second, Enum.PartType.Ball, material)
+	createPart(model, "LeftArm", Vector3.new(0.38, 1.08, 0.38), CFrame.new(-0.98, 0.3, 0) * CFrame.Angles(0, 0, math.rad(14)), accent, Enum.PartType.Cylinder, material)
+	createPart(model, "RightArm", Vector3.new(0.38, 1.08, 0.38), CFrame.new(0.98, 0.3, 0) * CFrame.Angles(0, 0, math.rad(-14)), accent, Enum.PartType.Cylinder, material)
+	createPart(model, "LeftFoot", Vector3.new(0.58, 0.25, 0.72), CFrame.new(-0.42, -0.86, -0.08), second, Enum.PartType.Ball, material)
+	createPart(model, "RightFoot", Vector3.new(0.58, 0.25, 0.72), CFrame.new(0.42, -0.86, -0.08), second, Enum.PartType.Ball, material)
+
+	if not shadowMode then
+		createPart(model, "LeftEye", Vector3.new(0.2, 0.2, 0.05), CFrame.new(-0.28, 1.66, -0.62), THEME.White, Enum.PartType.Ball, Enum.Material.SmoothPlastic)
+		createPart(model, "RightEye", Vector3.new(0.2, 0.2, 0.05), CFrame.new(0.28, 1.66, -0.62), THEME.White, Enum.PartType.Ball, Enum.Material.SmoothPlastic)
+		createPart(model, "Smile", Vector3.new(0.46, 0.07, 0.05), CFrame.new(0, 1.34, -0.66), THEME.Ink, Enum.PartType.Block, Enum.Material.SmoothPlastic)
+
+		local light = Instance.new("PointLight")
+		light.Name = "RevealLight"
+		light.Color = profile.glow
+		light.Brightness = 1.6 + profile.intensity * 0.35
+		light.Range = 10
+		light.Parent = model:FindFirstChild("Body")
+	end
+
+	return model
 end
 
-local function createSimplePreview(parent, npc, profile)
+local function clearWorldModel(worldModel)
+	for _, child in ipairs(worldModel:GetChildren()) do
+		child:Destroy()
+	end
+end
+
+local function fitCameraToModel(camera, model)
+	local cf, size = model:GetBoundingBox()
+	local largest = math.max(size.X, size.Y, size.Z)
+	local distance = math.max(5.5, largest * 2.65)
+	local focus = cf.Position + Vector3.new(0, size.Y * 0.1, 0)
+	camera.CFrame = CFrame.new(focus + Vector3.new(0, size.Y * 0.14, distance), focus)
+end
+
+local function createViewportNPC(parent, npc, profile, shadowMode, zIndex)
 	local viewport = Instance.new("ViewportFrame")
-	viewport.Name = "SimpleNPCPreview"
-	viewport.AnchorPoint = Vector2.new(0.5, 0.5)
+	viewport.Name = shadowMode and "ShadowNPCViewport" or "NPCViewport"
 	viewport.BackgroundTransparency = 1
-	viewport.Position = UDim2.fromScale(0.5, 0.47)
-	viewport.Size = UDim2.fromOffset(220, 220)
-	viewport.ZIndex = 66
+	viewport.Size = UDim2.fromScale(1, 1)
+	viewport.ZIndex = zIndex or 1
+	viewport.LightColor = shadowMode and Color3.fromRGB(50, 56, 80) or THEME.White
+	viewport.Ambient = shadowMode and Color3.fromRGB(0, 0, 0) or profile.glow
 	viewport.Parent = parent
 
+	local worldModel = Instance.new("WorldModel")
+	worldModel.Name = "WorldModel"
+	worldModel.Parent = viewport
+
 	local camera = Instance.new("Camera")
-	camera.CFrame = CFrame.new(Vector3.new(0, 2, 7), Vector3.new(0, 1.3, 0))
+	camera.Name = "RevealCamera"
 	camera.Parent = viewport
 	viewport.CurrentCamera = camera
 
-	local world = Instance.new("WorldModel")
-	world.Parent = viewport
+	local model = createPreviewModel(npc, profile, shadowMode)
+	model.Parent = worldModel
+	fitCameraToModel(camera, model)
 
-	local model = Instance.new("Model")
-	model.Name = npc.displayName .. "_Preview"
-	model.Parent = world
-
-	local function part(name, size, cf, color, shape, material)
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Size = size
-		p.CFrame = cf
-		p.Color = color
-		p.Shape = shape or Enum.PartType.Block
-		p.Material = material or Enum.Material.SmoothPlastic
-		p.Anchored = true
-		p.CanCollide = false
-		p.Parent = model
-		return p
-	end
-
-	local main = profile.color
-	local second = profile.color:Lerp(THEME.White, 0.48)
-	local accent = profile.deep
-
-	part("Body", Vector3.new(1.55, 1.9, 0.95), CFrame.new(0, 0.32, 0), main, Enum.PartType.Ball)
-	part("Head", Vector3.new(1.35, 1.35, 1.35), CFrame.new(0, 1.66, 0), second, Enum.PartType.Ball)
-	part("LeftArm", Vector3.new(0.38, 1.08, 0.38), CFrame.new(-0.98, 0.36, 0) * CFrame.Angles(0, 0, math.rad(14)), accent, Enum.PartType.Cylinder)
-	part("RightArm", Vector3.new(0.38, 1.08, 0.38), CFrame.new(0.98, 0.36, 0) * CFrame.Angles(0, 0, math.rad(-14)), accent, Enum.PartType.Cylinder)
-	part("LeftFoot", Vector3.new(0.58, 0.25, 0.72), CFrame.new(-0.42, -0.78, -0.08), second, Enum.PartType.Ball)
-	part("RightFoot", Vector3.new(0.58, 0.25, 0.72), CFrame.new(0.42, -0.78, -0.08), second, Enum.PartType.Ball)
-	part("LeftEye", Vector3.new(0.2, 0.2, 0.05), CFrame.new(-0.28, 1.74, -0.62), THEME.White, Enum.PartType.Ball)
-	part("RightEye", Vector3.new(0.2, 0.2, 0.05), CFrame.new(0.28, 1.74, -0.62), THEME.White, Enum.PartType.Ball)
-	part("Smile", Vector3.new(0.46, 0.07, 0.05), CFrame.new(0, 1.42, -0.66), THEME.Ink, Enum.PartType.Block)
-
-	local light = Instance.new("PointLight")
-	light.Color = profile.color
-	light.Brightness = 1.8
-	light.Range = 10
-	light.Parent = model:FindFirstChild("Body")
-
-	local previewScale = Instance.new("UIScale")
-	previewScale.Scale = 0.42
-	previewScale.Parent = viewport
-	tween(previewScale, 0.26, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
-	task.spawn(function()
-		local started = os.clock()
-		while viewport.Parent and os.clock() - started < 2.2 do
-			local elapsed = os.clock() - started
-			model:PivotTo(CFrame.Angles(0, elapsed * 1.35, 0))
-			task.wait(1 / 30)
-		end
-	end)
-
-	return viewport
+	return {
+		viewport = viewport,
+		world = worldModel,
+		camera = camera,
+		model = model,
+	}
 end
 
-local function addSoftConfetti(parent, profile)
+local function setViewportNPC(viewData, npc, profile, shadowMode)
+	clearWorldModel(viewData.world)
+	local model = createPreviewModel(npc, profile, shadowMode)
+	model.Parent = viewData.world
+	viewData.model = model
+	viewData.viewport.Ambient = shadowMode and Color3.fromRGB(0, 0, 0) or profile.glow
+	viewData.viewport.LightColor = shadowMode and Color3.fromRGB(50, 56, 80) or THEME.White
+	fitCameraToModel(viewData.camera, model)
+end
+
+local function createShadowCard(parent, name, xScale, scaleValue, transparency)
+	local wrapper = Instance.new("Frame")
+	wrapper.Name = name
+	wrapper.AnchorPoint = Vector2.new(0.5, 0.5)
+	wrapper.BackgroundTransparency = 1
+	wrapper.Position = UDim2.fromScale(xScale, 0.5)
+	wrapper.Size = UDim2.fromScale(0.18, 0.88)
+	wrapper.ZIndex = 30
+	wrapper.Parent = parent
+
+	local scaler = Instance.new("UIScale")
+	scaler.Scale = scaleValue or 1
+	scaler.Parent = wrapper
+
+	local card = createRoundedPanel(wrapper, "Card", Color3.fromRGB(56, 66, 104), Color3.fromRGB(24, 30, 58), 22, 31)
+	card.Size = UDim2.fromScale(1, 1)
+	card.BackgroundTransparency = transparency or 0
+	createShadow(card, 24, 30)
+
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0.06, 0)
+	pad.PaddingBottom = UDim.new(0.06, 0)
+	pad.PaddingLeft = UDim.new(0.06, 0)
+	pad.PaddingRight = UDim.new(0.06, 0)
+	pad.Parent = card
+
+	local glow = Instance.new("Frame")
+	glow.Name = "CardGlow"
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.BackgroundColor3 = THEME.Blue
+	glow.BackgroundTransparency = 0.73
+	glow.BorderSizePixel = 0
+	glow.Position = UDim2.fromScale(0.5, 0.43)
+	glow.Size = UDim2.fromScale(0.72, 0.58)
+	glow.ZIndex = 32
+	glow.Parent = card
+	local glowCorner = Instance.new("UICorner")
+	glowCorner.CornerRadius = UDim.new(1, 0)
+	glowCorner.Parent = glow
+
+	local viewportHolder = Instance.new("Frame")
+	viewportHolder.Name = "ViewportHolder"
+	viewportHolder.BackgroundTransparency = 1
+	viewportHolder.Position = UDim2.fromScale(0.08, 0.08)
+	viewportHolder.Size = UDim2.fromScale(0.84, 0.65)
+	viewportHolder.ZIndex = 33
+	viewportHolder.Parent = card
+
+	local question = createTextLabel(card, "Question", "?", UDim2.fromScale(0.44, 0.32), UDim2.fromScale(0.28, 0.2), 42, THEME.Cream, 42)
+	question.AnchorPoint = Vector2.new(0, 0)
+
+	local nameLabel = createTextLabel(card, "Name", "???", UDim2.fromScale(0.92, 0.16), UDim2.fromScale(0.04, 0.76), 18, Color3.fromRGB(225, 233, 255), 36)
+	local rarityLabel = createTextLabel(card, "Rarity", "???", UDim2.fromScale(0.92, 0.1), UDim2.fromScale(0.04, 0.9), 13, Color3.fromRGB(177, 194, 232), 36)
+
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 0.8
+	aspect.DominantAxis = Enum.DominantAxis.Height
+	aspect.Parent = wrapper
+
+	return {
+		wrapper = wrapper,
+		card = card,
+		scale = scaler,
+		glow = glow,
+		viewportHolder = viewportHolder,
+		question = question,
+		nameLabel = nameLabel,
+		rarityLabel = rarityLabel,
+		viewData = nil,
+	}
+end
+
+local function updateShadowCard(cardData, npc, revealed)
+	local profile = getRarityProfile(npc.rarity)
+	cardData.glow.BackgroundColor3 = profile.glow
+	cardData.rarityLabel.TextColor3 = profile.color
+	cardData.question.Text = revealed and "!" or "?"
+	cardData.question.TextColor3 = revealed and profile.color or THEME.Cream
+	cardData.nameLabel.Text = revealed and npc.displayName or "???"
+	cardData.rarityLabel.Text = revealed and ("[" .. string.upper(npc.rarity) .. "]") or string.upper(npc.rarity)
+
+	if cardData.viewData then
+		setViewportNPC(cardData.viewData, npc, profile, not revealed)
+	else
+		cardData.viewData = createViewportNPC(cardData.viewportHolder, npc, profile, not revealed, 34)
+	end
+end
+
+local function createRarityRays(parent, profile)
+	local rays = Instance.new("Frame")
+	rays.Name = "RarityRays"
+	rays.AnchorPoint = Vector2.new(0.5, 0.5)
+	rays.BackgroundTransparency = 1
+	rays.Position = UDim2.fromScale(0.5, 0.48)
+	rays.Size = UDim2.fromScale(0.72, 1.08)
+	rays.ZIndex = 20
+	rays.Parent = parent
+
+	local rayCount = math.floor(10 + profile.intensity * 5)
+	for i = 1, rayCount do
+		local ray = Instance.new("Frame")
+		ray.Name = "Ray"
+		ray.AnchorPoint = Vector2.new(0.5, 1)
+		ray.BackgroundColor3 = i % 2 == 0 and profile.color or profile.glow
+		ray.BackgroundTransparency = 0.55
+		ray.BorderSizePixel = 0
+		ray.Position = UDim2.fromScale(0.5, 0.5)
+		ray.Size = UDim2.fromScale(0.014, 0.44 + profile.intensity * 0.06)
+		ray.Rotation = (360 / rayCount) * i
+		ray.ZIndex = 21
+		ray.Parent = rays
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(1, 0)
+		corner.Parent = ray
+		playTween(ray, 0.55, { BackgroundTransparency = 1, Size = UDim2.fromScale(0.006, 0.55) })
+	end
+
+	playTween(rays, 0.7, { Rotation = 34 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	Debris:AddItem(rays, 0.85)
+end
+
+local function createSparkles(parent, profile, amount)
 	local holder = Instance.new("Frame")
-	holder.Name = "SoftConfetti"
+	holder.Name = "RevealSparkles"
 	holder.BackgroundTransparency = 1
 	holder.Size = UDim2.fromScale(1, 1)
 	holder.ZIndex = 80
 	holder.Parent = parent
 
-	for i = 1, 20 do
-		local dot = Instance.new("Frame")
-		dot.Name = "Dot"
-		dot.AnchorPoint = Vector2.new(0.5, 0.5)
-		dot.BackgroundColor3 = i % 3 == 0 and THEME.Cream or profile.color
-		dot.BorderSizePixel = 0
-		dot.Position = UDim2.fromScale(0.5, 0.5)
-		dot.Size = UDim2.fromOffset(i % 2 == 0 and 10 or 7, i % 2 == 0 and 10 or 7)
-		dot.ZIndex = 81
-		dot.Parent = holder
-		addCorner(dot, 8)
+	for i = 1, amount do
+		local sparkle = Instance.new("Frame")
+		sparkle.Name = "Sparkle"
+		sparkle.AnchorPoint = Vector2.new(0.5, 0.5)
+		sparkle.BackgroundColor3 = i % 3 == 0 and THEME.Cream or profile.color
+		sparkle.BorderSizePixel = 0
+		sparkle.Position = UDim2.fromScale(0.5, 0.49)
+		sparkle.Size = UDim2.fromOffset(i % 2 == 0 and 11 or 8, i % 2 == 0 and 11 or 8)
+		sparkle.Rotation = i * 19
+		sparkle.ZIndex = 81
+		sparkle.Parent = holder
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(1, 0)
+		corner.Parent = sparkle
 
-		local angle = (math.pi * 2 / 20) * i
-		local distance = 112 + (i % 5) * 18
-		tween(dot, 0.55, {
-			Position = UDim2.new(0.5, math.cos(angle) * distance, 0.5, math.sin(angle) * distance),
+		local angle = (math.pi * 2 / amount) * i
+		local distance = 120 + (i % 6) * 18 + profile.intensity * 16
+		playTween(sparkle, 0.62, {
+			Position = UDim2.new(0.5, math.cos(angle) * distance, 0.49, math.sin(angle) * distance),
+			Rotation = sparkle.Rotation + 180,
 			BackgroundTransparency = 1,
-			Rotation = i * 24,
-		})
+		}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	end
 
-	Debris:AddItem(holder, 0.8)
+	Debris:AddItem(holder, 0.9)
 end
 
-local function runReveal(rawPayload)
+local function createFinalViewport(parent, npc, profile)
+	local holder = Instance.new("Frame")
+	holder.Name = "FinalViewportHolder"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.Position = UDim2.fromScale(0.5, 0.47)
+	holder.Size = UDim2.fromScale(0.34, 0.5)
+	holder.ZIndex = 70
+	holder.Parent = parent
+
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 1
+	aspect.Parent = holder
+
+	local data = createViewportNPC(holder, npc, profile, false, 72)
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.35
+	scale.Parent = holder
+	playTween(scale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+	local rotating = true
+	task.spawn(function()
+		local started = os.clock()
+		while rotating and holder.Parent and data.model and data.model.Parent do
+			local elapsed = os.clock() - started
+			data.model:PivotTo(CFrame.Angles(0, elapsed * 1.35, 0))
+			task.wait(1 / 30)
+		end
+	end)
+
+	return function()
+		rotating = false
+	end
+end
+
+local function cleanupReveal(state)
+	if not state then
+		return
+	end
+
+	if state.rotateCleanup then
+		state.rotateCleanup()
+	end
+
+	for _, connection in ipairs(state.connections or {}) do
+		if connection then
+			connection:Disconnect()
+		end
+	end
+
+	if state.gui and state.gui.Parent then
+		state.gui:Destroy()
+	end
+
+	if state.blur and state.blur.Parent then
+		state.blur:Destroy()
+	end
+
+	if activeGui == state.gui then
+		activeGui = nil
+	end
+end
+
+local function playRevealSequence(rawPayload)
 	local payload = normalizePayload(rawPayload)
 	local selected = payload.selectedNPC
-	local profile = getProfile(selected.rarity)
+	local profile = getRarityProfile(selected.rarity)
+	local state = {
+		connections = {},
+	}
 
 	if activeGui then
 		activeGui:Destroy()
@@ -434,131 +677,198 @@ local function runReveal(rawPayload)
 	end
 
 	local blur = Instance.new("BlurEffect")
-	blur.Name = "NPCRevealSoftBlur"
+	blur.Name = "KickBloxNPCRevealBlur"
 	blur.Size = 0
 	blur.Parent = Lighting
+	state.blur = blur
 
 	local gui = Instance.new("ScreenGui")
-	gui.Name = "NPCRevealRollGui"
+	gui.Name = "KickBloxNPCRevealGui"
 	gui.IgnoreGuiInset = true
 	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 9800
+	gui.DisplayOrder = 9900
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	gui.Parent = playerGui
+	state.gui = gui
 	activeGui = gui
 
-	local dim = Instance.new("Frame")
-	dim.Name = "Dim"
-	dim.BackgroundColor3 = Color3.fromRGB(12, 15, 28)
-	dim.BackgroundTransparency = 1
-	dim.BorderSizePixel = 0
-	dim.Size = UDim2.fromScale(1, 1)
-	dim.ZIndex = 1
-	dim.Parent = gui
+	local overlay = Instance.new("Frame")
+	overlay.Name = "DarkOverlay"
+	overlay.BackgroundColor3 = Color3.fromRGB(7, 9, 18)
+	overlay.BackgroundTransparency = 1
+	overlay.BorderSizePixel = 0
+	overlay.Size = UDim2.fromScale(1, 1)
+	overlay.ZIndex = 1
+	overlay.Parent = gui
 
-	local holder = makePanel(gui, "RevealHolder", THEME.Panel, THEME.PanelDeep, 28, 10)
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.Position = UDim2.fromScale(0.5, 0.5)
-	holder.Size = UDim2.fromOffset(760, 470)
+	local stage = createRoundedPanel(gui, "RevealStage", THEME.PanelTop, THEME.PanelBottom, 30, 10)
+	stage.AnchorPoint = Vector2.new(0.5, 0.5)
+	stage.Position = UDim2.fromScale(0.5, 0.5)
+	stage.Size = UDim2.fromScale(0.74, 0.66)
+	stage.ClipsDescendants = false
+	createShadow(stage, 32, 9)
 
-	local holderScale = Instance.new("UIScale")
-	local viewportSize = Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-	local fit = math.clamp(math.min((viewportSize.X - 28) / 760, (viewportSize.Y - 28) / 470), 0.48, 1)
-	holderScale.Scale = fit * 0.9
-	holderScale.Parent = holder
+	local maxSize = Instance.new("UISizeConstraint")
+	maxSize.MaxSize = Vector2.new(920, 620)
+	maxSize.MinSize = Vector2.new(320, 300)
+	maxSize.Parent = stage
 
-	tween(dim, 0.18, { BackgroundTransparency = 0.24 })
-	tween(blur, 0.2, { Size = 9 })
-	tween(holderScale, 0.22, { Scale = fit }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 1.52
+	aspect.DominantAxis = Enum.DominantAxis.Width
+	aspect.Parent = stage
+
+	local stageScale = Instance.new("UIScale")
+	stageScale.Scale = 0.75
+	stageScale.Parent = stage
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0.035, 0)
+	padding.PaddingBottom = UDim.new(0.035, 0)
+	padding.PaddingLeft = UDim.new(0.035, 0)
+	padding.PaddingRight = UDim.new(0.035, 0)
+	padding.Parent = stage
 
 	local shine = Instance.new("Frame")
 	shine.Name = "TopShine"
 	shine.BackgroundColor3 = THEME.White
-	shine.BackgroundTransparency = 0.72
+	shine.BackgroundTransparency = 0.76
 	shine.BorderSizePixel = 0
-	shine.Position = UDim2.new(0, 14, 0, 12)
-	shine.Size = UDim2.new(1, -28, 0, 34)
-	shine.ZIndex = 12
-	shine.Parent = holder
-	addCorner(shine, 18)
+	shine.Position = UDim2.fromScale(0.03, 0.03)
+	shine.Size = UDim2.fromScale(0.94, 0.11)
+	shine.ZIndex = 13
+	shine.Parent = stage
+	local shineCorner = Instance.new("UICorner")
+	shineCorner.CornerRadius = UDim.new(1, 0)
+	shineCorner.Parent = shine
 
-	makeLabel(holder, "Title", "ROLLING...", UDim2.new(1, -40, 0, 56), UDim2.new(0, 20, 0, 18), 38, THEME.Cream, 15)
-	local subtitle = makeLabel(holder, "Subtitle", payload.zoneName .. " Reward", UDim2.new(1, -40, 0, 28), UDim2.new(0, 20, 0, 70), 19, Color3.fromRGB(255, 252, 226), 15)
+	local title = createTextLabel(stage, "Title", "WHO DID YOU GET?", UDim2.fromScale(0.9, 0.12), UDim2.fromScale(0.05, 0.035), 42, THEME.Cream, 18)
+	local subtitle = createTextLabel(stage, "Subtitle", payload.zoneName .. " Reward", UDim2.fromScale(0.8, 0.06), UDim2.fromScale(0.1, 0.14), 21, Color3.fromRGB(255, 252, 226), 18)
 
 	local reel = Instance.new("Frame")
-	reel.Name = "SimpleReel"
+	reel.Name = "ShadowCarousel"
 	reel.BackgroundTransparency = 1
-	reel.Position = UDim2.new(0, 0, 0, 112)
-	reel.Size = UDim2.new(1, 0, 0, 230)
-	reel.ZIndex = 18
-	reel.Parent = holder
+	reel.Position = UDim2.fromScale(0.025, 0.24)
+	reel.Size = UDim2.fromScale(0.95, 0.42)
+	reel.ZIndex = 20
+	reel.Parent = stage
 
-	local left = makeShadowCard(reel, "Left", 0.27, 0.82, 0.18)
-	local center = makeShadowCard(reel, "Center", 0.5, 1.12, 0)
-	local right = makeShadowCard(reel, "Right", 0.73, 0.82, 0.18)
+	local cards = {
+		createShadowCard(reel, "Card_1", 0.08, 0.72, 0.5),
+		createShadowCard(reel, "Card_2", 0.25, 0.86, 0.22),
+		createShadowCard(reel, "Card_3", 0.5, 1.14, 0),
+		createShadowCard(reel, "Card_4", 0.75, 0.86, 0.22),
+		createShadowCard(reel, "Card_5", 0.92, 0.72, 0.5),
+	}
+
+	local slots = {
+		{ x = 0.08, scale = 0.72, alpha = 0.5, rot = -8 },
+		{ x = 0.25, scale = 0.86, alpha = 0.22, rot = -4 },
+		{ x = 0.5, scale = 1.14, alpha = 0, rot = 0 },
+		{ x = 0.75, scale = 0.86, alpha = 0.22, rot = 4 },
+		{ x = 0.92, scale = 0.72, alpha = 0.5, rot = 8 },
+	}
+
+	playTween(overlay, 0.26, { BackgroundTransparency = 0.18 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	playTween(blur, 0.28, { Size = 12 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	playTween(stageScale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	playTween(stage, 0.32, { Rotation = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 	local possible = payload.possibleNPCs
-	local index = 0
+	local rollIndex = 0
 
-	for tick = 1, ROLL_TICKS do
-		index += 1
-		local leftNpc = possible[((index - 1) % #possible) + 1]
-		local centerNpc = possible[(index % #possible) + 1]
-		local rightNpc = possible[((index + 1) % #possible) + 1]
+	for step = 1, ROLL_STEPS do
+		rollIndex += 1
+		local ratio = step / ROLL_STEPS
 
-		setShadowCard(left, leftNpc, false)
-		setShadowCard(center, centerNpc, false)
-		setShadowCard(right, rightNpc, false)
+		for i, card in ipairs(cards) do
+			local npc = possible[((rollIndex + i - 2) % #possible) + 1]
+			updateShadowCard(card, npc, false)
+			local slot = slots[i]
+			playTween(card.wrapper, 0.08, {
+				Position = UDim2.fromScale(slot.x, 0.5),
+				Rotation = slot.rot,
+			}, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+			playTween(card.scale, 0.08, { Scale = slot.scale }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			playTween(card.card, 0.08, { BackgroundTransparency = slot.alpha }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		end
 
-		local ratio = tick / ROLL_TICKS
-		local bump = 1.12 + (1 - ratio) * 0.08
-		tween(center.scale, 0.055, { Scale = bump }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-		tween(center.card, 0.055, { Position = UDim2.fromScale(0.5, 0.48) })
-		task.wait(0.035 + (ratio ^ 2) * 0.105)
-		tween(center.scale, 0.07, { Scale = 1.12 })
-		tween(center.card, 0.07, { Position = UDim2.fromScale(0.5, 0.5) })
-		playSound(TICK_SOUND_ID, 0.15, 1 + ratio * 0.35)
+		local pulseScale = 1.14 + (1 - ratio) * 0.08
+		playTween(cards[3].scale, 0.05, { Scale = pulseScale }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+		local shakePower = math.max(0, (1 - ratio) * 6 + profile.intensity * 0.9)
+		stage.Position = UDim2.new(
+			0.5,
+			(math.random() * 2 - 1) * shakePower,
+			0.5,
+			(math.random() * 2 - 1) * shakePower
+		)
+
+		playSound(TICK_SOUND_ID, 0.16, 0.92 + ratio * 0.45)
+		task.wait(0.027 + (ratio ^ 2.15) * 0.13)
 	end
 
-	setShadowCard(left, possible[((index - 1) % #possible) + 1], false)
-	setShadowCard(center, selected, true)
-	setShadowCard(right, possible[((index + 1) % #possible) + 1], false)
+	stage.Position = UDim2.fromScale(0.5, 0.5)
+	title.Text = "REVEALING..."
 
-	makeLabel(holder, "PopText", "YOU GOT", UDim2.fromOffset(210, 36), UDim2.new(0.5, -105, 0, 106), 28, profile.color, 70)
+	for i, card in ipairs(cards) do
+		if i == 3 then
+			updateShadowCard(card, selected, false)
+			playTween(card.scale, 0.2, { Scale = 1.28 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			playTween(card.glow, 0.2, { BackgroundTransparency = 0.48 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		else
+			playTween(card.wrapper, 0.24, {
+				Position = UDim2.fromScale(i < 3 and -0.08 or 1.08, 0.5),
+				Rotation = i < 3 and -14 or 14,
+			}, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+			playTween(card.card, 0.2, { BackgroundTransparency = 1 })
+		end
+	end
 
-	tween(left.card, 0.22, { BackgroundTransparency = 0.55, Position = UDim2.fromScale(0.22, 0.52) })
-	tween(right.card, 0.22, { BackgroundTransparency = 0.55, Position = UDim2.fromScale(0.78, 0.52) })
-	tween(center.scale, 0.28, { Scale = 1.28 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	tween(center.card, 0.28, { Position = UDim2.fromScale(0.5, 0.45) })
+	task.wait(0.24)
+
+	for shake = 1, 8 do
+		cards[3].wrapper.Position = UDim2.new(0.5, (math.random() * 2 - 1) * 5, 0.5, (math.random() * 2 - 1) * 3)
+		task.wait(0.035)
+	end
+	cards[3].wrapper.Position = UDim2.fromScale(0.5, 0.5)
+
+	createRarityRays(stage, profile)
 
 	local flash = Instance.new("Frame")
-	flash.Name = "SoftFlash"
+	flash.Name = "RevealFlash"
 	flash.BackgroundColor3 = profile.color
-	flash.BackgroundTransparency = profile.flash
+	flash.BackgroundTransparency = 0.22
 	flash.BorderSizePixel = 0
 	flash.Size = UDim2.fromScale(1, 1)
-	flash.ZIndex = 90
+	flash.ZIndex = 100
 	flash.Parent = gui
-	tween(flash, 0.32, { BackgroundTransparency = 1 })
-	Debris:AddItem(flash, 0.4)
+	playTween(flash, 0.36, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	Debris:AddItem(flash, 0.44)
 
-	addSoftConfetti(holder, profile)
-	playSound(FINAL_SOUND_ID, 0.45, 1)
+	playSound(FINAL_SOUND_ID, 0.55, 1)
+	if profile.confetti > 0 then
+		createSparkles(stage, profile, profile.confetti)
+	else
+		createSparkles(stage, profile, 10)
+	end
 
-	task.wait(0.16)
-	createSimplePreview(holder, selected, profile)
+	cards[3].wrapper.Visible = false
+	state.rotateCleanup = createFinalViewport(stage, selected, profile)
 
-	local result = makePanel(holder, "Result", profile.color:Lerp(THEME.White, 0.18), profile.deep, 20, 65)
-	result.AnchorPoint = Vector2.new(0.5, 1)
-	result.Position = UDim2.new(0.5, 0, 1, -20)
-	result.Size = UDim2.fromOffset(540, 104)
-	result.BackgroundTransparency = 1
+	local resultPanel = createRoundedPanel(stage, "ResultPanel", profile.color:Lerp(THEME.White, 0.16), profile.deep, 24, 70)
+	resultPanel.AnchorPoint = Vector2.new(0.5, 1)
+	resultPanel.Position = UDim2.fromScale(0.5, 0.975)
+	resultPanel.Size = UDim2.fromScale(0.72, 0.22)
+	resultPanel.BackgroundTransparency = 1
+	createShadow(resultPanel, 24, 69)
 
 	local resultScale = Instance.new("UIScale")
-	resultScale.Scale = 0.82
-	resultScale.Parent = result
+	resultScale.Scale = 0.76
+	resultScale.Parent = resultPanel
 
-	makeLabel(result, "Name", selected.displayName, UDim2.new(1, -30, 0, 40), UDim2.new(0, 15, 0, 12), 30, THEME.White, 70)
+	createTextLabel(resultPanel, "YouGot", "YOU GOT", UDim2.fromScale(0.92, 0.24), UDim2.fromScale(0.04, 0.06), 18, THEME.Cream, 73)
+	createTextLabel(resultPanel, "NPCName", selected.displayName, UDim2.fromScale(0.92, 0.34), UDim2.fromScale(0.04, 0.27), 32, THEME.White, 73)
 
 	local mutationText = selected.mutationDisplayName
 	if mutationText == "" or mutationText == "nil" then
@@ -573,40 +883,61 @@ local function runReveal(rawPayload)
 		detail ..= "  |  " .. mutationText
 	end
 
-	makeLabel(result, "Details", detail, UDim2.new(1, -30, 0, 28), UDim2.new(0, 15, 0, 56), 19, THEME.Cream, 70)
+	createTextLabel(resultPanel, "Details", detail, UDim2.fromScale(0.92, 0.24), UDim2.fromScale(0.04, 0.64), 20, THEME.Cream, 73)
 
-	tween(result, 0.14, { BackgroundTransparency = 0 })
-	tween(resultScale, 0.24, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	subtitle.Text = "Tap anywhere to continue"
+	playTween(resultPanel, 0.18, { BackgroundTransparency = 0 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	playTween(resultScale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	title.Text = "CLAIMED!"
+	subtitle.Text = "Tap continue or wait"
 
-	local closeButton = Instance.new("TextButton")
-	closeButton.Name = "TapToClose"
-	closeButton.BackgroundTransparency = 1
-	closeButton.Size = UDim2.fromScale(1, 1)
-	closeButton.Text = ""
-	closeButton.ZIndex = 120
-	closeButton.Parent = gui
+	local continue = Instance.new("TextButton")
+	continue.Name = "Continue"
+	continue.AnchorPoint = Vector2.new(0.5, 1)
+	continue.BackgroundColor3 = THEME.Green
+	continue.BorderSizePixel = 0
+	continue.Position = UDim2.fromScale(0.5, 1.105)
+	continue.Size = UDim2.fromScale(0.32, 0.085)
+	continue.Font = FONT
+	continue.Text = "CONTINUE"
+	continue.TextColor3 = THEME.White
+	continue.TextStrokeColor3 = THEME.Ink
+	continue.TextStrokeTransparency = 0.05
+	continue.TextScaled = true
+	continue.ZIndex = 90
+	continue.Parent = stage
+	local continueCorner = Instance.new("UICorner")
+	continueCorner.CornerRadius = UDim.new(1, 0)
+	continueCorner.Parent = continue
+	createStroke(continue, THEME.Ink, 3, 0)
+	createGradient(continue, THEME.Green, Color3.fromRGB(32, 163, 71), 90)
+	local continueTextSize = Instance.new("UITextSizeConstraint")
+	continueTextSize.MaxTextSize = 24
+	continueTextSize.MinTextSize = 10
+	continueTextSize.Parent = continue
 
 	local closeRequested = false
-	closeButton.Activated:Connect(function()
+	table.insert(state.connections, continue.Activated:Connect(function()
 		closeRequested = true
+	end))
+
+	task.delay(0.2, function()
+		if continue.Parent then
+			playTween(continue, 0.22, { Position = UDim2.fromScale(0.5, 0.985) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		end
 	end)
 
-	local started = os.clock()
-	while not closeRequested and os.clock() - started < 2.2 do
+	local waitStarted = os.clock()
+	while not closeRequested and os.clock() - waitStarted < 2.8 do
 		task.wait(0.05)
 	end
 
-	tween(dim, 0.18, { BackgroundTransparency = 1 })
-	tween(blur, 0.18, { Size = 0 })
-	tween(holderScale, 0.18, { Scale = fit * 0.88 })
-	task.wait(0.2)
+	playTween(overlay, 0.2, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	playTween(blur, 0.2, { Size = 0 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	playTween(stageScale, 0.2, { Scale = 0.86 }, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+	playTween(stage, 0.2, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	task.wait(0.22)
 
-	if gui == activeGui then
-		activeGui = nil
-	end
-	gui:Destroy()
-	blur:Destroy()
+	cleanupReveal(state)
 end
 
 local function processQueue()
@@ -617,7 +948,7 @@ local function processQueue()
 	playing = true
 	while #queue > 0 do
 		local payload = table.remove(queue, 1)
-		local ok, err = pcall(runReveal, payload)
+		local ok, err = pcall(playRevealSequence, payload)
 		if not ok then
 			warn("[NPCRevealRoll] Reveal failed:", err)
 			if activeGui then
@@ -625,7 +956,7 @@ local function processQueue()
 				activeGui = nil
 			end
 		end
-		task.wait(0.1)
+		task.wait(0.12)
 	end
 	playing = false
 end
@@ -659,4 +990,4 @@ if legacyRemote and legacyRemote:IsA("RemoteEvent") then
 	legacyRemote.OnClientEvent:Connect(enqueueReveal)
 end
 
-print("[NPCRevealRoll] Loaded clean cartoony NPC reveal animation.")
+print("[NPCRevealRoll] Loaded premium Kick Blox NPC reveal animation.")
