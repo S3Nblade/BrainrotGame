@@ -9,6 +9,7 @@ local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local EggConfig = require(ServerScriptService:WaitForChild("EggConfig"))
 
@@ -26,6 +27,7 @@ local rng = Random.new()
 
 local activeById = {}
 local lastDamageAt = {}
+local zoneRuntime = {}
 
 local function ensureFolder(parent, name)
 	local folder = parent:FindFirstChild(name)
@@ -109,10 +111,49 @@ local function chooseWeighted(weightMap)
 	return nil
 end
 
+local function chooseWeightedWithLuck(weightMap, luckBonus, baselineRarity, isMutation)
+	local total = 0
+	local adjusted = {}
+	local baseOrder = EggConfig.RarityOrder[tostring(baselineRarity or "Common")] or 1
+	local scale = isMutation and (EggConfig.LuckScaling.MutationLuckScale or 0.016) or (EggConfig.LuckScaling.RewardLuckScale or 0.012)
+
+	for key, weight in pairs(weightMap or {}) do
+		local order = EggConfig.RarityOrder[tostring(key)] or (isMutation and ({ Normal = 1, Golden = 2, Diamond = 3, Shadow = 4, Rainbow = 5 })[tostring(key)] or 1)
+		local lift = math.max(0, order - baseOrder)
+		if isMutation then
+			lift = math.max(0, order - 1)
+		end
+
+		local multiplier = 1 + (tonumber(luckBonus) or 0) * scale * lift
+		if lift <= 0 and (tonumber(luckBonus) or 0) > 0 then
+			multiplier = math.max(0.35, 1 - (tonumber(luckBonus) or 0) * scale * 0.25)
+		end
+
+		local newWeight = math.max(0, (tonumber(weight) or 0) * multiplier)
+		adjusted[key] = newWeight
+		total += newWeight
+	end
+
+	if total <= 0 then
+		return chooseWeighted(weightMap)
+	end
+
+	local roll = rng:NextNumber(0, total)
+	local running = 0
+	for key, weight in pairs(adjusted) do
+		running += weight
+		if roll <= running then
+			return tostring(key)
+		end
+	end
+
+	return chooseWeighted(weightMap)
+end
+
 local function chooseEgg(zoneConfig)
 	local total = 0
-	for _, eggDef in ipairs(zoneConfig.Eggs or {}) do
-		total += math.max(0, tonumber(eggDef.Weight) or 0)
+	for _, eggDef in ipairs(zoneConfig.AllowedEggs or zoneConfig.Eggs or {}) do
+		total += math.max(0, tonumber(eggDef.SpawnWeight or eggDef.Weight) or 0)
 	end
 	if total <= 0 then
 		return nil
@@ -120,13 +161,75 @@ local function chooseEgg(zoneConfig)
 
 	local roll = rng:NextNumber(0, total)
 	local running = 0
-	for _, eggDef in ipairs(zoneConfig.Eggs) do
-		running += math.max(0, tonumber(eggDef.Weight) or 0)
+	for _, eggDef in ipairs(zoneConfig.AllowedEggs or zoneConfig.Eggs or {}) do
+		running += math.max(0, tonumber(eggDef.SpawnWeight or eggDef.Weight) or 0)
 		if roll <= running then
 			return eggDef
 		end
 	end
-	return zoneConfig.Eggs[1]
+	return (zoneConfig.AllowedEggs or zoneConfig.Eggs or {})[1]
+end
+
+local function rangeNumber(range, fallback)
+	if type(range) ~= "table" then
+		return fallback
+	end
+
+	local minValue = tonumber(range.Min) or fallback
+	local maxValue = tonumber(range.Max) or minValue
+	if maxValue < minValue then
+		maxValue = minValue
+	end
+
+	return rng:NextNumber(minValue, maxValue)
+end
+
+local function rangeInteger(range, fallback)
+	return math.floor(rangeNumber(range, fallback) + 0.5)
+end
+
+local function rangeRatio(value, range)
+	if type(range) ~= "table" then
+		return 0
+	end
+
+	local minValue = tonumber(range.Min) or value
+	local maxValue = tonumber(range.Max) or minValue
+	if maxValue <= minValue then
+		return 0
+	end
+
+	return math.clamp((value - minValue) / (maxValue - minValue), 0, 1)
+end
+
+local function rollEggStats(baseDef)
+	local hp = rangeInteger(baseDef.HpRange, tonumber(baseDef.HP) or 100)
+	local size = rangeNumber(baseDef.SizeRange, tonumber(baseDef.Size) or 1)
+	local baseLuck = rangeInteger(baseDef.LuckRange, tonumber(baseDef.LuckBonus) or 5)
+	local hpRatio = rangeRatio(hp, baseDef.HpRange)
+	local sizeRatio = rangeRatio(size, baseDef.SizeRange)
+	local hpBonus = math.floor(hpRatio * (EggConfig.LuckScaling.HPBonusMax or 10) + 0.5)
+	local sizeBonus = math.floor(sizeRatio * (EggConfig.LuckScaling.SizeBonusMax or 12) + 0.5)
+	local finalLuck = math.max(0, baseLuck + hpBonus + sizeBonus)
+
+	local rolled = {}
+	for key, value in pairs(baseDef) do
+		rolled[key] = value
+	end
+
+	rolled.BaseDef = baseDef
+	rolled.HP = hp
+	rolled.Size = size
+	rolled.BaseLuck = baseLuck
+	rolled.HPBonus = hpBonus
+	rolled.SizeBonus = sizeBonus
+	rolled.LuckBonus = finalLuck
+	rolled.Glow = 0.35 + finalLuck / 55
+	rolled.Speed = math.max(7, (tonumber(baseDef.Speed) or 12) - sizeRatio * 1.5 - hpRatio * 0.7)
+	rolled.ChaseTime = tonumber(baseDef.ChaseTime) or 16
+	rolled.ChaseRadius = tonumber(baseDef.ChaseRadius) or 45
+
+	return rolled
 end
 
 local function findWorkspaceDescendant(name)
@@ -228,6 +331,10 @@ local function randomPointInsideZone(zoneName, zoneConfig)
 	if not cf or not size then
 		return nil
 	end
+	zoneRuntime[zoneName] = zoneRuntime[zoneName] or {}
+	zoneRuntime[zoneName].root = root
+	zoneRuntime[zoneName].cframe = cf
+	zoneRuntime[zoneName].size = size
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
@@ -244,6 +351,43 @@ local function randomPointInsideZone(zoneName, zoneConfig)
 	end
 
 	return cf.Position + Vector3.new(0, (zoneConfig.SpawnYOffset or 2.25) + size.Y * 0.5, 0)
+end
+
+local function refreshZoneRuntime(zoneName)
+	local root = findWorkspaceDescendant(zoneName)
+	if not root then
+		return nil
+	end
+
+	local cf, size = getBounds(root)
+	if not cf or not size then
+		return nil
+	end
+
+	zoneRuntime[zoneName] = {
+		root = root,
+		cframe = cf,
+		size = size,
+	}
+	return zoneRuntime[zoneName]
+end
+
+local function clampToZone(zoneName, position)
+	local runtime = zoneRuntime[zoneName] or refreshZoneRuntime(zoneName)
+	if not runtime then
+		return position
+	end
+
+	local localPos = runtime.cframe:PointToObjectSpace(position)
+	local margin = 6
+	local xLimit = math.max(8, runtime.size.X * 0.5 - margin)
+	local zLimit = math.max(8, runtime.size.Z * 0.5 - margin)
+	local clamped = Vector3.new(
+		math.clamp(localPos.X, -xLimit, xLimit),
+		localPos.Y,
+		math.clamp(localPos.Z, -zLimit, zLimit)
+	)
+	return runtime.cframe:PointToWorldSpace(clamped)
 end
 
 local function setPartBase(part, anchored)
@@ -287,61 +431,68 @@ local function createBillboard(model, eggDef)
 
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "EggBillboard"
-	gui.Size = UDim2.fromOffset(155, 70)
+	gui.Size = UDim2.fromOffset(150, 82)
 	gui.StudsOffset = Vector3.new(0, 3.25 * (tonumber(eggDef.Size) or 1), 0)
 	gui.MaxDistance = 55
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
 	gui.Parent = root
 
-	local card = Instance.new("Frame")
-	card.Name = "Card"
-	card.BackgroundColor3 = Color3.fromRGB(17, 20, 30)
-	card.BackgroundTransparency = 0.18
-	card.BorderSizePixel = 0
-	card.Size = UDim2.fromScale(1, 1)
-	card.Parent = gui
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = card
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = getRarityColor(eggDef.Rarity)
-	stroke.Thickness = 1.5
-	stroke.Transparency = 0.1
-	stroke.Parent = card
-
 	local name = Instance.new("TextLabel")
 	name.Name = "EggName"
 	name.BackgroundTransparency = 1
-	name.Position = UDim2.fromScale(0.06, 0.04)
-	name.Size = UDim2.fromScale(0.88, 0.3)
+	name.Position = UDim2.fromScale(0, 0)
+	name.Size = UDim2.fromScale(1, 0.28)
 	name.Font = Enum.Font.GothamBold
 	name.Text = tostring(eggDef.DisplayName or "Egg")
 	name.TextColor3 = Color3.fromRGB(255, 255, 255)
 	name.TextScaled = true
 	name.TextWrapped = true
-	name.Parent = card
+	name.Parent = gui
+	local nameStroke = Instance.new("UIStroke")
+	nameStroke.Color = Color3.fromRGB(10, 12, 18)
+	nameStroke.Thickness = 2
+	nameStroke.Parent = name
+
+	local timerText = Instance.new("TextLabel")
+	timerText.Name = "TimerText"
+	timerText.BackgroundTransparency = 1
+	timerText.Position = UDim2.fromScale(0, 0.25)
+	timerText.Size = UDim2.fromScale(1, 0.22)
+	timerText.Font = Enum.Font.GothamBold
+	timerText.Text = ""
+	timerText.TextColor3 = Color3.fromRGB(255, 245, 196)
+	timerText.TextScaled = true
+	timerText.Visible = false
+	timerText.Parent = gui
+	local timerStroke = Instance.new("UIStroke")
+	timerStroke.Color = Color3.fromRGB(10, 12, 18)
+	timerStroke.Thickness = 2
+	timerStroke.Parent = timerText
 
 	local hpText = Instance.new("TextLabel")
 	hpText.Name = "HPText"
 	hpText.BackgroundTransparency = 1
-	hpText.Position = UDim2.fromScale(0.06, 0.34)
-	hpText.Size = UDim2.fromScale(0.88, 0.22)
+	hpText.Position = UDim2.fromScale(0.08, 0.4)
+	hpText.Size = UDim2.fromScale(0.84, 0.16)
 	hpText.Font = Enum.Font.GothamMedium
 	hpText.Text = "HP: " .. tostring(eggDef.HP) .. "/" .. tostring(eggDef.HP)
 	hpText.TextColor3 = Color3.fromRGB(225, 232, 244)
 	hpText.TextScaled = true
-	hpText.Parent = card
+	hpText.Parent = gui
+	local hpStroke = Instance.new("UIStroke")
+	hpStroke.Color = Color3.fromRGB(10, 12, 18)
+	hpStroke.Thickness = 1.5
+	hpStroke.Parent = hpText
 
 	local barBack = Instance.new("Frame")
 	barBack.Name = "HPBarBack"
-	barBack.BackgroundColor3 = Color3.fromRGB(38, 44, 60)
+	barBack.BackgroundColor3 = Color3.fromRGB(14, 16, 24)
+	barBack.BackgroundTransparency = 0.12
 	barBack.BorderSizePixel = 0
-	barBack.Position = UDim2.fromScale(0.08, 0.59)
-	barBack.Size = UDim2.fromScale(0.84, 0.12)
-	barBack.Parent = card
+	barBack.Position = UDim2.fromScale(0.18, 0.59)
+	barBack.Size = UDim2.fromScale(0.64, 0.08)
+	barBack.Parent = gui
 	local barCorner = Instance.new("UICorner")
 	barCorner.CornerRadius = UDim.new(1, 0)
 	barCorner.Parent = barBack
@@ -359,22 +510,42 @@ local function createBillboard(model, eggDef)
 	local luck = Instance.new("TextLabel")
 	luck.Name = "LuckText"
 	luck.BackgroundTransparency = 1
-	luck.Position = UDim2.fromScale(0.06, 0.72)
-	luck.Size = UDim2.fromScale(0.88, 0.22)
+	luck.Position = UDim2.fromScale(0, 0.69)
+	luck.Size = UDim2.fromScale(1, 0.22)
 	luck.Font = Enum.Font.GothamBold
 	luck.Text = "Luck +" .. tostring(eggDef.LuckBonus or 0) .. "%"
 	luck.TextColor3 = getRarityColor(eggDef.Rarity)
 	luck.TextScaled = true
-	luck.Parent = card
+	luck.Parent = gui
+	local luckStroke = Instance.new("UIStroke")
+	luckStroke.Color = Color3.fromRGB(10, 12, 18)
+	luckStroke.Thickness = 2
+	luckStroke.Parent = luck
 
 	local function refresh()
 		local maxHP = tonumber(model:GetAttribute("EggMaxHP")) or tonumber(eggDef.HP) or 1
 		local hp = math.clamp(tonumber(model:GetAttribute("EggHP")) or maxHP, 0, maxHP)
 		hpText.Text = "HP: " .. tostring(math.ceil(hp)) .. "/" .. tostring(math.ceil(maxHP))
 		fill.Size = UDim2.fromScale(maxHP > 0 and hp / maxHP or 0, 1)
+
+		local active = model:GetAttribute("CaptureChaseActive") == true
+		timerText.Visible = active
+		if active then
+			local timeLeft = math.max(0, (tonumber(model:GetAttribute("CaptureChaseEndTime")) or 0) - Workspace:GetServerTimeNow())
+			timerText.Text = string.format("%.1fs", timeLeft)
+			timerText.TextColor3 = timeLeft <= 5 and Color3.fromRGB(255, 88, 88) or Color3.fromRGB(255, 245, 196)
+		end
 	end
 
 	model:GetAttributeChangedSignal("EggHP"):Connect(refresh)
+	model:GetAttributeChangedSignal("CaptureChaseActive"):Connect(refresh)
+	model:GetAttributeChangedSignal("CaptureChaseEndTime"):Connect(refresh)
+	task.spawn(function()
+		while model.Parent and gui.Parent do
+			refresh()
+			task.wait(0.08)
+		end
+	end)
 	refresh()
 	return gui
 end
@@ -404,6 +575,21 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	model:SetAttribute("CaptureHP", tonumber(eggDef.HP) or 100)
 	model:SetAttribute("CaptureMaxHP", tonumber(eggDef.HP) or 100)
 	model:SetAttribute("LuckBonus", tonumber(eggDef.LuckBonus) or 0)
+	model:SetAttribute("EggBaseLuck", tonumber(eggDef.BaseLuck) or tonumber(eggDef.LuckBonus) or 0)
+	model:SetAttribute("EggHPLuckBonus", tonumber(eggDef.HPBonus) or 0)
+	model:SetAttribute("EggSizeLuckBonus", tonumber(eggDef.SizeBonus) or 0)
+	model:SetAttribute("EggSize", tonumber(eggDef.Size) or 1)
+	model:SetAttribute("EggSpeed", tonumber(eggDef.Speed) or 12)
+	model:SetAttribute("CaptureChaseActive", false)
+	model:SetAttribute("CaptureChaseStartTime", 0)
+	model:SetAttribute("CaptureChaseEndTime", 0)
+	model:SetAttribute("CaptureChaseDuration", 0)
+	model:SetAttribute("CaptureHunterUserId", 0)
+	model:SetAttribute("CaptureHunterName", "")
+	model:SetAttribute("CapturePanic", false)
+	model:SetAttribute("CaptureShielded", false)
+	model:SetAttribute("CaptureShieldEndTime", 0)
+	model:SetAttribute("CaptureStunned", false)
 	model:SetAttribute("HatchInProgress", false)
 	model:SetAttribute("CanPickup", false)
 	model:SetAttribute("PickupReady", false)
@@ -480,7 +666,15 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 
 	model:PivotTo(base * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
 	model.Parent = eggFolder
-	activeById[eggId] = { Model = model, Zone = zoneName, ZoneConfig = zoneConfig, EggDef = eggDef }
+	activeById[eggId] = {
+		Model = model,
+		Zone = zoneName,
+		ZoneConfig = zoneConfig,
+		EggDef = eggDef,
+		SpawnPosition = position,
+		BaseY = position.Y,
+		MoveSeed = rng:NextNumber(0, math.pi * 2),
+	}
 	return model
 end
 
@@ -575,11 +769,11 @@ local function createRewardTool(player, rewardNpc, mutationName, mutationInfo, b
 end
 
 local function getRewardRarity(eggDef)
-	return chooseWeighted(eggDef.Rewards and eggDef.Rewards.Brainrots) or tostring(eggDef.Rarity or "Common")
+	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Brainrots, eggDef.LuckBonus, eggDef.Rarity, false) or tostring(eggDef.Rarity or "Common")
 end
 
 local function getRewardMutation(eggDef)
-	return chooseWeighted(eggDef.Rewards and eggDef.Rewards.Mutations) or "Normal"
+	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Mutations, eggDef.LuckBonus, eggDef.Rarity, true) or "Normal"
 end
 
 local function getRevealPool(api, templateZone)
@@ -681,8 +875,13 @@ local function finishEgg(player, egg, eggData)
 		EggName = tostring(eggDef.DisplayName or "Egg"),
 		EggRarity = tostring(eggDef.Rarity or "Common"),
 		LuckBonus = tonumber(eggDef.LuckBonus) or 0,
-		LuckText = "Luck Bonus: +" .. tostring(eggDef.LuckBonus or 0) .. "%",
+		LuckText = "Egg Luck: +" .. tostring(eggDef.LuckBonus or 0) .. "%",
 		LuckHint = "Better odds for Rare Brainrots",
+		EggHP = tonumber(eggDef.HP) or 100,
+		EggSize = tonumber(eggDef.Size) or 1,
+		EggBaseLuck = tonumber(eggDef.BaseLuck) or 0,
+		EggHPLuckBonus = tonumber(eggDef.HPBonus) or 0,
+		EggSizeLuckBonus = tonumber(eggDef.SizeBonus) or 0,
 		ZoneName = eggData.Zone,
 		ZoneDisplayName = tostring(zoneConfig.DisplayName or eggData.Zone),
 		ResultName = tostring(tool:GetAttribute("DisplayName") or tool.Name),
@@ -753,6 +952,21 @@ local function damageEgg(player, egg, amount)
 	end
 	lastDamageAt[key] = now
 
+	local eggIdForChase = tostring(egg:GetAttribute("EggId") or "")
+	local eggDataForChase = activeById[eggIdForChase]
+	if eggDataForChase and egg:GetAttribute("CaptureChaseActive") ~= true then
+		local chaseDuration = tonumber(eggDataForChase.EggDef.ChaseTime) or 16
+		local serverTime = Workspace:GetServerTimeNow()
+		egg:SetAttribute("CaptureChaseActive", true)
+		egg:SetAttribute("CaptureChaseStartTime", serverTime)
+		egg:SetAttribute("CaptureChaseEndTime", serverTime + chaseDuration)
+		egg:SetAttribute("CaptureChaseDuration", chaseDuration)
+		egg:SetAttribute("CaptureHunterUserId", player.UserId)
+		egg:SetAttribute("CaptureHunterName", player.Name)
+		eggDataForChase.ChaseTarget = player
+		eggDataForChase.NextWanderAt = 0
+	end
+
 	local maxHP = tonumber(egg:GetAttribute("EggMaxHP")) or 100
 	local hp = math.clamp(tonumber(egg:GetAttribute("EggHP")) or maxHP, 0, maxHP)
 	local damage = math.max(1, tonumber(amount) or DEFAULT_DAMAGE)
@@ -790,13 +1004,145 @@ local function damageEgg(player, egg, amount)
 	return true
 end
 
+local function getPlayerRoot(player)
+	local character = player.Character
+	return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getNearestPlayer(position, radius)
+	local nearestPlayer = nil
+	local nearestDistance = radius
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		local root = getPlayerRoot(player)
+		if root then
+			local distance = (root.Position - position).Magnitude
+			if distance <= nearestDistance then
+				nearestPlayer = player
+				nearestDistance = distance
+			end
+		end
+	end
+
+	return nearestPlayer, nearestDistance
+end
+
+local function startEggChase(eggData, player)
+	local egg = eggData.Model
+	if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
+		return
+	end
+	if egg:GetAttribute("CaptureChaseActive") == true then
+		eggData.ChaseTarget = player or eggData.ChaseTarget
+		return
+	end
+
+	local now = Workspace:GetServerTimeNow()
+	local duration = tonumber(eggData.EggDef.ChaseTime) or 16
+	egg:SetAttribute("CaptureChaseActive", true)
+	egg:SetAttribute("CaptureChaseStartTime", now)
+	egg:SetAttribute("CaptureChaseEndTime", now + duration)
+	egg:SetAttribute("CaptureChaseDuration", duration)
+	egg:SetAttribute("CaptureHunterUserId", player and player.UserId or 0)
+	egg:SetAttribute("CaptureHunterName", player and player.Name or "")
+	eggData.ChaseTarget = player
+	eggData.NextWanderAt = 0
+end
+
+local function escapeEgg(eggData)
+	local egg = eggData.Model
+	if not egg or not egg.Parent then
+		return
+	end
+
+	egg:SetAttribute("HatchInProgress", true)
+	egg:SetAttribute("CaptureChaseActive", false)
+	egg:SetAttribute("CapturePanic", true)
+
+	for _, part in ipairs(egg:GetDescendants()) do
+		if part:IsA("BasePart") then
+			TweenService:Create(part, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Transparency = 1,
+				Size = part.Size * 0.82,
+			}):Play()
+		end
+	end
+
+	local eggId = egg:GetAttribute("EggId")
+	if eggId then
+		activeById[tostring(eggId)] = nil
+	end
+
+	task.delay(0.25, function()
+		if egg and egg.Parent then
+			egg:Destroy()
+		end
+	end)
+end
+
+local function moveEggAway(eggData, dt)
+	local egg = eggData.Model
+	local root = getRoot(egg)
+	if not egg or not egg.Parent or not root then
+		return
+	end
+
+	local now = Workspace:GetServerTimeNow()
+	local chaseActive = egg:GetAttribute("CaptureChaseActive") == true
+	if chaseActive and now >= (tonumber(egg:GetAttribute("CaptureChaseEndTime")) or 0) then
+		escapeEgg(eggData)
+		return
+	end
+
+	local targetPlayer = eggData.ChaseTarget
+	local targetRoot = targetPlayer and getPlayerRoot(targetPlayer)
+	local radius = tonumber(eggData.EggDef.ChaseRadius) or 45
+	if not targetRoot then
+		targetPlayer, _ = getNearestPlayer(root.Position, radius)
+		targetRoot = targetPlayer and getPlayerRoot(targetPlayer)
+	end
+
+	if not chaseActive then
+		if targetRoot and (targetRoot.Position - root.Position).Magnitude <= radius then
+			startEggChase(eggData, targetPlayer)
+		else
+			return
+		end
+	end
+
+	if not targetRoot then
+		return
+	end
+
+	local away = root.Position - targetRoot.Position
+	if away.Magnitude < 1 then
+		away = Vector3.new(math.cos(now + eggData.MoveSeed), 0, math.sin(now + eggData.MoveSeed))
+	end
+	away = Vector3.new(away.X, 0, away.Z)
+	if away.Magnitude < 0.1 then
+		away = Vector3.new(1, 0, 0)
+	end
+
+	local strafe = Vector3.new(-away.Z, 0, away.X).Unit * math.sin(now * 1.6 + eggData.MoveSeed) * 0.42
+	local direction = (away.Unit + strafe).Unit
+	local speed = tonumber(eggData.EggDef.Speed) or tonumber(egg:GetAttribute("EggSpeed")) or 12
+	local nextPosition = root.Position + direction * speed * dt
+	nextPosition = clampToZone(eggData.Zone, nextPosition)
+	nextPosition = Vector3.new(nextPosition.X, eggData.BaseY or nextPosition.Y, nextPosition.Z)
+
+	local bounce = math.sin(os.clock() * 10 + eggData.MoveSeed) * 0.16
+	local lookAt = nextPosition + direction
+	local targetCFrame = CFrame.new(nextPosition + Vector3.new(0, bounce, 0), Vector3.new(lookAt.X, nextPosition.Y + bounce, lookAt.Z))
+	egg:PivotTo(targetCFrame)
+end
+
 local function spawnEgg(zoneName, zoneConfig)
 	if countEggs(zoneName) >= (tonumber(zoneConfig.MaxEggs) or 6) then
 		return false
 	end
 
-	local eggDef = chooseEgg(zoneConfig)
-	if not eggDef then
+	local baseEggDef = chooseEgg(zoneConfig)
+	if not baseEggDef then
 		return false
 	end
 
@@ -805,7 +1151,7 @@ local function spawnEgg(zoneName, zoneConfig)
 		return false
 	end
 
-	createEggModel(zoneName, zoneConfig, eggDef, position)
+	createEggModel(zoneName, zoneConfig, rollEggStats(baseEggDef), position)
 	return true
 end
 
@@ -846,6 +1192,16 @@ Players.PlayerRemoving:Connect(function(player)
 	for key, _ in pairs(lastDamageAt) do
 		if string.sub(key, 1, #tostring(player.UserId)) == tostring(player.UserId) then
 			lastDamageAt[key] = nil
+		end
+	end
+end)
+
+RunService.Heartbeat:Connect(function(dt)
+	for eggId, eggData in pairs(activeById) do
+		if not eggData.Model or not eggData.Model.Parent then
+			activeById[eggId] = nil
+		elseif eggData.Model:GetAttribute("HatchInProgress") ~= true then
+			moveEggAway(eggData, math.min(dt, 0.08))
 		end
 	end
 end)

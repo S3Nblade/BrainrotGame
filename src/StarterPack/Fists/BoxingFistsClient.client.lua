@@ -16,16 +16,19 @@ local COMBO = {"Jab", "Cross", "Hook"}
 
 local PUNCH_INFO = {
 	Jab = {
-		length = 0.32,
-		hitTime = 0.13,
+		length = 0.28,
+		hitTime = 0.11,
+		speed = 1.16,
 	},
 	Cross = {
-		length = 0.46,
-		hitTime = 0.20,
+		length = 0.38,
+		hitTime = 0.16,
+		speed = 1.12,
 	},
 	Hook = {
-		length = 0.44,
-		hitTime = 0.17,
+		length = 0.42,
+		hitTime = 0.18,
+		speed = 1.05,
 	},
 }
 
@@ -137,14 +140,15 @@ local function addR6Key(seq, t, p)
 end
 
 local R15_GUARD = {
-	UpperTorso = C(0, 0, 0),
+	LowerTorso = C(0, 0, 0),
+	UpperTorso = C(-3, 0, 0),
 
-	RightUpperArm = C(-42, -4, 22),
-	RightLowerArm = C(-62, 0, -8),
+	RightUpperArm = C(-50, -7, 28),
+	RightLowerArm = C(-70, 0, -10),
 	RightHand = C(0, 0, 0),
 
-	LeftUpperArm = C(-42, 4, -22),
-	LeftLowerArm = C(-62, 0, 8),
+	LeftUpperArm = C(-50, 7, -28),
+	LeftLowerArm = C(-70, 0, 10),
 	LeftHand = C(0, 0, 0),
 }
 
@@ -429,6 +433,21 @@ local function loadTracks(humanoid)
 	return tracks
 end
 
+local function playHitKick(humanoid, punchName)
+	if not humanoid then
+		return
+	end
+
+	local strength = punchName == "Hook" and 0.18 or punchName == "Cross" and 0.13 or 0.08
+	local oldOffset = humanoid.CameraOffset
+	humanoid.CameraOffset = oldOffset + Vector3.new(0, 0, -strength)
+	task.delay(0.06, function()
+		if humanoid and humanoid.Parent then
+			humanoid.CameraOffset = oldOffset
+		end
+	end)
+end
+
 tool.Equipped:Connect(function()
 	local humanoid = getHumanoid()
 
@@ -479,10 +498,11 @@ tool.Activated:Connect(function()
 	end
 
 	print("[BoxingFists] Punch:", punchName)
-	punchTrack:Play(0.04, 1, 1)
+	punchTrack:Play(0.035, 1, info.speed or 1)
 
 	task.delay(info.hitTime, function()
 		if tool.Parent == character then
+			playHitKick(humanoid, punchName)
 			hitRemote:FireServer(punchName)
 		end
 	end)

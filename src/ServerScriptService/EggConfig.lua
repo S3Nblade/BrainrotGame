@@ -1,8 +1,15 @@
 --!nonstrict
 -- ServerScriptService/EggConfig.lua
--- One tuning table for spawned eggs, rewards, HP, size, luck, and future zones.
+-- One tuning table for egg spawning, rolled stats, chase behavior, luck, and rewards.
 
 local EggConfig = {}
+
+EggConfig.LuckScaling = {
+	HPBonusMax = 10,
+	SizeBonusMax = 12,
+	RewardLuckScale = 0.012,
+	MutationLuckScale = 0.016,
+}
 
 EggConfig.RarityOrder = {
 	Common = 1,
@@ -44,21 +51,23 @@ EggConfig.Zones = {
 		SpawnInterval = 8,
 		RespawnDelay = 6,
 		SpawnYOffset = 2.25,
-		Eggs = {
+		AllowedEggs = {
 			{
 				Id = "CommonEgg",
 				DisplayName = "Common Egg",
 				Rarity = "Common",
 				Tier = 1,
-				HP = 100,
-				Size = 1,
-				LuckBonus = 5,
-				Weight = 75,
-				Glow = 0.45,
+				SpawnWeight = 75,
+				HpRange = { Min = 80, Max = 160 },
+				SizeRange = { Min = 0.9, Max = 1.15 },
+				LuckRange = { Min = 3, Max = 8 },
+				ChaseTime = 15,
+				Speed = 14,
+				ChaseRadius = 45,
 				Rewards = {
 					Brainrots = {
-						Common = 72,
-						Rare = 28,
+						Common = 85,
+						Rare = 15,
 					},
 					Mutations = {
 						Normal = 95,
@@ -71,20 +80,22 @@ EggConfig.Zones = {
 				DisplayName = "Rare Egg",
 				Rarity = "Rare",
 				Tier = 2,
-				HP = 250,
-				Size = 1.22,
-				LuckBonus = 15,
-				Weight = 25,
-				Glow = 0.8,
+				SpawnWeight = 25,
+				HpRange = { Min = 180, Max = 420 },
+				SizeRange = { Min = 1.15, Max = 1.45 },
+				LuckRange = { Min = 10, Max = 22 },
+				ChaseTime = 18,
+				Speed = 13,
+				ChaseRadius = 50,
 				Rewards = {
 					Brainrots = {
-						Common = 38,
-						Rare = 52,
-						Epic = 10,
+						Common = 50,
+						Rare = 42,
+						Epic = 8,
 					},
 					Mutations = {
-						Normal = 87,
-						Golden = 11,
+						Normal = 88,
+						Golden = 10,
 						Diamond = 2,
 					},
 				},
@@ -98,17 +109,19 @@ EggConfig.Zones = {
 		MaxEggs = 9,
 		SpawnInterval = 8,
 		RespawnDelay = 6,
-		Eggs = {
+		AllowedEggs = {
 			{
 				Id = "BigRareEgg",
 				DisplayName = "Big Rare Egg",
 				Rarity = "Rare",
 				Tier = 3,
-				HP = 450,
-				Size = 1.36,
-				LuckBonus = 25,
-				Weight = 65,
-				Glow = 1,
+				SpawnWeight = 65,
+				HpRange = { Min = 320, Max = 620 },
+				SizeRange = { Min = 1.32, Max = 1.65 },
+				LuckRange = { Min = 18, Max = 30 },
+				ChaseTime = 18,
+				Speed = 12.5,
+				ChaseRadius = 52,
 				Rewards = {
 					Brainrots = { Rare = 70, Epic = 30 },
 					Mutations = { Normal = 82, Golden = 14, Diamond = 4 },
@@ -119,11 +132,13 @@ EggConfig.Zones = {
 				DisplayName = "Epic Egg",
 				Rarity = "Epic",
 				Tier = 4,
-				HP = 500,
-				Size = 1.48,
-				LuckBonus = 20,
-				Weight = 35,
-				Glow = 1.15,
+				SpawnWeight = 35,
+				HpRange = { Min = 450, Max = 1200 },
+				SizeRange = { Min = 1.45, Max = 2 },
+				LuckRange = { Min = 25, Max = 55 },
+				ChaseTime = 22,
+				Speed = 11,
+				ChaseRadius = 55,
 				Rewards = {
 					Brainrots = { Rare = 40, Epic = 55, Mythic = 5 },
 					Mutations = { Normal = 76, Golden = 17, Diamond = 6, Shadow = 1 },
@@ -138,17 +153,19 @@ EggConfig.Zones = {
 		MaxEggs = 9,
 		SpawnInterval = 8,
 		RespawnDelay = 6,
-		Eggs = {
+		AllowedEggs = {
 			{
 				Id = "BigEpicEgg",
 				DisplayName = "Big Epic Egg",
 				Rarity = "Epic",
 				Tier = 5,
-				HP = 1200,
-				Size = 1.7,
-				LuckBonus = 45,
-				Weight = 70,
-				Glow = 1.35,
+				SpawnWeight = 70,
+				HpRange = { Min = 900, Max = 1600 },
+				SizeRange = { Min = 1.7, Max = 2.15 },
+				LuckRange = { Min = 38, Max = 62 },
+				ChaseTime = 23,
+				Speed = 10.5,
+				ChaseRadius = 58,
 				Rewards = {
 					Brainrots = { Epic = 74, Mythic = 22, Legendary = 4 },
 					Mutations = { Normal = 68, Golden = 20, Diamond = 9, Shadow = 2, Rainbow = 1 },
@@ -159,11 +176,13 @@ EggConfig.Zones = {
 				DisplayName = "Legendary Egg",
 				Rarity = "Legendary",
 				Tier = 6,
-				HP = 1800,
-				Size = 1.85,
-				LuckBonus = 60,
-				Weight = 30,
-				Glow = 1.65,
+				SpawnWeight = 30,
+				HpRange = { Min = 1500, Max = 2400 },
+				SizeRange = { Min = 1.9, Max = 2.35 },
+				LuckRange = { Min = 55, Max = 78 },
+				ChaseTime = 25,
+				Speed = 9.5,
+				ChaseRadius = 62,
 				Rewards = {
 					Brainrots = { Epic = 40, Mythic = 45, Legendary = 15 },
 					Mutations = { Normal = 60, Golden = 22, Diamond = 12, Shadow = 4, Rainbow = 2 },
@@ -172,5 +191,9 @@ EggConfig.Zones = {
 		},
 	},
 }
+
+for _, zone in pairs(EggConfig.Zones) do
+	zone.Eggs = zone.AllowedEggs
+end
 
 return EggConfig
