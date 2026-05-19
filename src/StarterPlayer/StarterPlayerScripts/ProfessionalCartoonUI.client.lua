@@ -156,11 +156,15 @@ local function addGradient(parent, top, bottom, rotation)
 	return gradient
 end
 
+local function getLuminance(color)
+	return (color.R * 0.299) + (color.G * 0.587) + (color.B * 0.114)
+end
+
 local function addTextStroke(label, thickness)
 	local stroke = label:FindFirstChildOfClass("UIStroke") or Instance.new("UIStroke")
 	stroke.Color = THEME.Ink
 	stroke.Thickness = thickness or 2
-	stroke.Transparency = 0
+	stroke.Transparency = getLuminance(label.TextColor3) > 0.55 and 0.05 or 1
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	stroke.Parent = label
 	return stroke
@@ -439,13 +443,35 @@ local function getUpgradeCards()
 	}
 end
 
-local function makeStatPill(parent, text, color, order)
+local function makeStatPill(parent, labelText, valueText, color, order)
 	local pill = makePanel(parent, "StatPill", color, color:Lerp(THEME.Ink, 0.25), 16, 30)
 	pill.LayoutOrder = order
-	pill.Size = UDim2.new(0, 174, 0, 54)
+	pill.Size = UDim2.new(0, 174, 0, 58)
 
-	local label = makeLabel(pill, "Text", text, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 20, Color3.fromRGB(255, 255, 255), 32)
+	local label = makeLabel(
+		pill,
+		"Label",
+		string.upper(labelText),
+		UDim2.new(1, -20, 0, 18),
+		UDim2.new(0, 10, 0, 8),
+		13,
+		Color3.fromRGB(255, 250, 215),
+		32
+	)
 	label.TextXAlignment = Enum.TextXAlignment.Center
+
+	local value = makeLabel(
+		pill,
+		"Value",
+		valueText,
+		UDim2.new(1, -20, 0, 28),
+		UDim2.new(0, 10, 0, 24),
+		22,
+		Color3.fromRGB(255, 255, 255),
+		32
+	)
+	value.TextXAlignment = Enum.TextXAlignment.Center
+
 	return pill
 end
 
@@ -454,30 +480,67 @@ local function makeUpgradeCard(parent, data, order)
 	local canUpgrade = data.canUpgrade == true
 	local level = tonumber(data.level) or 0
 	local maxLevel = tonumber(data.maxLevel) or 5
-	local cardTop = maxed and Color3.fromRGB(130, 225, 255) or (canUpgrade and Color3.fromRGB(111, 240, 111) or Color3.fromRGB(255, 202, 77))
-	local cardBottom = maxed and Color3.fromRGB(56, 122, 222) or (canUpgrade and Color3.fromRGB(32, 155, 70) or Color3.fromRGB(219, 103, 32))
+	local levelRatio = math.clamp(level / math.max(maxLevel, 1), 0, 1)
+	local accentTop = maxed and Color3.fromRGB(130, 225, 255) or (canUpgrade and THEME.Green or THEME.Gold)
+	local accentBottom = maxed and Color3.fromRGB(56, 122, 222) or (canUpgrade and THEME.GreenDeep or THEME.GoldDeep)
 
-	local card = makePanel(parent, tostring(data.key or data.title), cardTop, cardBottom, 20, 30)
+	local card = makePanel(parent, tostring(data.key or data.title), Color3.fromRGB(255, 248, 219), Color3.fromRGB(255, 223, 150), 20, 30)
 	card.LayoutOrder = order
-	card.Size = UDim2.new(0, 255, 0, 175)
+	card.Size = UDim2.new(0, 255, 0, 190)
 
-	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -20, 0, 36), UDim2.new(0, 10, 0, 14), 24, Color3.fromRGB(255, 255, 255), 34)
+	local accent = Instance.new("Frame")
+	accent.Name = "StatusAccent"
+	accent.BackgroundColor3 = accentTop
+	accent.BorderSizePixel = 0
+	accent.Position = UDim2.new(0, 0, 0, 0)
+	accent.Size = UDim2.new(1, 0, 0, 12)
+	accent.ZIndex = 34
+	accent.Parent = card
+	addGradient(accent, accentTop, accentBottom, 0)
+
+	local statusText = maxed and "MAX" or (canUpgrade and "READY" or "LOCKED")
+	local status = makePanel(card, "Status", accentTop, accentBottom, 12, 34)
+	status.Position = UDim2.new(1, -82, 0, 20)
+	status.Size = UDim2.fromOffset(70, 26)
+	makeLabel(status, "Text", statusText, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 13, Color3.fromRGB(255, 255, 255), 36)
+
+	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -100, 0, 36), UDim2.new(0, 12, 0, 20), 23, THEME.InkSoft, 34)
 	name.TextXAlignment = Enum.TextXAlignment.Left
 
-	local desc = makeLabel(card, "Description", tostring(data.desc or ""), UDim2.new(1, -20, 0, 45), UDim2.new(0, 10, 0, 55), 16, Color3.fromRGB(255, 252, 223), 34)
+	local desc = makeLabel(card, "Description", tostring(data.desc or ""), UDim2.new(1, -24, 0, 44), UDim2.new(0, 12, 0, 58), 16, Color3.fromRGB(82, 74, 70), 34)
 	desc.TextXAlignment = Enum.TextXAlignment.Left
 
 	local levelText = makeLabel(
 		card,
 		"Level",
 		"Level " .. tostring(level) .. " / " .. tostring(maxLevel),
-		UDim2.new(1, -20, 0, 26),
-		UDim2.new(0, 10, 0, 100),
+		UDim2.new(1, -24, 0, 24),
+		UDim2.new(0, 12, 0, 104),
 		17,
-		Color3.fromRGB(255, 255, 255),
+		THEME.InkSoft,
 		34
 	)
 	levelText.TextXAlignment = Enum.TextXAlignment.Left
+
+	local track = Instance.new("Frame")
+	track.Name = "LevelTrack"
+	track.BackgroundColor3 = Color3.fromRGB(55, 62, 82)
+	track.BorderSizePixel = 0
+	track.Position = UDim2.new(0, 12, 0, 132)
+	track.Size = UDim2.new(1, -24, 0, 12)
+	track.ZIndex = 34
+	track.Parent = card
+	addCorner(track, 8)
+
+	local fill = Instance.new("Frame")
+	fill.Name = "LevelFill"
+	fill.BackgroundColor3 = accentTop
+	fill.BorderSizePixel = 0
+	fill.Size = UDim2.fromScale(levelRatio, 1)
+	fill.ZIndex = 35
+	fill.Parent = track
+	addCorner(fill, 8)
+	addGradient(fill, accentTop, accentBottom, 0)
 
 	local buttonText
 	local buttonTop
@@ -498,7 +561,7 @@ local function makeUpgradeCard(parent, data, order)
 	end
 
 	local button = makeButton(card, "UpgradeButton", buttonText, buttonTop, buttonBottom, 36)
-	button.Position = UDim2.new(0, 16, 1, -52)
+	button.Position = UDim2.new(0, 16, 1, -48)
 	button.Size = UDim2.new(1, -32, 0, 38)
 	button.Active = not maxed
 
@@ -535,9 +598,9 @@ local function renderShop()
 	statLayout.Padding = UDim.new(0, 10)
 	statLayout.Parent = statRow
 
-	makeStatPill(statRow, "$" .. formatNumber(getStat({ "Money", "Coins", "Cash" })), THEME.Green, 1)
-	makeStatPill(statRow, formatNumber(getStat({ "Strength", "Power", "SpeedPower", "Speed" })) .. " STR", THEME.Gold, 2)
-	makeStatPill(statRow, "x" .. tostring(player:GetAttribute("MoneyMultiplier") or 1) .. " MONEY", THEME.Purple, 3)
+	makeStatPill(statRow, "Money", "$" .. formatNumber(getStat({ "Money", "Coins", "Cash" })), THEME.Green, 1)
+	makeStatPill(statRow, "Strength", formatNumber(getStat({ "Strength", "Power", "SpeedPower", "Speed" })) .. " STR", THEME.Gold, 2)
+	makeStatPill(statRow, "Multiplier", "x" .. tostring(player:GetAttribute("MoneyMultiplier") or 1), THEME.Purple, 3)
 
 	local tabRow = Instance.new("Frame")
 	tabRow.Name = "ShopTabs"
@@ -583,7 +646,7 @@ local function renderShop()
 	content.Parent = body
 
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.fromOffset(255, 175)
+	grid.CellSize = UDim2.fromOffset(255, 190)
 	grid.CellPadding = UDim2.fromOffset(14, 14)
 	grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	grid.SortOrder = Enum.SortOrder.LayoutOrder
