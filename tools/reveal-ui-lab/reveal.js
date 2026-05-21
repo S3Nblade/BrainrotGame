@@ -90,6 +90,10 @@ function addEffect(className, angle, distance, size, delay, extra = {}) {
   effectLayer.appendChild(effect);
 }
 
+function addCenterEffect(className, size, delay, extra = {}) {
+  addEffect(className, 0, 0, size, delay, extra);
+}
+
 function buildMutationEffects(selectedMutation) {
   effectLayer.replaceChildren();
   const speed = Number(reveal.style.getPropertyValue("--reveal-speed")) || 1;
@@ -98,6 +102,7 @@ function buildMutationEffects(selectedMutation) {
   const revealStart = 2.95 * speed;
 
   if (selectedMutation === "Normal") {
+    addCenterEffect("normal-pop", 108, revealStart - 0.08);
     for (let i = 0; i < 6; i += 1) {
       addEffect("normal-dot", (Math.PI * 2 * i) / 6, 88, 12, revealStart + i * 0.03);
     }
@@ -105,6 +110,8 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Diamond") {
+    addCenterEffect("diamond-core", 128, earlyStart);
+    addCenterEffect("impact-ring diamond-impact", 178, midStart + 0.18);
     for (let i = 0; i < 16; i += 1) {
       addEffect("diamond-shard", (Math.PI * 2 * i) / 16, 90 + (i % 4) * 20, 20 + (i % 2) * 10, midStart + i * 0.025, {
         "--spin": `${35 + i * 18}deg`,
@@ -114,6 +121,8 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Radioactive") {
+    addCenterEffect("radio-core", 118, earlyStart);
+    addCenterEffect("impact-ring radio-impact", 184, earlyStart + 0.14);
     for (let i = 0; i < 5; i += 1) {
       addEffect("radio-ring", 0, 0, 132 + i * 42, earlyStart + i * 0.16);
     }
@@ -124,6 +133,8 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Gold") {
+    addCenterEffect("gold-sun", 130, earlyStart);
+    addCenterEffect("impact-ring gold-impact", 186, midStart + 0.12);
     for (let i = 0; i < 12; i += 1) {
       addEffect("gold-coin", (Math.PI * 2 * i) / 12, 92 + (i % 4) * 16, 18, midStart + i * 0.026);
     }
@@ -134,6 +145,8 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Rainbow") {
+    addCenterEffect("rainbow-halo", 174, earlyStart);
+    addCenterEffect("impact-ring rainbow-impact", 218, earlyStart + 0.12);
     for (let i = 0; i < 28; i += 1) {
       addEffect("rainbow-orb", (Math.PI * 2 * i) / 28, 96 + (i % 6) * 14, 19, earlyStart + i * 0.016, {
         "--hue": `${i * 22}deg`,
@@ -146,6 +159,9 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Shadow") {
+    addEffect("shadow-moon", -Math.PI / 3, 118, 86, earlyStart);
+    addCenterEffect("shadow-eclipse", 148, earlyStart + 0.08);
+    addCenterEffect("impact-ring shadow-impact", 204, earlyStart + 0.16);
     for (let i = 0; i < 24; i += 1) {
       addEffect("shadow-wisp", (Math.PI * 2 * i) / 24, 82 + (i % 5) * 18, 44 + (i % 4) * 12, earlyStart + i * 0.026, {
         "--spin": `${-25 + i * 11}deg`,

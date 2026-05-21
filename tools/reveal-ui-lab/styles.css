@@ -323,10 +323,37 @@ button {
   background: rgba(210, 222, 242, 0.9);
 }
 
+.normal-pop {
+  border-radius: 50%;
+  border: 4px solid rgba(210, 222, 242, 0.82);
+  box-shadow: 0 0 18px rgba(210, 222, 242, 0.4);
+}
+
+.impact-ring {
+  border-radius: 50%;
+  border: 6px solid var(--mutation);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--mutation) 58%, transparent);
+}
+
+.diamond-core {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(112, 217, 255, 0.64) 45%, rgba(37, 153, 255, 0.78));
+  clip-path: polygon(50% 0, 88% 24%, 72% 100%, 28% 100%, 12% 24%);
+  box-shadow: 0 0 34px rgba(112, 217, 255, 0.62);
+}
+
 .diamond-shard {
   background: linear-gradient(135deg, #ffffff, #8de7ff 42%, #2cb5ff);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
   box-shadow: 0 0 18px rgba(112, 217, 255, 0.42);
+}
+
+.radio-core {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0 12%, transparent 13%),
+    conic-gradient(from 30deg, #9bff45 0 18%, transparent 18% 32%, #9bff45 32% 50%, transparent 50% 64%, #9bff45 64% 82%, transparent 82% 100%);
+  box-shadow: 0 0 36px rgba(155, 255, 69, 0.58);
 }
 
 .radio-ring {
@@ -347,10 +374,29 @@ button {
   box-shadow: 0 0 16px rgba(255, 210, 74, 0.5);
 }
 
+.gold-sun {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, #fff9b8, #ffd24a 45%, #f29b14);
+  box-shadow:
+    0 0 34px rgba(255, 210, 74, 0.64),
+    0 0 0 16px rgba(255, 210, 74, 0.16),
+    0 0 0 32px rgba(255, 210, 74, 0.08);
+}
+
 .gold-streak {
   width: calc(var(--size) * 0.32);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff5a4, rgba(255, 255, 255, 0));
+}
+
+.rainbow-halo {
+  border-radius: 50%;
+  border: 11px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(#ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb, #ff4d7d) border-box;
+  box-shadow: 0 0 36px rgba(255, 77, 203, 0.32);
 }
 
 .rainbow-orb {
@@ -372,6 +418,22 @@ button {
   border-radius: 999px;
   background: radial-gradient(ellipse, rgba(24, 16, 42, 0.88), rgba(155, 124, 255, 0.26), transparent 74%);
   filter: blur(2.5px);
+}
+
+.shadow-moon {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.95), rgba(205, 192, 255, 0.9));
+  box-shadow:
+    inset -24px 4px 0 rgba(38, 26, 66, 0.88),
+    0 0 28px rgba(155, 124, 255, 0.62);
+}
+
+.shadow-eclipse {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(22, 14, 38, 0.88), rgba(55, 35, 92, 0.52), transparent 72%);
+  box-shadow: 0 0 48px rgba(36, 24, 66, 0.62);
 }
 
 .shadow-ring {
@@ -428,19 +490,43 @@ button {
   top: 70%;
   width: min(86%, 390px);
   margin: 0;
-  color: #fff;
   font-size: clamp(26px, 5vw, 42px);
   font-weight: 950;
   text-align: center;
   line-height: 1;
   opacity: 0;
+  color: var(--mutation);
+  -webkit-text-stroke: 2px #ffffff;
+  text-shadow:
+    0 4px 0 rgba(20, 24, 36, 0.28),
+    0 0 18px color-mix(in srgb, var(--mutation) 58%, transparent);
+}
+
+.reveal[data-mutation="normal"] .reward-label {
+  color: #8e99ad;
+}
+
+.reveal[data-mutation="gold"] .reward-label {
+  color: #ffbd2c;
+}
+
+.reveal[data-mutation="diamond"] .reward-label {
+  color: #47cfff;
+}
+
+.reveal[data-mutation="radioactive"] .reward-label {
+  color: #79f72d;
+}
+
+.reveal[data-mutation="shadow"] .reward-label {
+  color: #8f7bff;
+}
+
+.reveal[data-mutation="rainbow"] .reward-label {
   background: linear-gradient(90deg, #ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow:
-    0 3px 0 rgba(20, 24, 36, 0.48),
-    0 0 20px color-mix(in srgb, var(--mutation) 42%, transparent);
 }
 
 .reveal.is-playing .stage {
@@ -480,15 +566,23 @@ button {
 }
 
 .reveal.is-playing .normal-dot,
+.reveal.is-playing .normal-pop,
+.reveal.is-playing .diamond-core,
 .reveal.is-playing .diamond-shard,
+.reveal.is-playing .radio-core,
 .reveal.is-playing .radio-dot,
+.reveal.is-playing .gold-sun,
 .reveal.is-playing .gold-coin,
 .reveal.is-playing .gold-streak,
+.reveal.is-playing .rainbow-halo,
 .reveal.is-playing .rainbow-orb,
+.reveal.is-playing .shadow-moon,
+.reveal.is-playing .shadow-eclipse,
 .reveal.is-playing .shadow-wisp {
   animation: mutationParticle 1050ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
 }
 
+.reveal.is-playing .impact-ring,
 .reveal.is-playing .radio-ring,
 .reveal.is-playing .rainbow-ring,
 .reveal.is-playing .shadow-ring {
