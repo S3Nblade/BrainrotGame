@@ -10,16 +10,61 @@ local SIGN_FACE = Enum.NormalId.Back
 local assignedPlots = {}
 local playerPlots = {}
 local signConnections = {}
+local plotsInitialized = false
+
+local function looksLikePlotsFolder(container)
+	if not container or not (container:IsA("Folder") or container:IsA("Model")) then
+		return false
+	end
+
+	local name = string.lower(container.Name)
+	if name ~= "plots" and name ~= "plot" then
+		return false
+	end
+
+	for _, child in ipairs(container:GetChildren()) do
+		if child:IsA("Model") or child:IsA("Folder") or child:IsA("BasePart") then
+			return true
+		end
+	end
+
+	return false
+end
 
 local function getPlotsFolder()
 	local direct = Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
-	if direct then
+	if looksLikePlotsFolder(direct) then
 		return direct
 	end
 
 	local spawnMap = Workspace:FindFirstChild("SpawnMap")
 	if spawnMap then
-		return spawnMap:FindFirstChild("plots") or spawnMap:FindFirstChild("Plots")
+		local nested = spawnMap:FindFirstChild("plots", true) or spawnMap:FindFirstChild("Plots", true)
+		if looksLikePlotsFolder(nested) then
+			return nested
+		end
+	end
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if looksLikePlotsFolder(obj) then
+			return obj
+		end
+	end
+
+	return nil
+end
+
+local function waitForPlotsFolder(timeout)
+	local started = os.clock()
+	local limit = tonumber(timeout) or 20
+
+	while os.clock() - started < limit do
+		local folder = getPlotsFolder()
+		if folder then
+			return folder
+		end
+
+		task.wait(0.25)
 	end
 
 	return nil
@@ -65,11 +110,11 @@ local function findBaseFloor(plot)
 end
 
 local function getAllPlots()
-	local plotsFolder = getPlotsFolder()
+	local plotsFolder = getPlotsFolder() or waitForPlotsFolder(2)
 	local plots = {}
 
 	if not plotsFolder then
-		warn("[PlotService] Missing Workspace.plots or Workspace.Plots")
+		warn("[PlotService] Missing plots folder. Expected Workspace.Plots, Workspace.plots, or a nested SpawnMap/Plots folder.")
 		return plots
 	end
 
@@ -325,16 +370,37 @@ local function getFreePlot()
 	return nil
 end
 
+local function setPlayerPlotAttributes(player, plot)
+	if not player then
+		return
+	end
+
+	if plot then
+		player:SetAttribute("AssignedPlotName", plot.Name)
+		player:SetAttribute("AssignedPlotFullName", plot:GetFullName())
+	else
+		player:SetAttribute("AssignedPlotName", nil)
+		player:SetAttribute("AssignedPlotFullName", nil)
+	end
+end
+
 local function assignPlayer(player)
+	if not plotsInitialized then
+		setPlayerPlotAttributes(player, nil)
+		return nil
+	end
+
 	if playerPlots[player] and playerPlots[player].Parent then
 		updatePlotSign(playerPlots[player], player)
 		connectSignListeners(player, playerPlots[player])
+		setPlayerPlotAttributes(player, playerPlots[player])
 		return playerPlots[player]
 	end
 
 	local plot = getFreePlot()
 	if not plot then
 		warn("[PlotService] No free plot for", player.Name)
+		setPlayerPlotAttributes(player, nil)
 		return nil
 	end
 
@@ -346,6 +412,7 @@ local function assignPlayer(player)
 	plot:SetAttribute("OwnerDisplayName", player.DisplayName)
 	plot:SetAttribute("Claimed", true)
 	plot:SetAttribute("Owner", player.Name)
+	setPlayerPlotAttributes(player, plot)
 
 	clearOldPlotGuis(plot)
 	updatePlotSign(plot, player)
@@ -356,7 +423,33 @@ local function assignPlayer(player)
 	return plot
 end
 
-local function teleportToPlot(player, character)
+local teleportToPlot
+
+local function assignPlayerWithRetry(player)
+	task.spawn(function()
+		for attempt = 1, 80 do
+			if not player.Parent then
+				return
+			end
+
+			local plot = assignPlayer(player)
+			if plot then
+				if teleportToPlot and player.Character then
+					teleportToPlot(player, player.Character)
+				end
+				return
+			end
+
+			if attempt == 1 or attempt % 10 == 0 then
+				warn("[PlotService] Waiting for an assignable plot for", player.Name, "attempt", attempt)
+			end
+
+			task.wait(0.5)
+		end
+	end)
+end
+
+teleportToPlot = function(player, character)
 	local plot = playerPlots[player]
 	if not plot then
 		return
@@ -388,18 +481,33 @@ local function releasePlayer(player)
 
 	disconnectSignListeners(player)
 	playerPlots[player] = nil
+	setPlayerPlotAttributes(player, nil)
 end
 
-for _, plot in ipairs(getAllPlots()) do
-	clearPlotOwner(plot)
-end
+task.spawn(function()
+	local folder = waitForPlotsFolder(20)
+	if not folder then
+		warn("[PlotService] Could not find plots folder during startup.")
+		return
+	end
+
+	for _, plot in ipairs(getAllPlots()) do
+		clearPlotOwner(plot)
+	end
+
+	plotsInitialized = true
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		assignPlayerWithRetry(player)
+	end
+end)
 
 Players.PlayerAdded:Connect(function(player)
-	assignPlayer(player)
+	assignPlayerWithRetry(player)
 
 	player.CharacterAdded:Connect(function(character)
 		task.wait(0.25)
-		assignPlayer(player)
+		assignPlayerWithRetry(player)
 		teleportToPlot(player, character)
 	end)
 end)
@@ -408,7 +516,7 @@ Players.PlayerRemoving:Connect(releasePlayer)
 
 for _, player in ipairs(Players:GetPlayers()) do
 	task.defer(function()
-		assignPlayer(player)
+		assignPlayerWithRetry(player)
 
 		if player.Character then
 			teleportToPlot(player, player.Character)
