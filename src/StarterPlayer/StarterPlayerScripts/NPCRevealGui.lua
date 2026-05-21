@@ -2,6 +2,7 @@
 -- Reusable simulator-style egg NPC reveal GUI.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 
@@ -33,6 +34,18 @@ local queue = {}
 local playing = false
 local activeGui = nil
 local activeBlur = nil
+local revealAssetFolder = nil
+local triedRevealAssetFolder = false
+
+local ASSET_ALIASES = {
+	SoftGlow = { "SoftGlow", "soft_glow", "soft glow", "soft_glow.png", "soft-glow" },
+	BurstRing = { "BurstRing", "burst_ring", "burst ring", "burst_ring.png", "burst-ring" },
+	SparkleStar = { "SparkleStar", "sparkle_star", "sparkle star", "sparkle_star.png", "sparkle-star" },
+	ShineStreak = { "ShineStreak", "shine_streak", "shine streak", "shine_streak.png", "shine-streak" },
+	CardGlow = { "CardGlow", "reveal_card_glow", "card_glow", "reveal card glow", "reveal_card_glow.png" },
+	NewBadge = { "NewBadge", "new_badge", "new badge", "new_badge.png", "new-badge" },
+	TapPanel = { "TapPanel", "tap_panel", "tap panel", "tap_panel.png", "tap-panel" },
+}
 
 local function cleanAssetId(id)
 	if type(id) ~= "string" then
@@ -44,8 +57,71 @@ local function cleanAssetId(id)
 	return id
 end
 
+local function normalizeAssetName(name)
+	return string.lower(tostring(name or "")):gsub("[^%w]", "")
+end
+
+local function getRevealAssetFolder()
+	if revealAssetFolder and revealAssetFolder.Parent then
+		return revealAssetFolder
+	end
+	if triedRevealAssetFolder then
+		return nil
+	end
+
+	triedRevealAssetFolder = true
+	local guiFolder = ReplicatedStorage:FindFirstChild("GUI") or ReplicatedStorage:WaitForChild("GUI", 2)
+	if not guiFolder then
+		return nil
+	end
+
+	revealAssetFolder = guiFolder:FindFirstChild("RevealEgg") or guiFolder:WaitForChild("RevealEgg", 2)
+	return revealAssetFolder
+end
+
+local function readAssetIdFromInstance(instance)
+	if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+		return cleanAssetId(instance.Image)
+	end
+	if instance:IsA("Decal") or instance:IsA("Texture") then
+		return cleanAssetId(instance.Texture)
+	end
+	if instance:IsA("StringValue") then
+		return cleanAssetId(instance.Value)
+	end
+
+	return cleanAssetId(instance:GetAttribute("Image"))
+		or cleanAssetId(instance:GetAttribute("Texture"))
+		or cleanAssetId(instance:GetAttribute("AssetId"))
+		or cleanAssetId(instance:GetAttribute("ImageId"))
+end
+
+local function findReplicatedAssetId(name)
+	local folder = getRevealAssetFolder()
+	if not folder then
+		return nil
+	end
+
+	local names = ASSET_ALIASES[name] or { name }
+	local wanted = {}
+	for _, alias in ipairs(names) do
+		wanted[normalizeAssetName(alias)] = true
+	end
+
+	for _, descendant in ipairs(folder:GetDescendants()) do
+		if wanted[normalizeAssetName(descendant.Name)] then
+			local id = readAssetIdFromInstance(descendant)
+			if id then
+				return id
+			end
+		end
+	end
+
+	return nil
+end
+
 local function asset(name)
-	return cleanAssetId(Assets[name])
+	return findReplicatedAssetId(name) or cleanAssetId(Assets[name])
 end
 
 local function rarityColor(rarity)
