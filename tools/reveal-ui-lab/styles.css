@@ -1,8 +1,9 @@
 :root {
   --rarity: #ffbd2c;
   --rarity-soft: #fff0b6;
-  --ink: #151823;
-  font-family: Gotham, "Trebuchet MS", Arial, sans-serif;
+  --ink: #141824;
+  --panel: rgba(255, 255, 255, 0.78);
+  font-family: Inter, Gotham, "Trebuchet MS", Arial, sans-serif;
 }
 
 * {
@@ -12,63 +13,77 @@
 body {
   min-height: 100vh;
   margin: 0;
-  background: linear-gradient(135deg, #e7fbff 0%, #fff6cf 45%, #ffd8ee 100%);
   color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16)),
+    linear-gradient(135deg, #dff9ff 0%, #fff4be 48%, #ffd7ec 100%);
 }
 
 .lab-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(250px, 320px) 1fr;
-  gap: 24px;
-  padding: 24px;
+  grid-template-columns: minmax(260px, 310px) 1fr;
+  gap: 18px;
+  padding: 18px;
 }
 
 .controls {
   align-self: start;
   display: grid;
   gap: 14px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 2px solid rgba(255, 255, 255, 0.86);
-  border-radius: 24px;
-  box-shadow: 0 18px 50px rgba(49, 68, 111, 0.16);
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(45, 64, 110, 0.14);
+  backdrop-filter: blur(18px);
 }
 
 .eyebrow {
-  margin: 0 0 4px;
+  margin: 0 0 5px;
   color: #4a79ff;
+  font-size: 11px;
   font-weight: 900;
+  letter-spacing: 0;
   text-transform: uppercase;
-  font-size: 12px;
 }
 
 h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
+  line-height: 1.05;
 }
 
 label {
   display: grid;
-  gap: 6px;
-  font-weight: 800;
+  gap: 7px;
+  color: #384057;
   font-size: 13px;
+  font-weight: 850;
 }
 
 input,
 select,
 button {
   min-height: 42px;
+  width: 100%;
   border: 0;
   border-radius: 14px;
-  padding: 0 14px;
+  padding: 0 13px;
   font: inherit;
 }
 
 input,
 select {
-  background: #fff;
-  box-shadow: inset 0 0 0 2px rgba(74, 121, 255, 0.16);
+  color: #1c2230;
+  background: rgba(255, 255, 255, 0.96);
+  outline: 1px solid rgba(70, 100, 160, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+input:focus,
+select:focus {
+  outline: 3px solid rgba(74, 121, 255, 0.22);
 }
 
 .check-row {
@@ -79,35 +94,43 @@ select {
 .check-row input {
   min-height: 20px;
   width: 20px;
+  accent-color: #4a79ff;
 }
 
 button {
-  background: linear-gradient(180deg, #6fd7ff, #4a79ff);
   color: #fff;
-  font-weight: 900;
+  font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(74, 121, 255, 0.32);
+  background: linear-gradient(180deg, #64d3ff 0%, #4a79ff 100%);
+  box-shadow: 0 12px 26px rgba(74, 121, 255, 0.28);
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 .preview-wrap {
   position: relative;
-  min-height: calc(100vh - 48px);
+  min-height: calc(100vh - 36px);
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 26px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.95), transparent 28%),
-    linear-gradient(135deg, #70ddff 0%, #fff3b4 45%, #ffb5df 100%);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.72);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.18)),
+    linear-gradient(135deg, #8ee8ff 0%, #fff2bd 50%, #ffc8e6 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.74),
+    0 22px 70px rgba(46, 65, 112, 0.16);
 }
 
 .world-hint {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 64px 64px;
-  opacity: 0.45;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(180deg, transparent 62%, rgba(71, 129, 255, 0.12));
+  background-size: 72px 72px, 72px 72px, auto;
+  opacity: 0.42;
 }
 
 .reveal {
@@ -121,18 +144,20 @@ button {
 .soft-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 251, 211, 0.45), rgba(110, 217, 255, 0.34), rgba(255, 177, 221, 0.42));
-  backdrop-filter: blur(5px);
   opacity: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 254, 225, 0.42), rgba(104, 220, 255, 0.22), rgba(255, 184, 224, 0.34)),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.06) 62%, transparent 78%);
+  backdrop-filter: blur(4px);
 }
 
 .stage {
   position: relative;
-  width: min(92vw, 470px);
-  height: min(86vh, 560px);
+  width: min(88vw, 430px);
+  height: min(84vh, 530px);
   min-height: 420px;
-  transform: scale(0.82);
   opacity: 0;
+  transform: scale(0.9);
 }
 
 .card-glow,
@@ -158,59 +183,91 @@ button {
 }
 
 .card-glow {
-  width: 108%;
-  height: 100%;
+  width: 106%;
+  height: 98%;
   object-fit: contain;
   opacity: 0;
+  filter: saturate(0.92);
 }
 
 .card {
-  width: 88%;
-  height: 86%;
-  top: 51%;
-  border-radius: 26px;
-  background: linear-gradient(180deg, rgba(255, 255, 249, 0.96), rgba(255, 235, 177, 0.96), color-mix(in srgb, var(--rarity) 30%, #fff));
-  border: 4px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 28px 80px rgba(70, 80, 125, 0.18);
+  top: 52%;
+  width: 86%;
+  height: 82%;
+  border-radius: 24px;
   opacity: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 245, 213, 0.96) 55%, rgba(255, 235, 180, 0.94)),
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--rarity) 18%, transparent));
+  border: 3px solid rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 30px 70px rgba(60, 72, 110, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
 }
 
 .soft-glow {
-  top: 42%;
-  width: 360px;
-  height: 360px;
+  top: 41%;
+  width: 340px;
+  height: 340px;
   object-fit: contain;
   opacity: 0;
-  filter: drop-shadow(0 0 28px var(--rarity));
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--rarity) 82%, white));
 }
 
 .burst-ring {
-  top: 42%;
-  width: 80px;
-  height: 80px;
+  top: 41%;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   opacity: 0;
 }
 
 .egg {
-  top: 42%;
-  width: 132px;
-  height: 172px;
+  top: 41%;
+  width: 126px;
+  height: 166px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #fffff8, color-mix(in srgb, var(--rarity) 22%, #fff0c4));
-  border: 4px solid rgba(255, 255, 255, 0.8);
-  box-shadow: inset -14px -22px 0 rgba(174, 123, 62, 0.12), 0 18px 38px rgba(95, 72, 44, 0.2);
   scale: 0.18;
+  background:
+    radial-gradient(ellipse at 36% 24%, rgba(255, 255, 255, 0.96), transparent 21%),
+    linear-gradient(180deg, #fffff8 0%, #fff1c4 100%);
+  border: 4px solid rgba(255, 255, 255, 0.86);
+  box-shadow:
+    inset -16px -22px 0 rgba(172, 120, 58, 0.1),
+    0 18px 34px rgba(94, 76, 47, 0.18);
+}
+
+.egg::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 16%;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rarity) 62%, white);
+  opacity: 0.7;
 }
 
 .egg-highlight {
   position: absolute;
-  left: 30%;
-  top: 16%;
-  width: 24px;
-  height: 58px;
+  left: 31%;
+  top: 14%;
+  width: 22px;
+  height: 54px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.56);
   transform: rotate(22deg);
 }
 
@@ -232,38 +289,40 @@ button {
 .crack-b {
   left: 58%;
   top: 50%;
-  height: 44px;
+  height: 42px;
   transform: rotate(-35deg);
 }
 
 .crack-flash {
-  top: 42%;
-  width: 100px;
-  height: 100px;
+  top: 41%;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.98), rgba(255, 213, 73, 0.74), transparent 68%);
   opacity: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1), rgba(255, 215, 78, 0.72), transparent 68%);
+  filter: blur(0.2px);
 }
 
 .sparkles {
-  top: 42%;
+  top: 41%;
   width: 1px;
   height: 1px;
 }
 
 .sparkle {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  background: url("../../generated_assets/reveal_gui/sparkle_star.png") center / contain no-repeat;
+  width: var(--size);
+  height: var(--size);
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.2);
+  background: url("../../generated_assets/reveal_gui/sparkle_star.png") center / contain no-repeat;
+  transform: translate(-50%, -50%) scale(0.25);
+  filter: drop-shadow(0 4px 8px rgba(255, 195, 40, 0.22));
 }
 
 .podium {
-  top: 62%;
-  width: 300px;
-  height: 130px;
+  top: 61.5%;
+  width: 282px;
+  height: 120px;
   opacity: 0;
 }
 
@@ -271,13 +330,14 @@ button {
   content: "";
   position: absolute;
   left: 50%;
-  top: 46%;
-  width: 260px;
-  height: 58px;
-  border-radius: 28px;
+  top: 48%;
+  width: 252px;
+  height: 54px;
+  border-radius: 27px;
   transform: translate(-50%, -50%);
-  background: linear-gradient(180deg, #77d9ff, #4d8fff);
-  border: 3px solid rgba(255, 255, 255, 0.62);
+  background: linear-gradient(180deg, #87e0ff 0%, #4d87ff 100%);
+  border: 3px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 12px 26px rgba(54, 112, 215, 0.2);
 }
 
 .podium::after {
@@ -285,19 +345,32 @@ button {
   position: absolute;
   left: 50%;
   top: 68%;
-  width: 210px;
-  height: 46px;
-  border-radius: 22px;
+  width: 200px;
+  height: 42px;
+  border-radius: 21px;
   transform: translate(-50%, -50%);
-  background: #315ed8;
+  background: linear-gradient(180deg, #3f74ec, #2f55c6);
 }
 
 .npc-preview {
-  top: 41%;
-  width: 214px;
-  height: 214px;
-  scale: 0.08;
+  top: 39.5%;
+  width: 210px;
+  height: 210px;
   opacity: 0;
+  scale: 0.08;
+}
+
+.npc-preview::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  width: 154px;
+  height: 24px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: rgba(58, 72, 120, 0.16);
+  filter: blur(5px);
 }
 
 .npc-head,
@@ -305,29 +378,33 @@ button {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  border: 4px solid rgba(255, 255, 255, 0.76);
+  border: 4px solid rgba(255, 255, 255, 0.78);
 }
 
 .npc-head {
-  top: 18%;
+  top: 17%;
   width: 96px;
   height: 96px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--rarity) 72%, #fff);
-  color: white;
+  color: #fff;
   font-size: 30px;
-  font-weight: 900;
-  text-shadow: 0 3px 0 rgba(21, 24, 35, 0.22);
+  font-weight: 950;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.48), transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, var(--rarity) 62%, #fff), var(--rarity));
+  box-shadow: 0 16px 28px rgba(75, 85, 130, 0.18);
+  text-shadow: 0 3px 0 rgba(21, 24, 35, 0.2);
 }
 
 .npc-body {
   top: 52%;
-  width: 112px;
+  width: 114px;
   height: 118px;
-  border-radius: 34px;
-  background: var(--rarity);
+  border-radius: 32px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity) 76%, #fff), var(--rarity));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .rarity-label,
@@ -336,29 +413,40 @@ button {
 .tap-text {
   margin: 0;
   color: #fff;
-  font-weight: 1000;
+  font-weight: 950;
   text-align: center;
-  text-shadow: 0 3px 0 rgba(21, 24, 35, 0.62), 0 0 16px rgba(255, 255, 255, 0.42);
   opacity: 0;
 }
 
 .rarity-label {
   top: 14%;
-  color: var(--rarity);
-  font-size: clamp(22px, 4vw, 30px);
+  min-width: 150px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: clamp(18px, 3.3vw, 25px);
+  line-height: 1;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity) 78%, #fff), var(--rarity));
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--rarity) 26%, transparent);
+  text-shadow: 0 2px 0 rgba(21, 24, 35, 0.24);
 }
 
 .npc-name {
-  top: 71%;
-  width: 86%;
-  font-size: clamp(27px, 5vw, 42px);
+  top: 72%;
+  width: 84%;
+  font-size: clamp(28px, 5vw, 40px);
   line-height: 1;
+  letter-spacing: 0;
+  text-shadow:
+    0 3px 0 rgba(20, 24, 36, 0.72),
+    0 0 18px rgba(255, 255, 255, 0.46);
 }
 
 .new-badge-img {
   left: 78%;
   top: 16%;
-  width: 108px;
+  width: 102px;
   opacity: 0;
   transform: translate(-50%, -50%) rotate(-8deg);
 }
@@ -366,30 +454,35 @@ button {
 .new-badge-text {
   left: 78%;
   top: 16%;
-  width: 108px;
-  font-size: 24px;
+  width: 102px;
+  font-size: 23px;
   transform: translate(-50%, -50%) rotate(-8deg);
+  text-shadow: 0 2px 0 rgba(139, 20, 42, 0.35);
 }
 
 .shine {
   left: -10%;
-  top: 46%;
-  width: 90px;
-  height: 360px;
+  top: 47%;
+  width: 86px;
+  height: 340px;
   object-fit: contain;
   opacity: 0;
   transform: translate(-50%, -50%) rotate(-20deg);
+  pointer-events: none;
 }
 
 .tap-panel-img {
   top: 91%;
-  width: 256px;
+  width: 238px;
   opacity: 0;
 }
 
 .tap-text {
   top: 91%;
-  font-size: 18px;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 16px;
+  font-weight: 850;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.32);
 }
 
 .reveal.is-playing .soft-overlay {
@@ -397,63 +490,69 @@ button {
 }
 
 .reveal.is-playing .stage {
-  animation: stageIn 360ms cubic-bezier(0.15, 1.2, 0.35, 1) forwards;
+  animation: stageIn 360ms cubic-bezier(0.17, 1.15, 0.34, 1) forwards;
 }
 
 .reveal.is-playing .card,
 .reveal.is-playing .card-glow,
 .reveal.is-playing .podium {
-  animation: fadeIn 280ms ease-out forwards;
+  animation: fadeIn 300ms ease-out forwards;
 }
 
 .reveal.is-playing .soft-glow {
-  animation: glowPulse 1700ms ease-in-out 280ms infinite alternate;
+  animation: glowPulse 1500ms ease-in-out 260ms infinite alternate;
 }
 
 .reveal.is-playing .egg {
-  animation: eggIntro 360ms cubic-bezier(0.15, 1.2, 0.35, 1) forwards, eggBounce 720ms ease-in-out 360ms 3, eggShake 520ms ease-in-out 1250ms, eggPop 260ms ease-in 1900ms forwards;
+  animation:
+    eggIntro 340ms cubic-bezier(0.17, 1.15, 0.34, 1) forwards,
+    eggBounce 640ms ease-in-out 350ms 2,
+    eggShake 540ms ease-in-out 1120ms,
+    eggPop 240ms ease-in 1820ms forwards;
 }
 
 .reveal.is-playing .crack {
-  animation: fadeIn 120ms ease-out 1680ms forwards;
+  animation: fadeIn 120ms ease-out 1580ms forwards;
 }
 
 .reveal.is-playing .crack-flash {
-  animation: flashPop 340ms ease-out 1900ms forwards;
+  animation: flashPop 340ms ease-out 1820ms forwards;
 }
 
 .reveal.is-playing .burst-ring {
-  animation: burstPop 520ms cubic-bezier(0.15, 1.2, 0.35, 1) 1900ms forwards, ringSpin 1500ms linear 2120ms infinite;
+  animation:
+    burstPop 520ms cubic-bezier(0.17, 1.15, 0.34, 1) 1820ms forwards,
+    ringSpin 1700ms linear 2050ms infinite;
 }
 
 .reveal.is-playing .sparkle {
-  animation: sparklePop 520ms cubic-bezier(0.15, 1.2, 0.35, 1) var(--delay) forwards;
+  animation: sparklePop 520ms cubic-bezier(0.17, 1.15, 0.34, 1) var(--delay) forwards;
 }
 
 .reveal.is-playing .npc-preview {
-  animation: npcIn 420ms cubic-bezier(0.15, 1.2, 0.35, 1) 2140ms forwards;
+  animation: npcIn 440ms cubic-bezier(0.17, 1.15, 0.34, 1) 2060ms forwards;
 }
 
 .reveal.is-playing .rarity-label {
-  animation: textIn 200ms ease-out 2260ms forwards;
+  animation: textPop 210ms ease-out 2220ms forwards;
 }
 
 .reveal.is-playing .npc-name {
-  animation: textIn 220ms ease-out 2360ms forwards;
+  animation: textPop 230ms ease-out 2320ms forwards;
 }
 
 .reveal.is-playing.has-new .new-badge-img,
 .reveal.is-playing.has-new .new-badge-text {
-  animation: badgeIn 260ms cubic-bezier(0.15, 1.2, 0.35, 1) 2480ms forwards;
+  animation: badgeIn 260ms cubic-bezier(0.17, 1.15, 0.34, 1) 2440ms forwards;
 }
 
 .reveal.is-playing .shine {
-  animation: shineSweep 620ms ease-out 2600ms forwards;
+  animation: shineSweep 620ms ease-out 2520ms forwards;
 }
 
 .reveal.is-playing .tap-panel-img,
 .reveal.is-playing .tap-text {
-  animation: fadeIn 220ms ease-out 3120ms forwards;
+  animation: fadeIn 220ms ease-out 3040ms forwards;
 }
 
 .reveal.is-closing .stage {
@@ -465,92 +564,175 @@ button {
 }
 
 @keyframes overlayIn {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes stageIn {
-  to { opacity: 1; transform: scale(1); }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes fadeIn {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes glowPulse {
-  from { opacity: 0.28; transform: translate(-50%, -50%) scale(0.92); }
-  to { opacity: 0.9; transform: translate(-50%, -50%) scale(1.18); }
+  from {
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  to {
+    opacity: 0.82;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
 }
 
 @keyframes eggIntro {
-  to { scale: 1; }
+  to {
+    scale: 1;
+  }
 }
 
 @keyframes eggBounce {
-  50% { scale: 1.08; transform: translate(-50%, -54%); }
+  50% {
+    scale: 1.06;
+    transform: translate(-50%, -54%);
+  }
 }
 
 @keyframes eggShake {
-  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
-  16% { transform: translate(calc(-50% - 10px), -50%) rotate(-11deg); }
-  32% { transform: translate(calc(-50% + 10px), -50%) rotate(11deg); }
-  48% { transform: translate(calc(-50% - 8px), -50%) rotate(-8deg); }
-  64% { transform: translate(calc(-50% + 8px), -50%) rotate(8deg); }
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  16% {
+    transform: translate(calc(-50% - 9px), -50%) rotate(-10deg);
+  }
+  32% {
+    transform: translate(calc(-50% + 9px), -50%) rotate(10deg);
+  }
+  48% {
+    transform: translate(calc(-50% - 7px), -50%) rotate(-7deg);
+  }
+  64% {
+    transform: translate(calc(-50% + 7px), -50%) rotate(7deg);
+  }
 }
 
 @keyframes eggPop {
-  to { scale: 0.02; opacity: 0; }
+  to {
+    opacity: 0;
+    scale: 0.02;
+  }
 }
 
 @keyframes flashPop {
-  0% { opacity: 0; scale: 0.4; }
-  35% { opacity: 1; scale: 1.9; }
-  100% { opacity: 0; scale: 3.8; }
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+  34% {
+    opacity: 1;
+    scale: 1.7;
+  }
+  100% {
+    opacity: 0;
+    scale: 3.5;
+  }
 }
 
 @keyframes burstPop {
-  to { opacity: 1; width: 390px; height: 390px; transform: translate(-50%, -50%) rotate(90deg); }
+  to {
+    width: 360px;
+    height: 360px;
+    opacity: 0.96;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
 }
 
 @keyframes ringSpin {
-  to { transform: translate(-50%, -50%) rotate(450deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(450deg);
+  }
 }
 
 @keyframes sparklePop {
-  to { opacity: 1; transform: translate(var(--x), var(--y)) scale(1) rotate(80deg); }
+  to {
+    opacity: 0.95;
+    transform: translate(var(--x), var(--y)) scale(var(--scale)) rotate(72deg);
+  }
 }
 
 @keyframes npcIn {
-  to { opacity: 1; scale: 1; }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }
 
-@keyframes textIn {
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+@keyframes textPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 @keyframes badgeIn {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes shineSweep {
-  15% { opacity: 1; }
-  100% { left: 112%; opacity: 0; }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 112%;
+    opacity: 0;
+  }
 }
 
 @keyframes closeStage {
-  to { opacity: 0; transform: scale(0.88); }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
 }
 
 @keyframes closeOverlay {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 760px) {
   .lab-shell {
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 12px;
+  }
+
+  .controls {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+
+  .controls > div,
+  .controls button {
+    grid-column: 1 / -1;
   }
 
   .preview-wrap {
-    min-height: 680px;
+    min-height: 640px;
   }
 }

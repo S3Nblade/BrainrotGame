@@ -17,16 +17,19 @@ const sparkleLayer = reveal.querySelector(".sparkles");
 
 function buildSparkles() {
   sparkleLayer.replaceChildren();
-  for (let i = 0; i < 18; i += 1) {
+  for (let i = 0; i < 16; i += 1) {
     const sparkle = document.createElement("span");
     sparkle.className = "sparkle";
-    const angle = (Math.PI * 2 * i) / 18;
-    const distance = 116 + (i % 4) * 22;
+    const angle = (Math.PI * 2 * i) / 16;
+    const distance = 108 + (i % 4) * 20;
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance * 0.76;
+    const size = 22 + (i % 4) * 6;
     sparkle.style.setProperty("--x", `${x}px`);
     sparkle.style.setProperty("--y", `${y}px`);
-    sparkle.style.setProperty("--delay", `${1.98 + i * 0.025}s`);
+    sparkle.style.setProperty("--size", `${size}px`);
+    sparkle.style.setProperty("--scale", `${0.86 + (i % 3) * 0.1}`);
+    sparkle.style.setProperty("--delay", `${1.9 + i * 0.022}s`);
     sparkleLayer.appendChild(sparkle);
   }
 }
