@@ -330,6 +330,20 @@ local function isNamedContainer(obj, wantedName)
 	return (obj:IsA("Model") or obj:IsA("Folder")) and normalize(obj.Name) == normalize(wantedName)
 end
 
+local function isMoneyCollectName(name)
+	local n = normalize(name)
+	return n == "moneycollect"
+		or n == "collectmoney"
+		or n == "moneycollectpart"
+		or n == "collectmoneypart"
+		or string.find(n, "moneycollect", 1, true) ~= nil
+		or string.find(n, "collectmoney", 1, true) ~= nil
+end
+
+local function isMoneyCollectContainer(obj)
+	return (obj:IsA("Model") or obj:IsA("Folder")) and isMoneyCollectName(obj.Name)
+end
+
 local function findNamedAncestor(obj, wantedName)
 	local current = obj
 
@@ -349,6 +363,34 @@ local function hasNamedAncestor(obj, wantedName)
 
 	while current and current ~= Workspace do
 		if isNamedContainer(current, wantedName) then
+			return true
+		end
+
+		current = current.Parent
+	end
+
+	return false
+end
+
+local function findMoneyCollectAncestor(obj)
+	local current = obj
+
+	while current and current ~= Workspace do
+		if isMoneyCollectContainer(current) then
+			return current
+		end
+
+		current = current.Parent
+	end
+
+	return nil
+end
+
+local function hasMoneyCollectAncestor(obj)
+	local current = obj.Parent
+
+	while current and current ~= Workspace do
+		if isMoneyCollectContainer(current) then
 			return true
 		end
 
@@ -475,22 +517,24 @@ end
 
 local function getCollectContainers(plot)
 	local collects = {}
+	local used = {}
+
+	local function addCollect(container, part)
+		if part and not used[part] then
+			used[part] = true
+			table.insert(collects, {
+				container = container,
+				part = part,
+			})
+		end
+	end
 
 	for _, obj in ipairs(plot:GetDescendants()) do
-		if isNamedContainer(obj, MONEY_COLLECT_NAME) and not hasNamedAncestor(obj, MONEY_COLLECT_NAME) then
+		if isMoneyCollectContainer(obj) and not hasMoneyCollectAncestor(obj) then
 			local mainPart = getBestMoneyPart(obj)
-
-			if mainPart then
-				table.insert(collects, {
-					container = obj,
-					part = mainPart,
-				})
-			end
-		elseif obj:IsA("BasePart") and normalize(obj.Name) == normalize(MONEY_COLLECT_NAME) then
-			table.insert(collects, {
-				container = obj,
-				part = obj,
-			})
+			addCollect(obj, mainPart)
+		elseif obj:IsA("BasePart") and (isMoneyCollectName(obj.Name) or obj:GetAttribute("MoneyCollectPart") == true) then
+			addCollect(findMoneyCollectAncestor(obj) or obj, obj)
 		end
 	end
 
@@ -1235,7 +1279,10 @@ local function findAssignedNpcForCollect(player, collectPart)
 	local slotId = tostring(collectPart:GetAttribute("BrainrotSlotId") or "")
 
 	if slotId ~= "" then
-		return getNpcBySlot(player, slotId)
+		local bySlot = getNpcBySlot(player, slotId)
+		if bySlot then
+			return bySlot
+		end
 	end
 
 	local uid = collectPart:GetAttribute("LinkedBrainrotUID")
@@ -1245,6 +1292,33 @@ local function findAssignedNpcForCollect(player, collectPart)
 				return npc
 			end
 		end
+	end
+
+	local plot = findPlotFromObject(collectPart)
+	local bestNpc = nil
+	local bestDistance = math.huge
+	for _, npc in ipairs(npcFolder:GetChildren()) do
+		if isPlacedNpc(npc) and ownsNpc(player, npc) then
+			local assignedPath = tostring(npc:GetAttribute("AssignedSlotPath") or "")
+			local assignedSlot = tostring(npc:GetAttribute("AssignedSlotId") or "")
+			local root = getNpcRoot(npc)
+
+			if assignedSlot ~= "" and assignedSlot == slotId then
+				return npc
+			elseif assignedPath ~= "" and string.find(assignedPath, slotId, 1, true) then
+				return npc
+			elseif plot and root and findPlotFromObject(root) == plot then
+				local distance = (root.Position - collectPart.Position).Magnitude
+				if distance < bestDistance then
+					bestDistance = distance
+					bestNpc = npc
+				end
+			end
+		end
+	end
+
+	if bestNpc and bestDistance <= 80 then
+		return bestNpc
 	end
 
 	return nil
@@ -1311,7 +1385,7 @@ local function setupCollectTouch(collect)
 			collectConnections[part] = part.Touched:Connect(function(hit)
 				local mainPart = part
 
-				local collectContainer = findNamedAncestor(part, MONEY_COLLECT_NAME)
+				local collectContainer = findMoneyCollectAncestor(part)
 				if collectContainer then
 					mainPart = getBestMoneyPart(collectContainer) or part
 				end

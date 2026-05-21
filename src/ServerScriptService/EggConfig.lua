@@ -99,7 +99,7 @@ EggConfig.Zones = {
 		AllowedEggs = {
 			{
 				Id = "CommonEgg",
-				DisplayName = "Common Egg",
+				DisplayName = "Common",
 				Rarity = "Common",
 				Tier = 1,
 				SpawnWeight = 75,
@@ -122,7 +122,7 @@ EggConfig.Zones = {
 			},
 			{
 				Id = "RareEgg",
-				DisplayName = "Rare Egg",
+				DisplayName = "Rare",
 				Rarity = "Rare",
 				Tier = 2,
 				SpawnWeight = 25,
@@ -157,7 +157,7 @@ EggConfig.Zones = {
 		AllowedEggs = {
 			{
 				Id = "BigRareEgg",
-				DisplayName = "Big Rare Egg",
+				DisplayName = "Big Rare",
 				Rarity = "Rare",
 				Tier = 3,
 				SpawnWeight = 65,
@@ -174,7 +174,7 @@ EggConfig.Zones = {
 			},
 			{
 				Id = "EpicEgg",
-				DisplayName = "Epic Egg",
+				DisplayName = "Epic",
 				Rarity = "Epic",
 				Tier = 4,
 				SpawnWeight = 35,
@@ -201,7 +201,7 @@ EggConfig.Zones = {
 		AllowedEggs = {
 			{
 				Id = "BigEpicEgg",
-				DisplayName = "Big Epic Egg",
+				DisplayName = "Big Epic",
 				Rarity = "Epic",
 				Tier = 5,
 				SpawnWeight = 70,
@@ -218,7 +218,7 @@ EggConfig.Zones = {
 			},
 			{
 				Id = "LegendaryEgg",
-				DisplayName = "Legendary Egg",
+				DisplayName = "Legendary",
 				Rarity = "Legendary",
 				Tier = 6,
 				SpawnWeight = 30,

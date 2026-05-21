@@ -369,19 +369,35 @@ local function createLetterbox()
 
 	local top = Instance.new("Frame")
 	top.Name = "TopBar"
-	top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	top.BackgroundColor3 = Color3.fromRGB(63, 112, 230)
+	top.BackgroundTransparency = 0.12
 	top.BorderSizePixel = 0
 	top.Position = UDim2.fromScale(0, -0.13)
 	top.Size = UDim2.new(1, 0, 0.13, 0)
 	top.Parent = gui
+	local topGradient = Instance.new("UIGradient")
+	topGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 220, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 168, 224)),
+	})
+	topGradient.Rotation = 0
+	topGradient.Parent = top
 
 	local bottom = Instance.new("Frame")
 	bottom.Name = "BottomBar"
-	bottom.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	bottom.BackgroundColor3 = Color3.fromRGB(255, 168, 224)
+	bottom.BackgroundTransparency = 0.12
 	bottom.BorderSizePixel = 0
 	bottom.Position = UDim2.fromScale(0, 1)
 	bottom.Size = UDim2.new(1, 0, 0.13, 0)
 	bottom.Parent = gui
+	local bottomGradient = Instance.new("UIGradient")
+	bottomGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 238, 132)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 220, 255)),
+	})
+	bottomGradient.Rotation = 0
+	bottomGradient.Parent = bottom
 
 	TweenService:Create(top, TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
 		Position = UDim2.fromScale(0, 0),
