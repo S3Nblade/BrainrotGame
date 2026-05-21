@@ -726,8 +726,8 @@ local function finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId
 	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
 	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
 	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
-	hatchPrompt.HoldDuration = 0.15
-	hatchPrompt.MaxActivationDistance = 10
+	hatchPrompt.HoldDuration = 0.08
+	hatchPrompt.MaxActivationDistance = 14
 	hatchPrompt.RequiresLineOfSight = false
 	hatchPrompt.Enabled = false
 	hatchPrompt.Parent = root
@@ -1116,6 +1116,12 @@ local function refreshEggPrompt(egg)
 	local root = getRoot(egg)
 	local prompt = root and root:FindFirstChild("EggHatchPrompt")
 	if prompt and prompt:IsA("ProximityPrompt") then
+		prompt.KeyboardKeyCode = Enum.KeyCode.E
+		prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+		prompt.HoldDuration = 0.08
+		prompt.MaxActivationDistance = math.max(prompt.MaxActivationDistance, 14)
+		prompt.RequiresLineOfSight = false
+
 		local stunned = egg:GetAttribute("CaptureStunned") == true
 
 		if stunned then

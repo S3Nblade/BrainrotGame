@@ -14,6 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local TARGET_PROMPT_NAMES = {
 	["BrainrotCoreStandPrompt"] = true,
+	["EggHatchPrompt"] = true,
 }
 
 local activePrompts = {}
@@ -64,6 +65,7 @@ local function makeActionText(prompt)
 
 	action = action:gsub("Return Brainrot", "Pickup")
 	action = action:gsub("Place Brainrot", "Place")
+	action = action:gsub("Press E to Hatch", "Hatch")
 
 	return action
 end
