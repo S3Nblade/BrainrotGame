@@ -90,7 +90,11 @@ local function forceLegacyOverheadsHidden(npc, hidden)
 
 	for _, obj in ipairs(npc:GetDescendants()) do
 		if obj:IsA("BillboardGui") and obj.Name ~= "CaptureChaseTimerGui" then
-			obj.Enabled = not hidden
+			if obj.Name == "CaptureHealthBar" or string.find(string.lower(obj.Name), "healthbar", 1, true) then
+				obj:Destroy()
+			else
+				obj.Enabled = not hidden
+			end
 		end
 	end
 end
@@ -547,7 +551,7 @@ local function updateHPBar(data, npc)
 
 	data.hpTween = TweenService:Create(
 		data.hpBar.innerClip,
-		TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		TweenInfo.new(0.24, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 		{ Size = newSize }
 	)
 

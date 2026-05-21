@@ -330,6 +330,27 @@ local function isNamedContainer(obj, wantedName)
 	return (obj:IsA("Model") or obj:IsA("Folder")) and normalize(obj.Name) == normalize(wantedName)
 end
 
+local function isStandContainer(obj)
+	if not (obj:IsA("Model") or obj:IsA("Folder") or obj:IsA("BasePart")) then
+		return false
+	end
+
+	if obj:GetAttribute("BrainrotStand") == true then
+		return true
+	end
+
+	if (obj:IsA("Model") or obj:IsA("Folder")) and obj:GetAttribute("BrainrotSlotId") ~= nil then
+		return true
+	end
+
+	local n = normalize(obj.Name)
+	return n == normalize(STAND_MODEL_NAME)
+		or n == "brainrotstand"
+		or n == "stand"
+		or string.find(n, "brainrotstand", 1, true) ~= nil
+		or string.find(n, "brainrotcore", 1, true) ~= nil
+end
+
 local function isMoneyCollectName(name)
 	local n = normalize(name)
 	return n == "moneycollect"
@@ -349,7 +370,7 @@ local function findNamedAncestor(obj, wantedName)
 	local current = obj
 
 	while current and current ~= Workspace do
-		if isNamedContainer(current, wantedName) then
+		if (wantedName == STAND_MODEL_NAME and isStandContainer(current)) or isNamedContainer(current, wantedName) then
 			return current
 		end
 
@@ -363,7 +384,7 @@ local function hasNamedAncestor(obj, wantedName)
 	local current = obj.Parent
 
 	while current and current ~= Workspace do
-		if isNamedContainer(current, wantedName) then
+		if (wantedName == STAND_MODEL_NAME and isStandContainer(current)) or isNamedContainer(current, wantedName) then
 			return true
 		end
 
@@ -454,7 +475,7 @@ local function getStandSlots(plot)
 	local slots = {}
 
 	for _, obj in ipairs(plot:GetDescendants()) do
-		if isNamedContainer(obj, STAND_MODEL_NAME) and not hasNamedAncestor(obj, STAND_MODEL_NAME) then
+		if isStandContainer(obj) and not hasNamedAncestor(obj, STAND_MODEL_NAME) then
 			local part = getBestStandPart(obj)
 			if part then
 				table.insert(slots, {
@@ -1329,6 +1350,49 @@ local function findAssignedNpcForCollect(player, collectPart)
 	return nil
 end
 
+local function collectForPlayer(player, collectPart)
+	local plot = findPlotFromObject(collectPart)
+	if not playerOwnsPlot(player, plot) then
+		return false
+	end
+
+	local npc = findAssignedNpcForCollect(player, collectPart)
+
+	if not npc then
+		collectPart:SetAttribute("PrivateCollectAmount", 0)
+		collectPart:SetAttribute("LinkedBrainrotUID", nil)
+		return false
+	end
+
+	local npcKey =
+		tostring(player.UserId)
+		.. ":"
+		.. tostring(getStrongId(npc) or npc:GetAttribute("AssignedSlotId") or collectPart:GetFullName())
+
+	if collectDebounce[npcKey] and os.clock() - collectDebounce[npcKey] < COLLECT_DEBOUNCE then
+		return false
+	end
+
+	collectDebounce[npcKey] = os.clock()
+
+	local amount = math.floor(tonumber(npc:GetAttribute("Earned")) or 0)
+
+	if amount <= 0 then
+		collectPart:SetAttribute("PrivateCollectAmount", 0)
+		collectPart:SetAttribute("LinkedBrainrotUID", getStrongId(npc))
+		return false
+	end
+
+	npc:SetAttribute("Earned", 0)
+
+	collectPart:SetAttribute("PrivateCollectAmount", 0)
+	collectPart:SetAttribute("LinkedBrainrotUID", getStrongId(npc))
+
+	addMoney(player, amount)
+	-- Local pad effect handles collect feedback.
+	return true
+end
+
 local function collectFromPart(collectPart, hit)
 	local character = hit and hit:FindFirstAncestorOfClass("Model")
 	if not character then
@@ -1340,45 +1404,7 @@ local function collectFromPart(collectPart, hit)
 		return
 	end
 
-	local plot = findPlotFromObject(collectPart)
-	if not playerOwnsPlot(player, plot) then
-		return
-	end
-
-	local npc = findAssignedNpcForCollect(player, collectPart)
-
-	if not npc then
-		collectPart:SetAttribute("PrivateCollectAmount", 0)
-		collectPart:SetAttribute("LinkedBrainrotUID", nil)
-		return
-	end
-
-	local npcKey =
-		tostring(player.UserId)
-		.. ":"
-		.. tostring(getStrongId(npc) or npc:GetAttribute("AssignedSlotId") or collectPart:GetFullName())
-
-	if collectDebounce[npcKey] and os.clock() - collectDebounce[npcKey] < COLLECT_DEBOUNCE then
-		return
-	end
-
-	collectDebounce[npcKey] = os.clock()
-
-	local amount = math.floor(tonumber(npc:GetAttribute("Earned")) or 0)
-
-	if amount <= 0 then
-		collectPart:SetAttribute("PrivateCollectAmount", 0)
-		collectPart:SetAttribute("LinkedBrainrotUID", getStrongId(npc))
-		return
-	end
-
-	npc:SetAttribute("Earned", 0)
-
-	collectPart:SetAttribute("PrivateCollectAmount", 0)
-	collectPart:SetAttribute("LinkedBrainrotUID", getStrongId(npc))
-
-	addMoney(player, amount)
-	-- Local pad effect handles collect feedback.
+	collectForPlayer(player, collectPart)
 end
 
 local function setupCollectTouch(collect)
@@ -1529,8 +1555,81 @@ local function tickMoney(dt)
 	end
 end
 
+local function getPlayerRoot(player)
+	local character = player and player.Character
+	return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function findNearestSlotForPlayer(player, maxDistance)
+	local root = getPlayerRoot(player)
+	if not root then
+		return nil
+	end
+
+	local bestSlot = nil
+	local bestDistance = maxDistance or PROMPT_DISTANCE
+
+	for _, plot in ipairs(getAllPlots()) do
+		if playerOwnsPlot(player, plot) then
+			for _, slot in ipairs(getStandSlots(plot)) do
+				local distance = (root.Position - slot.part.Position).Magnitude
+				if distance <= bestDistance then
+					bestDistance = distance
+					bestSlot = slot
+				end
+			end
+		end
+	end
+
+	return bestSlot
+end
+
+local function findNearestCollectForPlayer(player, maxDistance)
+	local root = getPlayerRoot(player)
+	if not root then
+		return nil
+	end
+
+	local bestCollect = nil
+	local bestDistance = maxDistance or 14
+
+	for _, plot in ipairs(getAllPlots()) do
+		if playerOwnsPlot(player, plot) then
+			for _, collect in ipairs(getCollectContainers(plot)) do
+				local distance = (root.Position - collect.part.Position).Magnitude
+				if distance <= bestDistance then
+					bestDistance = distance
+					bestCollect = collect
+				end
+			end
+		end
+	end
+
+	return bestCollect
+end
+
 pickupRemote.OnServerEvent:Connect(function(player)
-	notify(player, "Use your plot stands to place or return brainrots.", "warning")
+	local slot = findNearestSlotForPlayer(player, PROMPT_DISTANCE + 2)
+	if slot then
+		local plot = findPlotFromObject(slot.part)
+		if playerOwnsPlot(player, plot) then
+			local npc = getNpcBySlot(player, slot.slotId)
+			if npc then
+				returnNpcFromSlot(player, slot)
+				return
+			elseif getHeldBrainrotTool(player) then
+				placeNpcOnSlot(player, slot)
+				return
+			end
+		end
+	end
+
+	local collect = findNearestCollectForPlayer(player, 16)
+	if collect and collectForPlayer(player, collect.part) then
+		return
+	end
+
+	notify(player, "Stand near your plot stand or money collect pad.", "warning")
 end)
 
 Players.PlayerAdded:Connect(function(player)
