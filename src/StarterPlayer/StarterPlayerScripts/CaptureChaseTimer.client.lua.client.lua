@@ -285,8 +285,19 @@ end
 local function setBarRatio(barData, ratio)
 	ratio = math.clamp(ratio, 0, 1)
 
-	barData.innerClip.Size = UDim2.new(1, -6, 1, -6)
 	barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
+end
+
+local function styleHPBarShell(data, isEgg)
+	if isEgg then
+		data.hpBar.outer.BackgroundTransparency = 1
+		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
+		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
+	else
+		data.hpBar.outer.BackgroundTransparency = 0
+		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
+		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
+	end
 end
 
 local function showStunnedPopup(npc)
@@ -546,6 +557,7 @@ local function updateHPBar(data, npc)
 
 	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
 	data.hpBar.text.Text = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
+	styleHPBarShell(data, isEgg)
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
 		return
@@ -602,7 +614,7 @@ local function setCaptureMode(data, npc)
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.outer.BackgroundTransparency = isEgg and 1 or 0
+	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
 
@@ -639,6 +651,7 @@ local function setStunnedMode(data, npc)
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 210, 60)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 245, 160)
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
@@ -661,6 +674,7 @@ local function setPanicMode(data)
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	styleHPBarShell(data, false)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 192, 64)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 232, 128)
 	data.hpBar.text.Text = "EVADING..."
