@@ -178,6 +178,14 @@ local function getAllBaseParts(container)
 end
 
 local function getAllPlots()
+	local plotService = _G.BrainrotPlotService
+	if type(plotService) == "table" and type(plotService.GetAllPlots) == "function" then
+		local ok, servicePlots = pcall(plotService.GetAllPlots)
+		if ok and type(servicePlots) == "table" and #servicePlots > 0 then
+			return servicePlots
+		end
+	end
+
 	local plotsFolder = getPlotsFolder()
 	local plots = {}
 
@@ -196,13 +204,14 @@ end
 
 local function findPlotFromObject(obj)
 	local plotsFolder = getPlotsFolder()
-	if not plotsFolder then
-		return nil
-	end
 
 	local current = obj
 	while current and current ~= Workspace do
-		if current.Parent == plotsFolder then
+		if (plotsFolder and current.Parent == plotsFolder)
+			or current:GetAttribute("OwnerUserId") ~= nil
+			or current:GetAttribute("OwnerName") ~= nil
+			or current:GetAttribute("Claimed") ~= nil
+		then
 			return current
 		end
 

@@ -18,7 +18,7 @@ local function looksLikePlotsFolder(container)
 	end
 
 	local name = string.lower(container.Name)
-	if name ~= "plots" and name ~= "plot" then
+	if name ~= "plots" then
 		return false
 	end
 
@@ -109,19 +109,142 @@ local function findBaseFloor(plot)
 	return getFirstBasePart(plot)
 end
 
-local function getAllPlots()
-	local plotsFolder = getPlotsFolder() or waitForPlotsFolder(2)
-	local plots = {}
+local function normalizedName(obj)
+	return string.lower(string.gsub(obj and obj.Name or "", "%s+", ""))
+end
 
-	if not plotsFolder then
-		warn("[PlotService] Missing plots folder. Expected Workspace.Plots, Workspace.plots, or a nested SpawnMap/Plots folder.")
-		return plots
+local function isImportedMapContainer(obj)
+	local name = normalizedName(obj)
+	return obj == Workspace
+		or name == "spawnmap"
+		or name == "map"
+		or name == "folder"
+		or string.sub(name, 1, 6) == "cloud_"
+end
+
+local function scorePlotCandidate(candidate)
+	if not candidate or not (candidate:IsA("Model") or candidate:IsA("Folder") or candidate:IsA("BasePart")) then
+		return 0
 	end
 
-	for _, plot in ipairs(plotsFolder:GetChildren()) do
-		if (plot:IsA("Model") or plot:IsA("Folder") or plot:IsA("BasePart")) and getFirstBasePart(plot) then
-			table.insert(plots, plot)
+	local score = 0
+	local descendants = candidate:IsA("BasePart") and {} or candidate:GetDescendants()
+	for _, obj in ipairs(descendants) do
+		local name = normalizedName(obj)
+		if name == "basefloor" then
+			score += 8
+		elseif name == "nameofplayer" or name == "ownername" then
+			score += 5
+		elseif string.find(name, "brainrotstand", 1, true) or string.find(name, "npcslot", 1, true) then
+			score += 4
+		elseif string.find(name, "moneycollect", 1, true) or string.find(name, "collectmoney", 1, true) then
+			score += 4
 		end
+
+		if obj:GetAttribute("BrainrotSlotId") ~= nil then
+			score += 4
+		end
+		if obj:GetAttribute("MoneyCollectPart") == true or obj:GetAttribute("PrivateCollectGuiPart") == true then
+			score += 4
+		end
+	end
+
+	local ownName = normalizedName(candidate)
+	if ownName == "basefloor" then
+		score += 8
+	elseif string.find(ownName, "plot", 1, true) then
+		score += 3
+	end
+
+	return score
+end
+
+local function findPlotRootFromMarker(marker)
+	if normalizedName(marker) == "basefloor" then
+		local parent = marker.Parent
+		if parent
+			and parent ~= Workspace
+			and (parent:IsA("Model") or parent:IsA("Folder"))
+			and not isImportedMapContainer(parent)
+		then
+			return parent
+		end
+	end
+
+	local best
+	local bestScore = 0
+	local current = marker
+
+	while current and current ~= Workspace do
+		if current:IsA("Model") or current:IsA("Folder") or current:IsA("BasePart") then
+			local score = scorePlotCandidate(current)
+			if score > bestScore and not isImportedMapContainer(current) then
+				best = current
+				bestScore = score
+			end
+		end
+
+		current = current.Parent
+	end
+
+	if best and bestScore >= 8 and getFirstBasePart(best) then
+		return best
+	end
+
+	local parent = marker.Parent
+	if parent and parent ~= Workspace and (parent:IsA("Model") or parent:IsA("Folder") or parent:IsA("BasePart")) then
+		return parent
+	end
+
+	return marker:IsA("BasePart") and marker or nil
+end
+
+local function discoverPlotsFromMarkers()
+	local plots = {}
+	local used = {}
+
+	local function addPlot(plot)
+		if not plot or used[plot] or not getFirstBasePart(plot) then
+			return
+		end
+
+		used[plot] = true
+		table.insert(plots, plot)
+	end
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		local name = normalizedName(obj)
+		local marker = name == "basefloor"
+			or name == "nameofplayer"
+			or string.find(name, "brainrotstand", 1, true) ~= nil
+			or string.find(name, "moneycollect", 1, true) ~= nil
+			or string.find(name, "collectmoney", 1, true) ~= nil
+			or obj:GetAttribute("BrainrotSlotId") ~= nil
+			or obj:GetAttribute("MoneyCollectPart") == true
+			or obj:GetAttribute("PrivateCollectGuiPart") == true
+
+		if marker then
+			addPlot(findPlotRootFromMarker(obj))
+		end
+	end
+
+	return plots
+end
+
+local function getAllPlots()
+	local plotsFolder = getPlotsFolder()
+	local plots = {}
+
+	if plotsFolder then
+		for _, plot in ipairs(plotsFolder:GetChildren()) do
+			if (plot:IsA("Model") or plot:IsA("Folder") or plot:IsA("BasePart")) and getFirstBasePart(plot) then
+				table.insert(plots, plot)
+			end
+		end
+	end
+
+	if #plots == 0 then
+		plots = discoverPlotsFromMarkers()
 	end
 
 	table.sort(plots, function(a, b)
@@ -140,6 +263,22 @@ local function getAllPlots()
 	end)
 
 	return plots
+end
+
+local function waitForAnyPlots(timeout)
+	local started = os.clock()
+	local limit = tonumber(timeout) or 20
+
+	while os.clock() - started < limit do
+		local plots = getAllPlots()
+		if #plots > 0 then
+			return plots
+		end
+
+		task.wait(0.25)
+	end
+
+	return {}
 end
 
 local function getRebirths(player)
@@ -485,13 +624,13 @@ local function releasePlayer(player)
 end
 
 task.spawn(function()
-	local folder = waitForPlotsFolder(20)
-	if not folder then
-		warn("[PlotService] Could not find plots folder during startup.")
+	local plots = waitForAnyPlots(25)
+	if #plots == 0 then
+		warn("[PlotService] Could not find assignable plots during startup.")
 		return
 	end
 
-	for _, plot in ipairs(getAllPlots()) do
+	for _, plot in ipairs(plots) do
 		clearPlotOwner(plot)
 	end
 
@@ -523,5 +662,12 @@ for _, player in ipairs(Players:GetPlayers()) do
 		end
 	end)
 end
+
+_G.BrainrotPlotService = {
+	GetAllPlots = getAllPlots,
+	GetPlayerPlot = function(player)
+		return playerPlots[player]
+	end,
+}
 
 print("[PlotService] Loaded fixed plot ownership system.")

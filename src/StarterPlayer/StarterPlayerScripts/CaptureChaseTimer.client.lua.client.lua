@@ -82,7 +82,22 @@ local function hideRobloxHumanoidName(npc)
 
 	pcall(function()
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+		humanoid.NameDisplayDistance = 0
+		humanoid.HealthDisplayDistance = 0
 	end)
+end
+
+local function isLegacyHealthGui(obj)
+	if not obj:IsA("BillboardGui") or obj.Name == "CaptureChaseTimerGui" or obj.Name == "StunnedPopup" then
+		return false
+	end
+
+	local lowerName = string.lower(obj.Name)
+	return obj.Name == "CaptureHealthBar"
+		or string.find(lowerName, "health", 1, true) ~= nil
+		or string.find(lowerName, "hp", 1, true) ~= nil
+		or string.find(lowerName, "capture", 1, true) ~= nil
 end
 
 local function forceLegacyOverheadsHidden(npc, hidden)
@@ -90,7 +105,7 @@ local function forceLegacyOverheadsHidden(npc, hidden)
 
 	for _, obj in ipairs(npc:GetDescendants()) do
 		if obj:IsA("BillboardGui") and obj.Name ~= "CaptureChaseTimerGui" then
-			if obj.Name == "CaptureHealthBar" or string.find(string.lower(obj.Name), "healthbar", 1, true) then
+			if isLegacyHealthGui(obj) or (hidden and npc:GetAttribute("EggBrainrot") == true) then
 				obj:Destroy()
 			else
 				obj.Enabled = not hidden
@@ -551,11 +566,23 @@ local function updateHPBar(data, npc)
 
 	data.hpTween = TweenService:Create(
 		data.hpBar.innerClip,
-		TweenInfo.new(0.24, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+		TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		{ Size = newSize }
 	)
 
 	data.hpTween:Play()
+
+	if ratio < (data.lastPulseRatio or 1) then
+		stopTween(data.hpPulseTween)
+		data.hpBar.fill.BackgroundTransparency = 0
+		data.hpPulseTween = TweenService:Create(
+			data.hpBar.fill,
+			TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true),
+			{ BackgroundTransparency = 0.18 }
+		)
+		data.hpPulseTween:Play()
+	end
+	data.lastPulseRatio = ratio
 end
 
 local function setCaptureMode(data, npc)
