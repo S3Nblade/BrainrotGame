@@ -348,16 +348,11 @@ local function isStandContainer(obj)
 		return true
 	end
 
-	if (obj:IsA("Model") or obj:IsA("Folder")) and obj:GetAttribute("BrainrotSlotId") ~= nil then
-		return true
-	end
-
 	local n = normalize(obj.Name)
 	return n == normalize(STAND_MODEL_NAME)
 		or n == "brainrotstand"
 		or n == "stand"
 		or string.find(n, "brainrotstand", 1, true) ~= nil
-		or string.find(n, "brainrotcore", 1, true) ~= nil
 end
 
 local function isMoneyCollectName(name)
@@ -482,11 +477,13 @@ end
 
 local function getStandSlots(plot)
 	local slots = {}
+	local usedPart = {}
 
 	for _, obj in ipairs(plot:GetDescendants()) do
 		if isStandContainer(obj) and not hasNamedAncestor(obj, STAND_MODEL_NAME) then
 			local part = getBestStandPart(obj)
-			if part then
+			if part and not usedPart[part] then
+				usedPart[part] = true
 				table.insert(slots, {
 					container = obj,
 					part = part,

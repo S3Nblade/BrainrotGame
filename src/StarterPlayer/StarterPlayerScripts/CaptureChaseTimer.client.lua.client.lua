@@ -285,11 +285,8 @@ end
 local function setBarRatio(barData, ratio)
 	ratio = math.clamp(ratio, 0, 1)
 
-	if ratio <= 0 then
-		barData.innerClip.Size = UDim2.new(0, 0, 1, -6)
-	else
-		barData.innerClip.Size = UDim2.new(ratio, -6 * ratio, 1, -6)
-	end
+	barData.innerClip.Size = UDim2.new(1, -6, 1, -6)
+	barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
 end
 
 local function showStunnedPopup(npc)
@@ -558,14 +555,10 @@ local function updateHPBar(data, npc)
 	stopTween(data.hpTween)
 
 	local newSize
-	if ratio <= 0 then
-		newSize = UDim2.new(0, 0, 1, -6)
-	else
-		newSize = UDim2.new(ratio, -6 * ratio, 1, -6)
-	end
+	newSize = UDim2.new(ratio, 0, 1, 0)
 
 	data.hpTween = TweenService:Create(
-		data.hpBar.innerClip,
+		data.hpBar.fill,
 		TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		{ Size = newSize }
 	)
@@ -609,7 +602,7 @@ local function setCaptureMode(data, npc)
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.outer.BackgroundTransparency = isEgg and 0.08 or 0
+	data.hpBar.outer.BackgroundTransparency = isEgg and 1 or 0
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
 

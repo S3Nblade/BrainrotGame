@@ -193,13 +193,18 @@ end
 
 local function getOwnPlot()
 	local plots = getPlotsFolder()
-	if not plots then
-		return nil
+
+	if plots then
+		for _, plot in ipairs(plots:GetChildren()) do
+			if plotOwnedByLocalPlayer(plot) then
+				return plot
+			end
+		end
 	end
 
-	for _, plot in ipairs(plots:GetChildren()) do
-		if plotOwnedByLocalPlayer(plot) then
-			return plot
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if (obj:IsA("Model") or obj:IsA("Folder") or obj:IsA("BasePart")) and plotOwnedByLocalPlayer(obj) then
+			return obj
 		end
 	end
 
@@ -274,6 +279,12 @@ local function getCollectPartsInPlot(plot)
 			if part and not seen[part] then
 				seen[part] = true
 				table.insert(parts, part)
+			end
+		elseif obj:IsA("BasePart")
+			and (obj:GetAttribute("PrivateCollectGuiPart") == true or obj:GetAttribute("MoneyCollectPart") == true) then
+			if not seen[obj] then
+				seen[obj] = true
+				table.insert(parts, obj)
 			end
 		end
 	end

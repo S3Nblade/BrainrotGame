@@ -1462,7 +1462,9 @@ local function damageEgg(player, egg, amount)
 
 	local humanoid = egg:FindFirstChildOfClass("Humanoid")
 	if humanoid then
-		humanoid.Health = math.max(1, hp)
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		humanoid.Health = humanoid.MaxHealth
 	end
 
 	local body = egg:FindFirstChild("EggBody", true)

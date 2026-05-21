@@ -40,14 +40,15 @@ end
 
 local function findPlotFromObject(obj)
 	local plotsFolder = getPlotsFolder()
-	if not plotsFolder then
-		return nil
-	end
 
 	local current = obj
 
 	while current and current ~= Workspace do
-		if current.Parent == plotsFolder then
+		if (plotsFolder and current.Parent == plotsFolder)
+			or current:GetAttribute("OwnerUserId") ~= nil
+			or current:GetAttribute("OwnerName") ~= nil
+			or current:GetAttribute("Claimed") ~= nil
+		then
 			return current
 		end
 

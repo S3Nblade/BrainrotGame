@@ -149,13 +149,18 @@ end
 
 local function getOwnPlot()
 	local plotsFolder = getPlotsFolder()
-	if not plotsFolder then
-		return nil
+
+	if plotsFolder then
+		for _, plot in ipairs(plotsFolder:GetChildren()) do
+			if ownsPlot(plot) then
+				return plot
+			end
+		end
 	end
 
-	for _, plot in ipairs(plotsFolder:GetChildren()) do
-		if ownsPlot(plot) then
-			return plot
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if (obj:IsA("Model") or obj:IsA("Folder") or obj:IsA("BasePart")) and ownsPlot(obj) then
+			return obj
 		end
 	end
 

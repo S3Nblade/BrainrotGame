@@ -35,10 +35,16 @@ local function updateNpc(npc)
 	local held = heldBy ~= nil and heldBy ~= 0 and heldBy ~= ""
 
 	local shouldHideOverhead = isHiding and not stunned and not placed and not held
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
 
 	for _, obj in ipairs(root:GetDescendants()) do
 		if obj:IsA("BillboardGui") then
-			if obj.Name == "NPCOverheadGui" or obj.Name == "CaptureHealthBar" then
+			local lowerName = string.lower(obj.Name)
+			if obj.Name == "CaptureHealthBar"
+				or string.find(lowerName, "healthbar", 1, true)
+				or (isEgg and string.find(lowerName, "health", 1, true)) then
+				obj:Destroy()
+			elseif obj.Name == "NPCOverheadGui" then
 				obj.Enabled = not shouldHideOverhead
 			end
 		end
