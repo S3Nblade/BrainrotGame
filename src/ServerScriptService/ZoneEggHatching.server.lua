@@ -20,6 +20,7 @@ local EGG_SPAWNER_ID = "CleanZoneEggSpawner_v1"
 local REVEAL_REMOTE_NAME = "EggRevealResult"
 local LEGACY_REVEAL_REMOTE_NAME = "ZoneEggHatchResult"
 local START_NPC_REVEAL_REMOTE_NAME = "StartNPCReveal"
+local HATCH_REQUEST_REMOTE_NAME = "HatchStunnedEggRequest"
 
 local INITIAL_DELAY = 3
 local DEFAULT_DAMAGE = 10
@@ -72,6 +73,7 @@ local remotesFolder = ensureFolder(ReplicatedStorage, "Remotes")
 local revealRemote = ensureRemote(remotesFolder, REVEAL_REMOTE_NAME)
 local legacyRevealRemote = ensureRemote(ReplicatedStorage, LEGACY_REVEAL_REMOTE_NAME)
 local startNpcRevealRemote = ensureRemote(remotesFolder, START_NPC_REVEAL_REMOTE_NAME)
+local hatchRequestRemote = ensureRemote(remotesFolder, HATCH_REQUEST_REMOTE_NAME)
 
 local function getZoneApi()
 	local started = os.clock()
@@ -722,13 +724,14 @@ local function finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId
 
 	local hatchPrompt = Instance.new("ProximityPrompt")
 	hatchPrompt.Name = "EggHatchPrompt"
-	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Hatch")
 	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
 	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
 	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	hatchPrompt.HoldDuration = 0.08
 	hatchPrompt.MaxActivationDistance = 14
 	hatchPrompt.RequiresLineOfSight = false
+	hatchPrompt.Style = Enum.ProximityPromptStyle.Default
 	hatchPrompt.Enabled = false
 	hatchPrompt.Parent = root
 	hatchPrompt.Triggered:Connect(function(player)
@@ -1121,14 +1124,15 @@ local function refreshEggPrompt(egg)
 		prompt.HoldDuration = 0.08
 		prompt.MaxActivationDistance = math.max(prompt.MaxActivationDistance, 14)
 		prompt.RequiresLineOfSight = false
+		prompt.Style = Enum.ProximityPromptStyle.Default
 
 		local stunned = egg:GetAttribute("CaptureStunned") == true
 
 		if stunned then
-			prompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+			prompt.ActionText = tostring(EggConfig.HatchPromptText or "Hatch")
 			prompt.Enabled = true
 		else
-			prompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+			prompt.ActionText = tostring(EggConfig.HatchPromptText or "Hatch")
 			prompt.Enabled = false
 		end
 	end
@@ -1390,6 +1394,12 @@ hatchStunnedEgg = function(player, egg)
 
 	finishEgg(player, egg, eggData)
 end
+
+hatchRequestRemote.OnServerEvent:Connect(function(player, egg)
+	if hatchStunnedEgg then
+		hatchStunnedEgg(player, egg)
+	end
+end)
 
 local function damageEgg(player, egg, amount)
 	if typeof(egg) ~= "Instance" then

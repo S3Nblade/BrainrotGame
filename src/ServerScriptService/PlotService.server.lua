@@ -12,7 +12,17 @@ local playerPlots = {}
 local signConnections = {}
 
 local function getPlotsFolder()
-	return Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
+	local direct = Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
+	if direct then
+		return direct
+	end
+
+	local spawnMap = Workspace:FindFirstChild("SpawnMap")
+	if spawnMap then
+		return spawnMap:FindFirstChild("plots") or spawnMap:FindFirstChild("Plots")
+	end
+
+	return nil
 end
 
 local function getFirstBasePart(container)

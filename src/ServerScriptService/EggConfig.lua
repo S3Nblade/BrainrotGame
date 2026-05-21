@@ -16,7 +16,7 @@ EggConfig.EvadeSuccessSpeedBoostDuration = 3
 EggConfig.EvadeSuccessInvulnerableDuration = 2
 EggConfig.EvadeSuccessSpeedMultiplier = 1.4
 EggConfig.StunDuration = 60
-EggConfig.HatchPromptText = "Press E to Hatch"
+EggConfig.HatchPromptText = "Hatch"
 
 EggConfig.SizeVariants = {
 	Small = {

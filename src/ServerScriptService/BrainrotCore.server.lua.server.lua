@@ -341,7 +341,8 @@ local function isMoneyCollectName(name)
 end
 
 local function isMoneyCollectContainer(obj)
-	return (obj:IsA("Model") or obj:IsA("Folder")) and isMoneyCollectName(obj.Name)
+	return (obj:IsA("Model") or obj:IsA("Folder"))
+		and (isMoneyCollectName(obj.Name) or obj:GetAttribute("MoneyCollect") == true)
 end
 
 local function findNamedAncestor(obj, wantedName)
@@ -533,7 +534,11 @@ local function getCollectContainers(plot)
 		if isMoneyCollectContainer(obj) and not hasMoneyCollectAncestor(obj) then
 			local mainPart = getBestMoneyPart(obj)
 			addCollect(obj, mainPart)
-		elseif obj:IsA("BasePart") and (isMoneyCollectName(obj.Name) or obj:GetAttribute("MoneyCollectPart") == true) then
+		elseif obj:IsA("BasePart")
+			and (isMoneyCollectName(obj.Name)
+				or obj:GetAttribute("MoneyCollectPart") == true
+				or obj:GetAttribute("PrivateCollectGuiPart") == true
+				or obj:GetAttribute("MoneyCollect") == true) then
 			addCollect(findMoneyCollectAncestor(obj) or obj, obj)
 		end
 	end
@@ -1307,7 +1312,7 @@ local function findAssignedNpcForCollect(player, collectPart)
 				return npc
 			elseif assignedPath ~= "" and string.find(assignedPath, slotId, 1, true) then
 				return npc
-			elseif plot and root and findPlotFromObject(root) == plot then
+			elseif plot and root then
 				local distance = (root.Position - collectPart.Position).Magnitude
 				if distance < bestDistance then
 					bestDistance = distance

@@ -609,14 +609,14 @@ local function setStunnedMode(data, npc)
 
 	if isEgg then
 		data.eggName.Text = tostring(npc:GetAttribute("EggOverheadName") or npc:GetAttribute("Rarity") or npc.Name)
-		data.luckText.Text = "Press E to Hatch"
+		data.luckText.Text = "Hatch Egg"
 	end
 
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 210, 60)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 245, 160)
+	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 210, 60)
+	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 245, 160)
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
 end
 

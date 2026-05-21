@@ -25,8 +25,6 @@ if not notifyRemote then
 	notifyRemote.Parent = ReplicatedStorage
 end
 
-local SpawnMap = Workspace:WaitForChild("SpawnMap")
-local plotsFolder = SpawnMap:WaitForChild("Plots")
 local npcFolder = Workspace:WaitForChild("BrainrotNPCs")
 
 local requestCooldown = {}
@@ -34,14 +32,57 @@ local requestCooldown = {}
 local REQUEST_COOLDOWN = 0.95
 local TOUCH_TIME = 0.12
 
+local function normalize(text)
+	return string.lower(tostring(text or "")):gsub("%s+", ""):gsub("_", ""):gsub("-", "")
+end
+
+local function getPlotsFolder()
+	local direct = Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
+	if direct then
+		return direct
+	end
+
+	local spawnMap = Workspace:FindFirstChild("SpawnMap")
+	if spawnMap then
+		return spawnMap:FindFirstChild("plots") or spawnMap:FindFirstChild("Plots")
+	end
+
+	return nil
+end
+
 local function getOwnerPlot(player)
+	local plotsFolder = getPlotsFolder()
+	if not plotsFolder then
+		return nil
+	end
+
 	for _, plot in ipairs(plotsFolder:GetChildren()) do
-		if plot:GetAttribute("OwnerUserId") == player.UserId then
+		if tostring(plot:GetAttribute("OwnerUserId")) == tostring(player.UserId)
+			or tostring(plot:GetAttribute("OwnerName")) == player.Name
+			or tostring(plot:GetAttribute("Owner")) == player.Name then
 			return plot
 		end
 	end
 
 	return nil
+end
+
+local function isCollectPart(part)
+	if not part:IsA("BasePart") then
+		return false
+	end
+
+	if part:GetAttribute("MoneyCollectPart") == true or part:GetAttribute("PrivateCollectGuiPart") == true then
+		return true
+	end
+
+	local n = normalize(part.Name)
+	return n == "moneycollect"
+		or n == "collectmoney"
+		or n == "moneycollectpart"
+		or n == "collectmoneypart"
+		or string.find(n, "moneycollect", 1, true) ~= nil
+		or string.find(n, "collectmoney", 1, true) ~= nil
 end
 
 local function getCollectPartFromGoal(goalPart)
@@ -74,6 +115,20 @@ local function getHouseGoals(plot)
 	end)
 
 	return goals
+end
+
+local function getCollectParts(plot)
+	local parts = {}
+	local used = {}
+
+	for _, obj in ipairs(plot:GetDescendants()) do
+		if obj:IsA("BasePart") and isCollectPart(obj) and not used[obj] then
+			used[obj] = true
+			table.insert(parts, obj)
+		end
+	end
+
+	return parts
 end
 
 local function hasMoneyForGoal(player, goalName)
@@ -197,11 +252,20 @@ local function autoCollectPlayer(player)
 
 	local collectParts = {}
 
-	for _, houseGoal in ipairs(getHouseGoals(plot)) do
-		local collectPart = getCollectPartFromGoal(houseGoal)
-
-		if collectPart and hasMoneyForGoal(player, houseGoal.Name) then
+	for _, collectPart in ipairs(getCollectParts(plot)) do
+		local amount = tonumber(collectPart:GetAttribute("PrivateCollectAmount")) or 0
+		if amount > 0 then
 			table.insert(collectParts, collectPart)
+		end
+	end
+
+	if #collectParts <= 0 then
+		for _, houseGoal in ipairs(getHouseGoals(plot)) do
+			local collectPart = getCollectPartFromGoal(houseGoal)
+
+			if collectPart and hasMoneyForGoal(player, houseGoal.Name) then
+				table.insert(collectParts, collectPart)
+			end
 		end
 	end
 
