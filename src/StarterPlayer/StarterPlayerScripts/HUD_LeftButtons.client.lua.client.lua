@@ -178,10 +178,19 @@ local function openTemplatePopup(name, assetNames)
 	blocker.Text = ""
 	blocker.AutoButtonColor = false
 	blocker.Size = UDim2.fromScale(1, 1)
-	blocker.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	blocker.BackgroundTransparency = 0.35
+	blocker.BackgroundColor3 = Color3.fromRGB(114, 210, 255)
+	blocker.BackgroundTransparency = 0.18
 	blocker.BorderSizePixel = 0
 	blocker.Parent = gui
+
+	local blockerGradient = Instance.new("UIGradient")
+	blockerGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(114, 210, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 246, 176)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 152, 218)),
+	})
+	blockerGradient.Rotation = 30
+	blockerGradient.Parent = blocker
 
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
