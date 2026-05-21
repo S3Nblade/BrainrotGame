@@ -139,6 +139,7 @@ button {
 .egg,
 .crack-flash,
 .sparkles,
+.mutation-effects,
 .npc-picture,
 .reward-label {
   position: absolute;
@@ -257,6 +258,13 @@ button {
   height: 1px;
 }
 
+.mutation-effects {
+  top: 42%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
 .sparkle {
   position: absolute;
   width: var(--size);
@@ -265,6 +273,72 @@ button {
   background: url("../../generated_assets/reveal_gui/sparkle_star.png") center / contain no-repeat;
   transform: translate(-50%, -50%) scale(0.25);
   filter: saturate(0.65);
+}
+
+.mutation-effect {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--size);
+  height: var(--size);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.2);
+}
+
+.normal-dot {
+  border-radius: 50%;
+  background: rgba(210, 222, 242, 0.9);
+}
+
+.diamond-shard {
+  background: linear-gradient(135deg, #ffffff, #8de7ff 42%, #2cb5ff);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  box-shadow: 0 0 18px rgba(112, 217, 255, 0.42);
+}
+
+.radio-ring {
+  border-radius: 50%;
+  border: 5px solid rgba(155, 255, 69, 0.78);
+  box-shadow: 0 0 24px rgba(155, 255, 69, 0.36);
+}
+
+.radio-dot {
+  border-radius: 50%;
+  background: radial-gradient(circle, #e7ff9b, #7bff32);
+  box-shadow: 0 0 16px rgba(155, 255, 69, 0.58);
+}
+
+.gold-coin {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #fff7b0, #ffd24a 48%, #e78b11);
+  box-shadow: 0 0 16px rgba(255, 210, 74, 0.5);
+}
+
+.gold-streak {
+  width: calc(var(--size) * 0.32);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff5a4, rgba(255, 255, 255, 0));
+}
+
+.rainbow-orb {
+  border-radius: 50%;
+  background: hsl(var(--hue) 95% 62%);
+  box-shadow: 0 0 18px hsl(var(--hue) 95% 62% / 0.5);
+}
+
+.rainbow-ring {
+  border-radius: 50%;
+  border: 5px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(#ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb, #ff4d7d) border-box;
+  opacity: 0;
+}
+
+.shadow-wisp {
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(34, 24, 56, 0.72), rgba(155, 124, 255, 0.18), transparent 72%);
+  filter: blur(2px);
 }
 
 .npc-picture {
@@ -364,6 +438,25 @@ button {
 
 .reveal.is-playing .sparkle {
   animation: sparklePop var(--sparkle-duration) cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
+}
+
+.reveal.is-playing .normal-dot,
+.reveal.is-playing .diamond-shard,
+.reveal.is-playing .radio-dot,
+.reveal.is-playing .gold-coin,
+.reveal.is-playing .gold-streak,
+.reveal.is-playing .rainbow-orb,
+.reveal.is-playing .shadow-wisp {
+  animation: mutationParticle 760ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
+}
+
+.reveal.is-playing .radio-ring,
+.reveal.is-playing .rainbow-ring {
+  animation: mutationRing 900ms ease-out var(--delay) forwards;
+}
+
+.reveal[data-mutation="shadow"].is-playing .npc-picture {
+  filter: drop-shadow(0 24px 22px rgba(24, 32, 52, 0.18)) drop-shadow(0 0 24px rgba(72, 50, 120, 0.48));
 }
 
 .reveal.is-playing .npc-picture {
@@ -481,6 +574,34 @@ button {
   to {
     opacity: 0.75;
     transform: translate(var(--x), var(--y)) scale(var(--scale)) rotate(70deg);
+  }
+}
+
+@keyframes mutationParticle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--spin, 70deg));
+  }
+}
+
+@keyframes mutationRing {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.45);
   }
 }
 
