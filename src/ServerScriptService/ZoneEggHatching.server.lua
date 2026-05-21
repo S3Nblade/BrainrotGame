@@ -5,6 +5,7 @@
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
@@ -23,11 +24,15 @@ local START_NPC_REVEAL_REMOTE_NAME = "StartNPCReveal"
 local INITIAL_DELAY = 3
 local DEFAULT_DAMAGE = 10
 local DAMAGE_COOLDOWN = 0.12
+local COMMON_EGG_TEMPLATE_NAME = "CommonEgg"
+local COMMON_EGG_RUN_ANIMATION_ID = "126840157397198"
+local COMMON_EGG_STUNNED_ANIMATION_ID = "120071709602508"
 local rng = Random.new()
 
 local activeById = {}
 local lastDamageAt = {}
 local zoneRuntime = {}
+local eggAnimationState = setmetatable({}, { __mode = "k" })
 local hatchStunnedEgg = nil
 local getPlayerRoot = nil
 
@@ -498,7 +503,239 @@ local function weld(root, part)
 	return weldConstraint
 end
 
-local function createBillboard(model, eggDef)
+local function normalizeAnimationId(id)
+	if id == nil then
+		return nil
+	end
+	local text = tostring(id)
+	if text == "" then
+		return nil
+	end
+	if string.find(text, "rbxassetid://", 1, true) then
+		return text
+	end
+	return "rbxassetid://" .. text
+end
+
+local function getCommonEggTemplate(modelName)
+	local templateName = tostring(modelName or COMMON_EGG_TEMPLATE_NAME)
+	local stored = ServerStorage:FindFirstChild(templateName)
+	if stored and stored:IsA("Model") then
+		return stored
+	end
+
+	local workspaceTemplate = Workspace:FindFirstChild(templateName)
+	if workspaceTemplate and workspaceTemplate:IsA("Model") and workspaceTemplate:GetAttribute("EggSpawnerId") ~= EGG_SPAWNER_ID then
+		workspaceTemplate.Name = templateName
+		workspaceTemplate:SetAttribute("CommonEggTemplate", true)
+		workspaceTemplate.Parent = ServerStorage
+		return workspaceTemplate
+	end
+
+	return nil
+end
+
+local function configureTemplateParts(model)
+	for _, descendant in ipairs(model:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			setPartBase(descendant, true)
+			descendant.Massless = true
+		elseif descendant:IsA("ProximityPrompt") and descendant.Name == "EggHatchPrompt" then
+			descendant:Destroy()
+		elseif descendant:IsA("BillboardGui") and descendant.Name == "EggBillboard" then
+			descendant:Destroy()
+		end
+	end
+end
+
+local function configureStunStarVisibility(model, visible)
+	for _, descendant in ipairs(model:GetDescendants()) do
+		if descendant:IsA("BasePart") and string.find(descendant.Name, "Stunned_Star", 1, true) then
+			descendant.Transparency = visible and 0 or 1
+			descendant.CanCollide = false
+			descendant.CanTouch = false
+			descendant.CanQuery = visible
+		end
+	end
+end
+
+local function getEggAnimator(model)
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Name = "Animator"
+			animator.Parent = humanoid
+		end
+		return animator
+	end
+
+	local controller = model:FindFirstChildOfClass("AnimationController")
+	if not controller then
+		controller = Instance.new("AnimationController")
+		controller.Name = "AnimationController"
+		controller.Parent = model
+	end
+
+	local animator = controller:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Name = "Animator"
+		animator.Parent = controller
+	end
+
+	return animator
+end
+
+local function loadEggAnimation(animator, animationId, priority, looped)
+	local normalizedId = normalizeAnimationId(animationId)
+	if not normalizedId then
+		return nil
+	end
+
+	local animation = Instance.new("Animation")
+	animation.AnimationId = normalizedId
+
+	local ok, track = pcall(function()
+		return animator:LoadAnimation(animation)
+	end)
+	if not ok then
+		warn("[ZoneEggHatching] Failed to load CommonEgg animation", normalizedId, track)
+		return nil
+	end
+
+	track.Priority = priority
+	track.Looped = looped
+	return track
+end
+
+local function refreshCommonEggAnimation(model)
+	local state = eggAnimationState[model]
+	if not state then
+		return
+	end
+
+	if model:GetAttribute("CaptureStunned") == true then
+		configureStunStarVisibility(model, true)
+		if state.run and state.run.IsPlaying then
+			state.run:Stop(0.08)
+		end
+		if state.stunned and not state.stunned.IsPlaying then
+			state.stunned:Play(0.08, 1, 1)
+		end
+	elseif model:GetAttribute("CaptureChaseActive") == true then
+		configureStunStarVisibility(model, false)
+		if state.stunned and state.stunned.IsPlaying then
+			state.stunned:Stop(0.12)
+		end
+		if state.run and not state.run.IsPlaying then
+			state.run:Play(0.12, 1, 1)
+		end
+	else
+		configureStunStarVisibility(model, false)
+		if state.run and state.run.IsPlaying then
+			state.run:Stop(0.15)
+		end
+		if state.stunned and state.stunned.IsPlaying then
+			state.stunned:Stop(0.15)
+		end
+	end
+end
+
+local function setupCommonEggAnimations(model, eggDef)
+	if tostring(eggDef.Id or "") ~= "CommonEgg" and model:GetAttribute("UsesCommonEggTemplate") ~= true then
+		return
+	end
+
+	local animator = getEggAnimator(model)
+	if not animator then
+		return
+	end
+
+	eggAnimationState[model] = {
+		run = loadEggAnimation(animator, eggDef.RunAnimationId or COMMON_EGG_RUN_ANIMATION_ID, Enum.AnimationPriority.Movement, true),
+		stunned = loadEggAnimation(animator, eggDef.StunnedAnimationId or COMMON_EGG_STUNNED_ANIMATION_ID, Enum.AnimationPriority.Action, true),
+	}
+
+	model:GetAttributeChangedSignal("CaptureChaseActive"):Connect(function()
+		refreshCommonEggAnimation(model)
+	end)
+	model:GetAttributeChangedSignal("CaptureStunned"):Connect(function()
+		refreshCommonEggAnimation(model)
+	end)
+
+	refreshCommonEggAnimation(model)
+end
+
+local createBillboard
+
+local function finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId, position, base)
+	local rarityColor = getRarityColor(eggDef.Rarity)
+
+	local existingPrompt = root:FindFirstChild("EggHatchPrompt")
+	if existingPrompt then
+		existingPrompt:Destroy()
+	end
+
+	local light = root:FindFirstChild("EggSoftGlow")
+	if not light then
+		light = Instance.new("PointLight")
+		light.Name = "EggSoftGlow"
+		light.Parent = root
+	end
+	light.Color = rarityColor
+	light.Brightness = 0.7 + (tonumber(eggDef.Glow) or 0.45)
+	light.Range = 9 + (tonumber(eggDef.Size) or 1) * 5
+
+	local highlight = model:FindFirstChild("EggRarityHighlight")
+	if not highlight then
+		highlight = Instance.new("Highlight")
+		highlight.Name = "EggRarityHighlight"
+		highlight.Parent = model
+	end
+	highlight.FillColor = rarityColor
+	highlight.OutlineColor = rarityColor:Lerp(Color3.fromRGB(255, 255, 255), 0.35)
+	highlight.FillTransparency = eggDef.Rarity == "Common" and 0.86 or 0.72
+	highlight.OutlineTransparency = eggDef.Rarity == "Common" and 0.45 or 0.2
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+
+	local hatchPrompt = Instance.new("ProximityPrompt")
+	hatchPrompt.Name = "EggHatchPrompt"
+	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
+	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
+	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
+	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	hatchPrompt.HoldDuration = 0.15
+	hatchPrompt.MaxActivationDistance = 10
+	hatchPrompt.RequiresLineOfSight = false
+	hatchPrompt.Enabled = false
+	hatchPrompt.Parent = root
+	hatchPrompt.Triggered:Connect(function(player)
+		if hatchStunnedEgg then
+			hatchStunnedEgg(player, model)
+		end
+	end)
+
+	createBillboard(model, eggDef)
+
+	model:PivotTo(base * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
+	model.Parent = eggFolder
+	activeById[eggId] = {
+		Model = model,
+		Zone = zoneName,
+		ZoneConfig = zoneConfig,
+		EggDef = eggDef,
+		SpawnPosition = position,
+		BaseY = position.Y,
+		MoveSeed = rng:NextNumber(0, math.pi * 2),
+	}
+
+	setupCommonEggAnimations(model, eggDef)
+	return model
+end
+
+function createBillboard(model, eggDef)
 	local root = getRoot(model)
 	if not root then
 		return nil
@@ -578,8 +815,12 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	local base = CFrame.new(position)
 	local eggId = HttpService:GenerateGUID(false)
 
-	local model = Instance.new("Model")
-	model.Name = tostring(eggDef.DisplayName or "Egg")
+	local commonTemplate = tostring(eggDef.Id or "") == "CommonEgg" and getCommonEggTemplate(eggDef.ModelName) or nil
+	local model = commonTemplate and commonTemplate:Clone() or Instance.new("Model")
+	model.Name = commonTemplate and tostring(eggDef.ModelName or eggDef.Id or COMMON_EGG_TEMPLATE_NAME) or tostring(eggDef.DisplayName or "Egg")
+	if commonTemplate then
+		model:SetAttribute("UsesCommonEggTemplate", true)
+	end
 	model:SetAttribute("EggId", eggId)
 	model:SetAttribute("EggSpawnerId", EGG_SPAWNER_ID)
 	model:SetAttribute("EggBrainrot", true)
@@ -617,6 +858,35 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	model:SetAttribute("HatchInProgress", false)
 	model:SetAttribute("CanPickup", false)
 	model:SetAttribute("PickupReady", false)
+
+	if commonTemplate then
+		configureTemplateParts(model)
+		pcall(function()
+			model:ScaleTo(scale)
+		end)
+
+		local root = getRoot(model)
+		if not root then
+			warn("[ZoneEggHatching] CommonEgg template has no BasePart root; CommonEgg spawn skipped.")
+			model:Destroy()
+			return nil
+		else
+			root.Massless = false
+			model.PrimaryPart = root
+
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.MaxHealth = tonumber(eggDef.HP) or 100
+				humanoid.Health = humanoid.MaxHealth
+				humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+				humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+				humanoid.WalkSpeed = 0
+			end
+
+			configureStunStarVisibility(model, false)
+			return finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId, position, base)
+		end
+	end
 
 	local root = makePart(model, "HumanoidRootPart", Vector3.new(1.7, 2.05, 1.7) * scale, base, Color3.fromRGB(255, 255, 255), Enum.PartType.Ball, Enum.Material.SmoothPlastic, 1)
 	root.Massless = false
@@ -670,53 +940,7 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	local aura = makePart(model, "RarityAura", Vector3.new(2.45, 0.08, 2.45) * scale, base * CFrame.new(0, -1.18 * scale, 0), rarityColor, Enum.PartType.Cylinder, Enum.Material.Neon, 0.58)
 	weld(root, aura)
 
-	local light = Instance.new("PointLight")
-	light.Name = "EggSoftGlow"
-	light.Color = rarityColor
-	light.Brightness = 0.7 + (tonumber(eggDef.Glow) or 0.45)
-	light.Range = 9 + scale * 5
-	light.Parent = root
-
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "EggRarityHighlight"
-	highlight.FillColor = rarityColor
-	highlight.OutlineColor = rarityColor:Lerp(Color3.fromRGB(255, 255, 255), 0.35)
-	highlight.FillTransparency = eggDef.Rarity == "Common" and 0.86 or 0.72
-	highlight.OutlineTransparency = eggDef.Rarity == "Common" and 0.45 or 0.2
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-	highlight.Parent = model
-
-	local hatchPrompt = Instance.new("ProximityPrompt")
-	hatchPrompt.Name = "EggHatchPrompt"
-	hatchPrompt.ActionText = tostring(EggConfig.HatchPromptText or "Press E to Hatch")
-	hatchPrompt.ObjectText = tostring(eggDef.DisplayName or "Egg")
-	hatchPrompt.KeyboardKeyCode = Enum.KeyCode.E
-	hatchPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
-	hatchPrompt.HoldDuration = 0.15
-	hatchPrompt.MaxActivationDistance = 10
-	hatchPrompt.RequiresLineOfSight = false
-	hatchPrompt.Enabled = false
-	hatchPrompt.Parent = root
-	hatchPrompt.Triggered:Connect(function(player)
-		if hatchStunnedEgg then
-			hatchStunnedEgg(player, model)
-		end
-	end)
-
-	createBillboard(model, eggDef)
-
-	model:PivotTo(base * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
-	model.Parent = eggFolder
-	activeById[eggId] = {
-		Model = model,
-		Zone = zoneName,
-		ZoneConfig = zoneConfig,
-		EggDef = eggDef,
-		SpawnPosition = position,
-		BaseY = position.Y,
-		MoveSeed = rng:NextNumber(0, math.pi * 2),
-	}
-	return model
+	return finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId, position, base)
 end
 
 local function countEggs(zoneName)
