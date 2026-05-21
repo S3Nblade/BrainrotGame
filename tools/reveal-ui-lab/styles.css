@@ -1,5 +1,27 @@
 :root {
   --mutation: #70d9ff;
+  --reveal-speed: 1;
+  --stage-in: 260ms;
+  --glow-duration: 1200ms;
+  --glow-delay: 220ms;
+  --crack-duration: 360ms;
+  --crack-delay: 1650ms;
+  --shell-duration: 520ms;
+  --shell-delay: 2920ms;
+  --flash-duration: 360ms;
+  --flash-delay: 2900ms;
+  --egg-intro: 280ms;
+  --egg-side-duration: 820ms;
+  --egg-side-delay: 300ms;
+  --egg-final-duration: 520ms;
+  --egg-final-delay: 2450ms;
+  --egg-fade-duration: 180ms;
+  --egg-fade-delay: 3320ms;
+  --sparkle-duration: 500ms;
+  --npc-duration: 360ms;
+  --npc-delay: 3320ms;
+  --text-duration: 260ms;
+  --text-delay: 3480ms;
   --ink: #141824;
   font-family: Inter, Gotham, "Trebuchet MS", Arial, sans-serif;
 }
@@ -309,54 +331,47 @@ button {
 }
 
 .reveal.is-playing .stage {
-  animation: stageIn 260ms cubic-bezier(0.17, 1.12, 0.34, 1) forwards;
+  animation: stageIn var(--stage-in) cubic-bezier(0.17, 1.12, 0.34, 1) forwards;
 }
 
 .reveal.is-playing .soft-glow {
-  animation: glowPulse 1200ms ease-in-out 220ms infinite alternate;
-}
-
-.reveal.is-playing .egg {
-  animation:
-    eggIntro 280ms cubic-bezier(0.17, 1.12, 0.34, 1) forwards,
-    eggSideMove 820ms ease-in-out 300ms 3,
-    eggFinalShake 520ms ease-in-out 2450ms forwards;
+  animation: glowPulse var(--glow-duration) ease-in-out var(--glow-delay) infinite alternate;
 }
 
 .reveal.is-playing .crack {
-  animation: crackGrow 360ms ease-out 1650ms forwards;
+  animation: crackGrow var(--crack-duration) ease-out var(--crack-delay) forwards;
 }
 
 .reveal.is-playing .egg-top {
-  animation: shellTopBreak 520ms cubic-bezier(0.17, 1.12, 0.34, 1) 2920ms forwards;
+  animation: shellTopBreak var(--shell-duration) cubic-bezier(0.17, 1.12, 0.34, 1) var(--shell-delay) forwards;
 }
 
 .reveal.is-playing .egg-bottom {
-  animation: shellBottomBreak 520ms cubic-bezier(0.17, 1.12, 0.34, 1) 2920ms forwards;
+  animation: shellBottomBreak var(--shell-duration) cubic-bezier(0.17, 1.12, 0.34, 1) var(--shell-delay) forwards;
 }
 
 .reveal.is-playing .crack-flash {
-  animation: flashPop 360ms ease-out 2900ms forwards;
+  animation: flashPop var(--flash-duration) ease-out var(--flash-delay) forwards;
 }
 
 .reveal.is-playing .egg {
   animation:
-    eggIntro 280ms cubic-bezier(0.17, 1.12, 0.34, 1) forwards,
-    eggSideMove 820ms ease-in-out 300ms 3,
-    eggFinalShake 520ms ease-in-out 2450ms forwards,
-    eggFadeOut 180ms ease-in 3320ms forwards;
+    eggIntro var(--egg-intro) cubic-bezier(0.17, 1.12, 0.34, 1) forwards,
+    eggSideMove var(--egg-side-duration) ease-in-out var(--egg-side-delay) 3,
+    eggFinalShake var(--egg-final-duration) ease-in-out var(--egg-final-delay) forwards,
+    eggFadeOut var(--egg-fade-duration) ease-in var(--egg-fade-delay) forwards;
 }
 
 .reveal.is-playing .sparkle {
-  animation: sparklePop 500ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
+  animation: sparklePop var(--sparkle-duration) cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
 }
 
 .reveal.is-playing .npc-picture {
-  animation: npcPop 360ms cubic-bezier(0.17, 1.12, 0.34, 1) 3320ms forwards;
+  animation: npcPop var(--npc-duration) cubic-bezier(0.17, 1.12, 0.34, 1) var(--npc-delay) forwards;
 }
 
 .reveal.is-playing .reward-label {
-  animation: textPop 260ms ease-out 3480ms forwards;
+  animation: textPop var(--text-duration) ease-out var(--text-delay) forwards;
 }
 
 .reveal.is-closing .stage {
