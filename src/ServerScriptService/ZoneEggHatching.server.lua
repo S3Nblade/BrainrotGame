@@ -540,6 +540,13 @@ local function configureTemplateParts(model)
 		if descendant:IsA("BasePart") then
 			setPartBase(descendant, true)
 			descendant.Massless = true
+			if descendant.Name == "RarityAura" then
+				descendant:Destroy()
+			end
+		elseif descendant:IsA("PointLight") and descendant.Name == "EggSoftGlow" then
+			descendant:Destroy()
+		elseif descendant:IsA("Highlight") and descendant.Name == "EggRarityHighlight" then
+			descendant:Destroy()
 		elseif descendant:IsA("ProximityPrompt") and descendant.Name == "EggHatchPrompt" then
 			descendant:Destroy()
 		elseif descendant:IsA("BillboardGui") and descendant.Name == "EggBillboard" then
@@ -672,33 +679,46 @@ local createBillboard
 
 local function finalizeEggModel(model, root, zoneName, zoneConfig, eggDef, eggId, position, base)
 	local rarityColor = getRarityColor(eggDef.Rarity)
+	local usesCommonTemplate = model:GetAttribute("UsesCommonEggTemplate") == true
 
 	local existingPrompt = root:FindFirstChild("EggHatchPrompt")
 	if existingPrompt then
 		existingPrompt:Destroy()
 	end
 
-	local light = root:FindFirstChild("EggSoftGlow")
-	if not light then
-		light = Instance.new("PointLight")
-		light.Name = "EggSoftGlow"
-		light.Parent = root
-	end
-	light.Color = rarityColor
-	light.Brightness = 0.7 + (tonumber(eggDef.Glow) or 0.45)
-	light.Range = 9 + (tonumber(eggDef.Size) or 1) * 5
+	if usesCommonTemplate then
+		for _, descendant in ipairs(model:GetDescendants()) do
+			if descendant:IsA("PointLight") and descendant.Name == "EggSoftGlow" then
+				descendant:Destroy()
+			elseif descendant:IsA("Highlight") and descendant.Name == "EggRarityHighlight" then
+				descendant:Destroy()
+			elseif descendant:IsA("BasePart") and descendant.Name == "RarityAura" then
+				descendant:Destroy()
+			end
+		end
+	else
+		local light = root:FindFirstChild("EggSoftGlow")
+		if not light then
+			light = Instance.new("PointLight")
+			light.Name = "EggSoftGlow"
+			light.Parent = root
+		end
+		light.Color = rarityColor
+		light.Brightness = 0.7 + (tonumber(eggDef.Glow) or 0.45)
+		light.Range = 9 + (tonumber(eggDef.Size) or 1) * 5
 
-	local highlight = model:FindFirstChild("EggRarityHighlight")
-	if not highlight then
-		highlight = Instance.new("Highlight")
-		highlight.Name = "EggRarityHighlight"
-		highlight.Parent = model
+		local highlight = model:FindFirstChild("EggRarityHighlight")
+		if not highlight then
+			highlight = Instance.new("Highlight")
+			highlight.Name = "EggRarityHighlight"
+			highlight.Parent = model
+		end
+		highlight.FillColor = rarityColor
+		highlight.OutlineColor = rarityColor:Lerp(Color3.fromRGB(255, 255, 255), 0.35)
+		highlight.FillTransparency = eggDef.Rarity == "Common" and 0.86 or 0.72
+		highlight.OutlineTransparency = eggDef.Rarity == "Common" and 0.45 or 0.2
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 	end
-	highlight.FillColor = rarityColor
-	highlight.OutlineColor = rarityColor:Lerp(Color3.fromRGB(255, 255, 255), 0.35)
-	highlight.FillTransparency = eggDef.Rarity == "Common" and 0.86 or 0.72
-	highlight.OutlineTransparency = eggDef.Rarity == "Common" and 0.45 or 0.2
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 
 	local hatchPrompt = Instance.new("ProximityPrompt")
 	hatchPrompt.Name = "EggHatchPrompt"
@@ -1674,6 +1694,10 @@ local function moveEggAway(eggData, dt)
 	local bounce = math.sin(os.clock() * 10 + eggData.MoveSeed) * 0.16
 	local lookAt = nextPosition + direction
 	local targetCFrame = CFrame.new(nextPosition + Vector3.new(0, bounce, 0), Vector3.new(lookAt.X, nextPosition.Y + bounce, lookAt.Z))
+	local yawOffset = tonumber(eggData.EggDef and eggData.EggDef.FacingYawOffsetDegrees) or 0
+	if yawOffset ~= 0 then
+		targetCFrame *= CFrame.Angles(0, math.rad(yawOffset), 0)
+	end
 	egg:PivotTo(targetCFrame)
 end
 

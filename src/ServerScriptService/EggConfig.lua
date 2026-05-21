@@ -105,6 +105,7 @@ EggConfig.Zones = {
 				ModelName = "CommonEgg",
 				RunAnimationId = 126840157397198,
 				StunnedAnimationId = 120071709602508,
+				FacingYawOffsetDegrees = 180,
 				SpawnWeight = 75,
 				HpRange = { Min = 80, Max = 160 },
 				SizeRange = { Min = 0.9, Max = 1.15 },
