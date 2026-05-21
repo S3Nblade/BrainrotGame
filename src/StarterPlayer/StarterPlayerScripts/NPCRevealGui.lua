@@ -221,7 +221,21 @@ local function createEgg(parent, rarity)
 	crackB.Size = UDim2.fromOffset(5, 44)
 	crackB.Parent = egg
 
-	return holder, scale, { crackA, crackB }
+	local crackC = crackA:Clone()
+	crackC.Name = "CrackC"
+	crackC.Position = UDim2.fromScale(0.42, 0.52)
+	crackC.Rotation = -20
+	crackC.Size = UDim2.fromOffset(5, 36)
+	crackC.Parent = egg
+
+	local crackD = crackA:Clone()
+	crackD.Name = "CrackD"
+	crackD.Position = UDim2.fromScale(0.5, 0.32)
+	crackD.Rotation = -8
+	crackD.Size = UDim2.fromOffset(5, 34)
+	crackD.Parent = egg
+
+	return holder, scale, { crackA, crackB, crackC, crackD }
 end
 
 local function createPodium(parent)
@@ -362,11 +376,21 @@ local function normalizePayload(payload)
 	local selected = type(payload.selectedNPC) == "table" and payload.selectedNPC or {}
 	local rarity = payload.rarity or payload.Rarity or payload.selectedRarity or selected.rarity or selected.Rarity or "Common"
 	local name = payload.npcName or payload.ResultName or selected.displayName or selected.DisplayName or selected.name or selected.Name or "Mystery NPC"
+	local mutation = payload.mutation
+		or payload.Mutation
+		or payload.mutationName
+		or payload.MutationName
+		or payload.MutationDisplayName
+		or selected.mutation
+		or selected.Mutation
+		or selected.mutationDisplayName
+		or "Normal"
 
 	return {
 		revealId = tostring(payload.revealId or payload.RevealId or payload.EggId or name .. "_" .. tostring(os.clock())),
 		npcName = tostring(name),
 		rarity = tostring(rarity),
+		mutation = tostring(mutation),
 		isNew = payload.isNew == true or payload.IsNew == true or payload.New == true or payload.FirstTime == true,
 		eggType = tostring(payload.eggType or payload.EggName or payload.eggName or "Egg"),
 		npcImage = payload.npcImage or payload.NPCImage or selected.image or selected.Image or selected.icon or selected.Icon,
@@ -488,8 +512,9 @@ local function playReveal(rawPayload)
 	local egg, eggScale, cracks = createEgg(stage, data.eggType)
 	local sparkles = createSparkles(stage, color)
 
-	local rarityLabel = makeText(stage, "RarityLabel", data.rarity, UDim2.fromScale(0.16, 0.105), UDim2.fromScale(0.68, 0.07), color, 28, 42)
 	local nameLabel = makeText(stage, "NpcName", data.npcName, UDim2.fromScale(0.07, 0.7), UDim2.fromScale(0.86, 0.1), Color3.fromRGB(255, 255, 255), 36, 42)
+	local mutationText = data.mutation == "Normal" and "Normal" or (data.mutation .. " Mutation")
+	local mutationLabel = makeText(stage, "MutationLabel", mutationText, UDim2.fromScale(0.16, 0.785), UDim2.fromScale(0.68, 0.06), color:Lerp(Color3.fromRGB(255, 255, 255), 0.25), 24, 42)
 
 	local newBadge
 	if data.isNew then
@@ -518,17 +543,21 @@ local function playReveal(rawPayload)
 	closeButton.ZIndex = 100
 	closeButton.Parent = gui
 
-	tween(overlay, 0.24, { BackgroundTransparency = 0.18 })
-	tween(blur, 0.24, { Size = 7 })
+	overlay.BackgroundTransparency = 1
+	blur.Size = 0
 	tween(stageScale, 0.36, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	tween(card, 0.28, { BackgroundTransparency = 0.04 })
-	tween(cardGlow, 0.28, cardGlow:IsA("ImageLabel") and { ImageTransparency = 0.16 } or { BackgroundTransparency = 0.22 })
-	tween(softGlow, 0.26, softGlow:IsA("ImageLabel") and { ImageTransparency = 0.2 } or { BackgroundTransparency = 0.38 })
-	for _, inst in ipairs(podium:GetDescendants()) do
-		if inst:IsA("Frame") then
-			tween(inst, 0.28, { BackgroundTransparency = inst.Name == "PodiumGlow" and 0.42 or 0.05 })
-		end
+	card.BackgroundTransparency = 1
+	local cardStroke = card:FindFirstChildOfClass("UIStroke")
+	if cardStroke then
+		cardStroke.Transparency = 1
 	end
+	if cardGlow:IsA("ImageLabel") then
+		cardGlow.ImageTransparency = 1
+	else
+		cardGlow.BackgroundTransparency = 1
+	end
+	tween(softGlow, 0.26, softGlow:IsA("ImageLabel") and { ImageTransparency = 0.2 } or { BackgroundTransparency = 0.38 })
+	podium.Visible = false
 	waitTween(eggScale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 	for _ = 1, 3 do
@@ -582,9 +611,9 @@ local function playReveal(rawPayload)
 	tween(burstRing, 1.4, { Rotation = 330 }, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
 	task.wait(0.08)
-	fadeText(rarityLabel, true, 0.18)
-	task.wait(0.08)
 	fadeText(nameLabel, true, 0.2)
+	task.wait(0.08)
+	fadeText(mutationLabel, true, 0.18)
 
 	if newBadge then
 		tween(newBadge, 0.22, newBadge:IsA("ImageLabel") and { ImageTransparency = 0 } or { BackgroundTransparency = 0.04 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)

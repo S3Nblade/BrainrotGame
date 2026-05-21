@@ -29,6 +29,21 @@
             <option>Huge</option>
           </select>
         </label>
+        <label>
+          Mutation
+          <select id="mutation">
+            <option selected>Diamond</option>
+            <option>Radioactive</option>
+            <option>Gold</option>
+            <option>Rainbow</option>
+            <option>Shadow</option>
+            <option>Normal</option>
+          </select>
+        </label>
+        <label>
+          NPC image URL
+          <input id="npcImage" placeholder="Optional image URL" />
+        </label>
         <label class="check-row">
           <input id="isNew" type="checkbox" checked />
           NEW badge
@@ -37,31 +52,31 @@
       </section>
 
       <section class="preview-wrap" aria-label="Reveal preview">
-        <div class="world-hint"></div>
         <div id="reveal" class="reveal" data-rarity="Legendary">
-          <div class="soft-overlay"></div>
           <div class="stage">
-            <img class="card-glow" src="../../generated_assets/reveal_gui/reveal_card_glow.png" alt="" />
-            <div class="card"></div>
             <img class="soft-glow" src="../../generated_assets/reveal_gui/soft_glow.png" alt="" />
             <img class="burst-ring" src="../../generated_assets/reveal_gui/burst_ring.png" alt="" />
             <div class="egg">
-              <div class="egg-highlight"></div>
+              <div class="egg-half egg-top">
+                <div class="egg-highlight"></div>
+              </div>
+              <div class="egg-half egg-bottom"></div>
               <span class="crack crack-a"></span>
               <span class="crack crack-b"></span>
+              <span class="crack crack-c"></span>
+              <span class="crack crack-d"></span>
             </div>
             <div class="crack-flash"></div>
             <div class="sparkles" aria-hidden="true"></div>
-            <div class="podium"></div>
             <div class="npc-preview">
+              <img class="npc-image" alt="" />
               <div class="npc-head">:)</div>
               <div class="npc-body"></div>
             </div>
-            <p class="rarity-label">Legendary</p>
             <h2 class="npc-name">Brr Brr Patapim</h2>
+            <p class="mutation-label">Diamond Mutation</p>
             <img class="new-badge-img" src="../../generated_assets/reveal_gui/new_badge.png" alt="" />
             <p class="new-badge-text">NEW!</p>
-            <img class="shine" src="../../generated_assets/reveal_gui/shine_streak.png" alt="" />
             <img class="tap-panel-img" src="../../generated_assets/reveal_gui/tap_panel.png" alt="" />
             <p class="tap-text">Tap to continue</p>
           </div>
