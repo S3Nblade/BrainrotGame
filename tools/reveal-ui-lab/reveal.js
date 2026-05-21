@@ -17,11 +17,11 @@ const mutationColors = {
 
 const mutationSpeeds = {
   Normal: 0.55,
-  Gold: 0.85,
-  Diamond: 1,
-  Radioactive: 1.2,
-  Rainbow: 1.45,
-  Shadow: 1.65,
+  Gold: 0.72,
+  Diamond: 0.82,
+  Radioactive: 0.92,
+  Rainbow: 1.02,
+  Shadow: 1.12,
 };
 
 const baseTiming = {
