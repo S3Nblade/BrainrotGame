@@ -1,6 +1,8 @@
 const reveal = document.querySelector("#reveal");
 const playButton = document.querySelector("#playButton");
 const mutation = document.querySelector("#mutation");
+const npcName = document.querySelector("#npcName");
+const npcImage = document.querySelector("#npcImage");
 const sparkleLayer = reveal.querySelector(".sparkles");
 
 const mutationColors = {
@@ -43,8 +45,18 @@ function playReveal() {
   const selectedMutation = mutation.value;
   const mutationColor = mutationColors[selectedMutation] || mutationColors.Normal;
   reveal.style.setProperty("--mutation", mutationColor);
-  reveal.querySelector(".mutation-label").textContent =
-    selectedMutation === "Normal" ? "Normal" : `${selectedMutation} Mutation`;
+  reveal.querySelector(".reward-label").textContent = `${selectedMutation} ${npcName.value || "Mystery NPC"}`;
+
+  const picture = reveal.querySelector(".npc-picture");
+  const image = reveal.querySelector(".npc-image");
+  if (npcImage.value.trim()) {
+    image.src = npcImage.value.trim();
+    picture.classList.add("has-image");
+  } else {
+    image.removeAttribute("src");
+    picture.classList.remove("has-image");
+  }
+
   reveal.classList.remove("is-playing", "is-closing");
   void reveal.offsetWidth;
   buildSparkles();

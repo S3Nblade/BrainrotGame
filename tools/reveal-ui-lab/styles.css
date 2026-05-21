@@ -57,6 +57,7 @@ label {
 }
 
 select,
+input,
 button {
   min-height: 42px;
   width: 100%;
@@ -67,6 +68,12 @@ button {
 }
 
 select {
+  color: #1c2230;
+  background: #fff;
+  outline: 1px solid rgba(70, 100, 160, 0.14);
+}
+
+input {
   color: #1c2230;
   background: #fff;
   outline: 1px solid rgba(70, 100, 160, 0.14);
@@ -110,7 +117,8 @@ button {
 .egg,
 .crack-flash,
 .sparkles,
-.mutation-label {
+.npc-picture,
+.reward-label {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -237,21 +245,67 @@ button {
   filter: saturate(0.65);
 }
 
-.mutation-label {
+.npc-picture {
+  top: 42%;
+  width: 220px;
+  height: 220px;
+  opacity: 0;
+  scale: 0.2;
+  filter: drop-shadow(0 24px 22px rgba(24, 32, 52, 0.18));
+}
+
+.npc-image,
+.npc-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.npc-image {
+  object-fit: contain;
+  opacity: 0;
+}
+
+.npc-picture.has-image .npc-image {
+  opacity: 1;
+}
+
+.npc-picture.has-image .npc-fallback {
+  display: none;
+}
+
+.npc-fallback {
+  display: grid;
+  place-items: center;
+  border-radius: 36px;
+  color: #fff;
+  font-size: 42px;
+  font-weight: 950;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.48), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--mutation) 45%, #fff), var(--mutation));
+  border: 5px solid rgba(255, 255, 255, 0.82);
+  text-shadow: 0 3px 0 rgba(24, 32, 52, 0.28);
+}
+
+.reward-label {
   top: 70%;
-  min-width: 190px;
+  width: min(86%, 390px);
   margin: 0;
-  padding: 9px 18px;
-  border-radius: 999px;
-  color: #182034;
-  font-size: clamp(18px, 3vw, 25px);
+  color: #fff;
+  font-size: clamp(26px, 5vw, 42px);
   font-weight: 950;
   text-align: center;
+  line-height: 1;
   opacity: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), color-mix(in srgb, var(--mutation) 35%, #fff));
-  border: 2px solid color-mix(in srgb, var(--mutation) 72%, white);
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--mutation) 22%, transparent);
+  background: linear-gradient(90deg, #ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 3px 0 rgba(20, 24, 36, 0.48),
+    0 0 20px color-mix(in srgb, var(--mutation) 42%, transparent);
 }
 
 .reveal.is-playing .stage {
@@ -285,12 +339,24 @@ button {
   animation: flashPop 360ms ease-out 2900ms forwards;
 }
 
+.reveal.is-playing .egg {
+  animation:
+    eggIntro 280ms cubic-bezier(0.17, 1.12, 0.34, 1) forwards,
+    eggSideMove 820ms ease-in-out 300ms 3,
+    eggFinalShake 520ms ease-in-out 2450ms forwards,
+    eggFadeOut 180ms ease-in 3320ms forwards;
+}
+
 .reveal.is-playing .sparkle {
   animation: sparklePop 500ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
 }
 
-.reveal.is-playing .mutation-label {
-  animation: textPop 260ms ease-out 3260ms forwards;
+.reveal.is-playing .npc-picture {
+  animation: npcPop 360ms cubic-bezier(0.17, 1.12, 0.34, 1) 3320ms forwards;
+}
+
+.reveal.is-playing .reward-label {
+  animation: textPop 260ms ease-out 3480ms forwards;
 }
 
 .reveal.is-closing .stage {
@@ -400,6 +466,20 @@ button {
   to {
     opacity: 0.75;
     transform: translate(var(--x), var(--y)) scale(var(--scale)) rotate(70deg);
+  }
+}
+
+@keyframes eggFadeOut {
+  to {
+    opacity: 0;
+    scale: 0.08;
+  }
+}
+
+@keyframes npcPop {
+  to {
+    opacity: 1;
+    scale: 1;
   }
 }
 

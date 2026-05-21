@@ -512,9 +512,18 @@ local function playReveal(rawPayload)
 	local egg, eggScale, cracks = createEgg(stage, data.eggType)
 	local sparkles = createSparkles(stage, color)
 
-	local nameLabel = makeText(stage, "NpcName", data.npcName, UDim2.fromScale(0.07, 0.7), UDim2.fromScale(0.86, 0.1), Color3.fromRGB(255, 255, 255), 36, 42)
-	local mutationText = data.mutation == "Normal" and "Normal" or (data.mutation .. " Mutation")
-	local mutationLabel = makeText(stage, "MutationLabel", mutationText, UDim2.fromScale(0.16, 0.785), UDim2.fromScale(0.68, 0.06), color:Lerp(Color3.fromRGB(255, 255, 255), 0.25), 24, 42)
+	local rewardText = data.mutation == "Normal" and data.npcName or (data.mutation .. " " .. data.npcName)
+	local rewardLabel = makeText(stage, "RewardLabel", rewardText, UDim2.fromScale(0.06, 0.7), UDim2.fromScale(0.88, 0.12), Color3.fromRGB(255, 255, 255), 38, 42)
+	local rewardGradient = Instance.new("UIGradient")
+	rewardGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 76, 125)),
+		ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 210, 74)),
+		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(98, 255, 131)),
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(78, 216, 255)),
+		ColorSequenceKeypoint.new(0.8, Color3.fromRGB(155, 124, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 76, 203)),
+	})
+	rewardGradient.Parent = rewardLabel
 
 	local newBadge
 	if data.isNew then
@@ -611,9 +620,7 @@ local function playReveal(rawPayload)
 	tween(burstRing, 1.4, { Rotation = 330 }, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
 	task.wait(0.08)
-	fadeText(nameLabel, true, 0.2)
-	task.wait(0.08)
-	fadeText(mutationLabel, true, 0.18)
+	fadeText(rewardLabel, true, 0.22)
 
 	if newBadge then
 		tween(newBadge, 0.22, newBadge:IsA("ImageLabel") and { ImageTransparency = 0 } or { BackgroundTransparency = 0.04 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
