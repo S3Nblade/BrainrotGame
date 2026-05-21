@@ -337,15 +337,21 @@ button {
 
 .diamond-core {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(112, 217, 255, 0.64) 45%, rgba(37, 153, 255, 0.78));
-  clip-path: polygon(50% 0, 88% 24%, 72% 100%, 28% 100%, 12% 24%);
-  box-shadow: 0 0 34px rgba(112, 217, 255, 0.62);
+    linear-gradient(135deg, transparent 0 18%, rgba(255, 255, 255, 0.82) 19% 24%, transparent 25%),
+    linear-gradient(45deg, transparent 0 42%, rgba(255, 255, 255, 0.7) 43% 48%, transparent 49%),
+    conic-gradient(from 45deg, #22a8ff, #a8f2ff, #3ecbff, #0e7ee8, #69e2ff, #22a8ff);
+  clip-path: polygon(50% 0, 92% 28%, 72% 100%, 28% 100%, 8% 28%);
+  box-shadow:
+    0 0 34px rgba(112, 217, 255, 0.72),
+    inset 0 -18px 0 rgba(0, 92, 190, 0.22);
 }
 
 .diamond-shard {
-  background: linear-gradient(135deg, #ffffff, #8de7ff 42%, #2cb5ff);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), transparent 36%),
+    linear-gradient(135deg, #73e6ff, #168bff 62%, #074fb8);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  box-shadow: 0 0 18px rgba(112, 217, 255, 0.42);
+  box-shadow: 0 0 20px rgba(112, 217, 255, 0.5);
 }
 
 .radio-core {
@@ -375,13 +381,13 @@ button {
 }
 
 .gold-sun {
-  border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 28%, #fff9b8, #ffd24a 45%, #f29b14);
+    radial-gradient(circle, #fff6a8 0 28%, #ffd24a 29% 49%, #f29b14 50% 63%, transparent 64%),
+    conic-gradient(from 8deg, transparent 0 7%, rgba(255, 184, 28, 0.95) 8% 12%, transparent 13% 20%);
+  clip-path: polygon(50% 0, 58% 25%, 82% 11%, 75% 38%, 100% 50%, 75% 62%, 82% 89%, 58% 75%, 50% 100%, 42% 75%, 18% 89%, 25% 62%, 0 50%, 25% 38%, 18% 11%, 42% 25%);
   box-shadow:
-    0 0 34px rgba(255, 210, 74, 0.64),
-    0 0 0 16px rgba(255, 210, 74, 0.16),
-    0 0 0 32px rgba(255, 210, 74, 0.08);
+    0 0 38px rgba(255, 188, 28, 0.74),
+    0 0 0 14px rgba(255, 210, 74, 0.14);
 }
 
 .gold-streak {
@@ -392,11 +398,10 @@ button {
 
 .rainbow-halo {
   border-radius: 50%;
-  border: 11px solid transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    conic-gradient(#ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb, #ff4d7d) border-box;
-  box-shadow: 0 0 36px rgba(255, 77, 203, 0.32);
+  background: conic-gradient(#ff3f72, #ffcf3f, #4fff75, #37dfff, #8d6cff, #ff4de1, #ff3f72);
+  -webkit-mask: radial-gradient(circle, transparent 0 54%, #000 56% 72%, transparent 74%);
+  mask: radial-gradient(circle, transparent 0 54%, #000 56% 72%, transparent 74%);
+  box-shadow: 0 0 36px rgba(255, 77, 203, 0.38);
 }
 
 .rainbow-orb {
@@ -407,10 +412,9 @@ button {
 
 .rainbow-ring {
   border-radius: 50%;
-  border: 5px solid transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    conic-gradient(#ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb, #ff4d7d) border-box;
+  background: conic-gradient(#ff3f72, #ffcf3f, #4fff75, #37dfff, #8d6cff, #ff4de1, #ff3f72);
+  -webkit-mask: radial-gradient(circle, transparent 0 60%, #000 62% 70%, transparent 72%);
+  mask: radial-gradient(circle, transparent 0 60%, #000 62% 70%, transparent 72%);
   opacity: 0;
 }
 
