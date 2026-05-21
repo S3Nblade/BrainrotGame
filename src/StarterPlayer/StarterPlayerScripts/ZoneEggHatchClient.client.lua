@@ -263,13 +263,50 @@ local function playReveal(rawPayload)
 
 	local overlay = Instance.new("Frame")
 	overlay.Name = "SoftOverlay"
-	overlay.BackgroundColor3 = Color3.fromRGB(22, 25, 34)
+	overlay.BackgroundColor3 = Color3.fromRGB(120, 220, 255)
 	overlay.BackgroundTransparency = 1
 	overlay.BorderSizePixel = 0
 	overlay.Size = UDim2.fromScale(1, 1)
 	overlay.Parent = gui
-	tween(overlay, 0.25, { BackgroundTransparency = 0.26 })
-	tween(blur, 0.28, { Size = 9 })
+	local overlayGradient = Instance.new("UIGradient")
+	overlayGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 252, 210)),
+		ColorSequenceKeypoint.new(0.48, Color3.fromRGB(120, 220, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 138, 222)),
+	})
+	overlayGradient.Rotation = 35
+	overlayGradient.Parent = overlay
+	tween(overlay, 0.25, { BackgroundTransparency = 0.08 })
+	tween(blur, 0.28, { Size = 6 })
+
+	for i = 1, 14 do
+		local sparkle = Instance.new("TextLabel")
+		sparkle.Name = "RevealSparkle"
+		sparkle.BackgroundTransparency = 1
+		sparkle.AnchorPoint = Vector2.new(0.5, 0.5)
+		sparkle.Position = UDim2.fromScale(math.random(8, 92) / 100, math.random(10, 88) / 100)
+		sparkle.Size = UDim2.fromOffset(math.random(18, 34), math.random(18, 34))
+		sparkle.Font = FONT_BOLD
+		sparkle.Text = "*"
+		sparkle.TextScaled = true
+		sparkle.TextColor3 = i % 2 == 0 and Color3.fromRGB(255, 245, 130) or Color3.fromRGB(255, 255, 255)
+		sparkle.TextTransparency = 0.25
+		sparkle.TextStrokeTransparency = 1
+		sparkle.Rotation = math.random(-25, 25)
+		sparkle.ZIndex = 3
+		sparkle.Parent = gui
+		tween(
+			sparkle,
+			1.1 + math.random() * 0.8,
+			{
+				Position = sparkle.Position + UDim2.fromScale(0, -0.035 - math.random() * 0.025),
+				TextTransparency = 1,
+				Rotation = sparkle.Rotation + math.random(35, 80),
+			},
+			Enum.EasingStyle.Sine,
+			Enum.EasingDirection.Out
+		)
+	end
 
 	local stage = Instance.new("Frame")
 	stage.Name = "Stage"
@@ -278,6 +315,32 @@ local function playReveal(rawPayload)
 	stage.Position = UDim2.fromScale(0.5, 0.5)
 	stage.Size = UDim2.fromOffset(460, 520)
 	stage.Parent = gui
+
+	local cardBack = Instance.new("Frame")
+	cardBack.Name = "CartoonRevealPanel"
+	cardBack.AnchorPoint = Vector2.new(0.5, 0.5)
+	cardBack.BackgroundColor3 = Color3.fromRGB(255, 248, 222)
+	cardBack.BackgroundTransparency = 0.08
+	cardBack.BorderSizePixel = 0
+	cardBack.Position = UDim2.fromScale(0.5, 0.5)
+	cardBack.Size = UDim2.fromScale(0.92, 0.88)
+	cardBack.ZIndex = 1
+	cardBack.Parent = stage
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 28)
+	cardCorner.Parent = cardBack
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = Color3.fromRGB(255, 255, 255)
+	cardStroke.Thickness = 4
+	cardStroke.Transparency = 0.2
+	cardStroke.Parent = cardBack
+	local cardGradient = Instance.new("UIGradient")
+	cardGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 245)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 218, 142)),
+	})
+	cardGradient.Rotation = 90
+	cardGradient.Parent = cardBack
 
 	local stageScale = Instance.new("UIScale")
 	stageScale.Scale = 0.86

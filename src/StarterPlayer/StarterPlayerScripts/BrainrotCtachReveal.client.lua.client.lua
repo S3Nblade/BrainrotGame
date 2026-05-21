@@ -204,19 +204,27 @@ local function showFound(data)
 	local dim = Instance.new("Frame")
 	dim.Name = "Dim"
 	dim.Size = UDim2.fromScale(1, 1)
-	dim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dim.BackgroundColor3 = Color3.fromRGB(116, 218, 255)
 	dim.BackgroundTransparency = 1
 	dim.BorderSizePixel = 0
 	dim.ZIndex = 240
 	dim.Parent = gui
+	local dimGradient = Instance.new("UIGradient")
+	dimGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 248, 196)),
+		ColorSequenceKeypoint.new(0.52, Color3.fromRGB(116, 218, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 139, 218)),
+	})
+	dimGradient.Rotation = 35
+	dimGradient.Parent = dim
 
 	local shadow = Instance.new("Frame")
 	shadow.Name = "CardShadow"
 	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
 	shadow.Position = UDim2.new(0.5, 0, 0.5, 32)
 	shadow.Size = UDim2.new(0, 462, 0, 260)
-	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.BackgroundTransparency = 0.62
+	shadow.BackgroundColor3 = Color3.fromRGB(54, 89, 190)
+	shadow.BackgroundTransparency = 0.72
 	shadow.BorderSizePixel = 0
 	shadow.ZIndex = 248
 	shadow.Parent = gui

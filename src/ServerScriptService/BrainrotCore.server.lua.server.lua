@@ -19,7 +19,7 @@ local PICKUP_REMOTE_NAME = "BrainrotCorePickup"
 
 local LOOP_EVERY = 0.35
 local MONEY_TICK_EVERY = 1.00
-local COLLECT_DEBOUNCE = 0.08
+local COLLECT_DEBOUNCE = 0.85
 local PLACE_DEBOUNCE = 0.45
 local PROMPT_DISTANCE = 12
 local PLACE_Y_OFFSET = 0.28
@@ -126,7 +126,17 @@ local function notify(player, message, variant)
 end
 
 local function getPlotsFolder()
-	return Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
+	local direct = Workspace:FindFirstChild("plots") or Workspace:FindFirstChild("Plots")
+	if direct then
+		return direct
+	end
+
+	local spawnMap = Workspace:FindFirstChild("SpawnMap")
+	if spawnMap then
+		return spawnMap:FindFirstChild("plots") or spawnMap:FindFirstChild("Plots")
+	end
+
+	return nil
 end
 
 local function getFirstBasePart(container)

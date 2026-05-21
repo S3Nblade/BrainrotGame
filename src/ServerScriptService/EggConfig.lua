@@ -17,7 +17,44 @@ EggConfig.EvadeSuccessInvulnerableDuration = 2
 EggConfig.EvadeSuccessSpeedMultiplier = 1.4
 EggConfig.StunDuration = 60
 EggConfig.HatchPromptText = "Press E to Hatch"
-EggConfig.ChasePromptText = "Press E to Chase"
+
+EggConfig.SizeVariants = {
+	Small = {
+		Weight = 45,
+		SizeMultiplier = 0.85,
+		HpMultiplier = 0.8,
+		LuckBonus = 0,
+		SpeedMultiplier = 1.08,
+	},
+	Normal = {
+		Weight = 24,
+		SizeMultiplier = 1,
+		HpMultiplier = 1,
+		LuckBonus = 3,
+		SpeedMultiplier = 1,
+	},
+	Medium = {
+		Weight = 16,
+		SizeMultiplier = 1.12,
+		HpMultiplier = 1.18,
+		LuckBonus = 5,
+		SpeedMultiplier = 0.96,
+	},
+	Large = {
+		Weight = 12,
+		SizeMultiplier = 1.35,
+		HpMultiplier = 1.7,
+		LuckBonus = 10,
+		SpeedMultiplier = 0.9,
+	},
+	Huge = {
+		Weight = 3,
+		SizeMultiplier = 1.85,
+		HpMultiplier = 3,
+		LuckBonus = 25,
+		SpeedMultiplier = 0.78,
+	},
+}
 
 EggConfig.RarityOrder = {
 	Common = 1,

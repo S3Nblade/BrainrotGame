@@ -203,7 +203,7 @@ local function createHPBar(parent)
 	outer.AnchorPoint = Vector2.new(0.5, 0)
 	outer.Position = UDim2.new(0.5, 0, 0, 56)
 	outer.Size = UDim2.fromOffset(194, 25)
-	outer.BackgroundColor3 = Color3.fromRGB(125, 22, 31)
+	outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
 	outer.BorderSizePixel = 0
 	outer.ZIndex = 10
 	outer.Parent = parent
@@ -569,7 +569,7 @@ local function setCaptureMode(data, npc)
 	data.luckText.Visible = isEgg
 
 	if isEgg then
-		data.eggName.Text = tostring(npc:GetAttribute("DisplayName") or npc.Name)
+		data.eggName.Text = tostring(npc:GetAttribute("EggOverheadName") or npc:GetAttribute("Rarity") or npc.Name)
 		data.luckText.Text = "Luck +" .. tostring(math.floor(tonumber(npc:GetAttribute("LuckBonus")) or 0)) .. "%"
 	end
 
@@ -577,10 +577,10 @@ local function setCaptureMode(data, npc)
 	data.clock.timerBack.Visible = true
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(20, 22, 34)
-	data.hpBar.outer.BackgroundTransparency = isEgg and 0.18 or 0
-	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(255, 92, 110) or Color3.fromRGB(255, 66, 78)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 170, 175)
+	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	data.hpBar.outer.BackgroundTransparency = isEgg and 0.08 or 0
+	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
+	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
 
 	updateClock(data, timeLeft)
 	updateHPBar(data, npc)
@@ -608,13 +608,13 @@ local function setStunnedMode(data, npc)
 	data.luckText.Visible = isEgg
 
 	if isEgg then
-		data.eggName.Text = tostring(npc:GetAttribute("DisplayName") or npc.Name)
+		data.eggName.Text = tostring(npc:GetAttribute("EggOverheadName") or npc:GetAttribute("Rarity") or npc.Name)
 		data.luckText.Text = "Press E to Hatch"
 	end
 
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(120, 78, 16)
+	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 210, 60)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 245, 160)
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
@@ -636,9 +636,9 @@ local function setPanicMode(data)
 
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(120, 56, 0)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 130, 35)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 210, 120)
+	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 192, 64)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 232, 128)
 	data.hpBar.text.Text = "EVADING..."
 end
 

@@ -282,13 +282,14 @@ local dim = Instance.new("TextButton")
 dim.Name = "Dim"
 dim.Text = ""
 dim.AutoButtonColor = false
-dim.BackgroundColor3 = Color3.fromRGB(5, 9, 18)
+dim.BackgroundColor3 = Color3.fromRGB(58, 126, 230)
 dim.BackgroundTransparency = 1
 dim.BorderSizePixel = 0
 dim.Size = UDim2.fromScale(1, 1)
 dim.Visible = false
 dim.ZIndex = 1
 dim.Parent = screenGui
+addGradient(dim, Color3.fromRGB(120, 220, 255), Color3.fromRGB(255, 168, 224), 35)
 
 local modal = makePanel(screenGui, "Modal", THEME.PanelTop, THEME.PanelBottom, 26, 20)
 modal.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -998,7 +999,7 @@ local function openModal(mode)
 	dim.BackgroundTransparency = 1
 	setModalScale(0.78)
 
-	tween(dim, 0.14, { BackgroundTransparency = 0.38 })
+	tween(dim, 0.14, { BackgroundTransparency = 0.48 })
 	tween(modalScale, 0.2, { Scale = getModalFitScale() }, Enum.EasingStyle.Back)
 
 	local rebirthGui = playerGui:FindFirstChild("RebirthGui")
