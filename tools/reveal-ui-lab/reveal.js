@@ -93,18 +93,20 @@ function addEffect(className, angle, distance, size, delay, extra = {}) {
 function buildMutationEffects(selectedMutation) {
   effectLayer.replaceChildren();
   const speed = Number(reveal.style.getPropertyValue("--reveal-speed")) || 1;
-  const start = 3.18 * speed;
+  const earlyStart = 0.18 * speed;
+  const midStart = 0.48 * speed;
+  const revealStart = 2.95 * speed;
 
   if (selectedMutation === "Normal") {
     for (let i = 0; i < 6; i += 1) {
-      addEffect("normal-dot", (Math.PI * 2 * i) / 6, 88, 12, start + i * 0.03);
+      addEffect("normal-dot", (Math.PI * 2 * i) / 6, 88, 12, revealStart + i * 0.03);
     }
     return;
   }
 
   if (selectedMutation === "Diamond") {
-    for (let i = 0; i < 12; i += 1) {
-      addEffect("diamond-shard", (Math.PI * 2 * i) / 12, 86 + (i % 3) * 22, 18 + (i % 2) * 8, start + i * 0.025, {
+    for (let i = 0; i < 16; i += 1) {
+      addEffect("diamond-shard", (Math.PI * 2 * i) / 16, 90 + (i % 4) * 20, 20 + (i % 2) * 10, midStart + i * 0.025, {
         "--spin": `${35 + i * 18}deg`,
       });
     }
@@ -112,42 +114,45 @@ function buildMutationEffects(selectedMutation) {
   }
 
   if (selectedMutation === "Radioactive") {
-    for (let i = 0; i < 3; i += 1) {
-      addEffect("radio-ring", 0, 0, 120 + i * 54, start + i * 0.16);
+    for (let i = 0; i < 5; i += 1) {
+      addEffect("radio-ring", 0, 0, 132 + i * 42, earlyStart + i * 0.16);
     }
-    for (let i = 0; i < 10; i += 1) {
-      addEffect("radio-dot", (Math.PI * 2 * i) / 10, 96 + (i % 2) * 24, 16, start + 0.05 + i * 0.025);
+    for (let i = 0; i < 16; i += 1) {
+      addEffect("radio-dot", (Math.PI * 2 * i) / 16, 104 + (i % 3) * 22, 18, earlyStart + 0.05 + i * 0.025);
     }
     return;
   }
 
   if (selectedMutation === "Gold") {
     for (let i = 0; i < 12; i += 1) {
-      addEffect("gold-coin", (Math.PI * 2 * i) / 12, 92 + (i % 4) * 16, 18, start + i * 0.026);
+      addEffect("gold-coin", (Math.PI * 2 * i) / 12, 92 + (i % 4) * 16, 18, midStart + i * 0.026);
     }
     for (let i = 0; i < 5; i += 1) {
-      addEffect("gold-streak", Math.PI * (0.2 + i * 0.16), 78 + i * 12, 52, start + 0.05 + i * 0.04);
+      addEffect("gold-streak", Math.PI * (0.2 + i * 0.16), 78 + i * 12, 52, midStart + 0.05 + i * 0.04);
     }
     return;
   }
 
   if (selectedMutation === "Rainbow") {
-    for (let i = 0; i < 18; i += 1) {
-      addEffect("rainbow-orb", (Math.PI * 2 * i) / 18, 94 + (i % 5) * 13, 17, start + i * 0.018, {
+    for (let i = 0; i < 28; i += 1) {
+      addEffect("rainbow-orb", (Math.PI * 2 * i) / 28, 96 + (i % 6) * 14, 19, earlyStart + i * 0.016, {
         "--hue": `${i * 22}deg`,
       });
     }
-    for (let i = 0; i < 2; i += 1) {
-      addEffect("rainbow-ring", 0, 0, 170 + i * 46, start + i * 0.14);
+    for (let i = 0; i < 4; i += 1) {
+      addEffect("rainbow-ring", 0, 0, 170 + i * 42, earlyStart + i * 0.14);
     }
     return;
   }
 
   if (selectedMutation === "Shadow") {
-    for (let i = 0; i < 12; i += 1) {
-      addEffect("shadow-wisp", (Math.PI * 2 * i) / 12, 76 + (i % 4) * 20, 34 + (i % 3) * 12, start + i * 0.035, {
+    for (let i = 0; i < 24; i += 1) {
+      addEffect("shadow-wisp", (Math.PI * 2 * i) / 24, 82 + (i % 5) * 18, 44 + (i % 4) * 12, earlyStart + i * 0.026, {
         "--spin": `${-25 + i * 11}deg`,
       });
+    }
+    for (let i = 0; i < 3; i += 1) {
+      addEffect("shadow-ring", 0, 0, 148 + i * 52, earlyStart + i * 0.22);
     }
   }
 }

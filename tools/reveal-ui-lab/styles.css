@@ -265,6 +265,39 @@ button {
   pointer-events: none;
 }
 
+.mutation-effects::before,
+.mutation-effects::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  pointer-events: none;
+}
+
+.reveal[data-mutation="radioactive"] .mutation-effects::before {
+  background: radial-gradient(circle, rgba(155, 255, 69, 0.34), transparent 62%);
+}
+
+.reveal[data-mutation="rainbow"] .mutation-effects::before {
+  background: conic-gradient(#ff4d7d, #ffd24a, #62ff83, #4ed8ff, #9b7cff, #ff4dcb, #ff4d7d);
+  filter: blur(18px) saturate(1.4);
+}
+
+.reveal[data-mutation="shadow"] .mutation-effects::before {
+  background: radial-gradient(circle, rgba(42, 28, 74, 0.52), rgba(155, 124, 255, 0.18), transparent 66%);
+  filter: blur(10px);
+}
+
+.reveal[data-mutation="shadow"] .mutation-effects::after {
+  border: 6px solid rgba(48, 32, 86, 0.55);
+  box-shadow: 0 0 32px rgba(42, 28, 74, 0.52);
+}
+
 .sparkle {
   position: absolute;
   width: var(--size);
@@ -337,8 +370,14 @@ button {
 
 .shadow-wisp {
   border-radius: 999px;
-  background: radial-gradient(ellipse, rgba(34, 24, 56, 0.72), rgba(155, 124, 255, 0.18), transparent 72%);
-  filter: blur(2px);
+  background: radial-gradient(ellipse, rgba(24, 16, 42, 0.88), rgba(155, 124, 255, 0.26), transparent 74%);
+  filter: blur(2.5px);
+}
+
+.shadow-ring {
+  border-radius: 50%;
+  border: 6px solid rgba(36, 24, 66, 0.68);
+  box-shadow: 0 0 26px rgba(76, 52, 128, 0.42);
 }
 
 .npc-picture {
@@ -447,12 +486,20 @@ button {
 .reveal.is-playing .gold-streak,
 .reveal.is-playing .rainbow-orb,
 .reveal.is-playing .shadow-wisp {
-  animation: mutationParticle 760ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
+  animation: mutationParticle 1050ms cubic-bezier(0.17, 1.12, 0.34, 1) var(--delay) forwards;
 }
 
 .reveal.is-playing .radio-ring,
-.reveal.is-playing .rainbow-ring {
-  animation: mutationRing 900ms ease-out var(--delay) forwards;
+.reveal.is-playing .rainbow-ring,
+.reveal.is-playing .shadow-ring {
+  animation: mutationRing 1250ms ease-out var(--delay) forwards;
+}
+
+.reveal[data-mutation="radioactive"].is-playing .mutation-effects::before,
+.reveal[data-mutation="rainbow"].is-playing .mutation-effects::before,
+.reveal[data-mutation="shadow"].is-playing .mutation-effects::before,
+.reveal[data-mutation="shadow"].is-playing .mutation-effects::after {
+  animation: mutationAura 2200ms ease-out 120ms forwards;
 }
 
 .reveal[data-mutation="shadow"].is-playing .npc-picture {
@@ -602,6 +649,20 @@ button {
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.45);
+  }
+}
+
+@keyframes mutationAura {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  25% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.38);
   }
 }
 
