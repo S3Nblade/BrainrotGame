@@ -224,6 +224,56 @@ local function createEgg(parent, rarity)
 	return holder, scale, { crackA, crackB }
 end
 
+local function createPodium(parent)
+	local holder = Instance.new("Frame")
+	holder.Name = "CodePodiumFallback"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.Position = UDim2.fromScale(0.5, 0.62)
+	holder.Size = UDim2.fromOffset(300, 130)
+	holder.ZIndex = 18
+	holder.Parent = parent
+
+	local glow = Instance.new("Frame")
+	glow.Name = "PodiumGlow"
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.BackgroundColor3 = Color3.fromRGB(91, 203, 255)
+	glow.BackgroundTransparency = 1
+	glow.BorderSizePixel = 0
+	glow.Position = UDim2.fromScale(0.5, 0.62)
+	glow.Size = UDim2.fromOffset(260, 44)
+	glow.ZIndex = 18
+	glow.Parent = holder
+	addCorner(glow, UDim.new(1, 0))
+
+	local top = Instance.new("Frame")
+	top.Name = "PodiumTop"
+	top.AnchorPoint = Vector2.new(0.5, 0.5)
+	top.BackgroundColor3 = Color3.fromRGB(82, 169, 255)
+	top.BackgroundTransparency = 1
+	top.BorderSizePixel = 0
+	top.Position = UDim2.fromScale(0.5, 0.46)
+	top.Size = UDim2.fromOffset(260, 58)
+	top.ZIndex = 19
+	top.Parent = holder
+	addCorner(top, UDim.new(0, 28))
+	addStroke(top, Color3.fromRGB(255, 255, 255), 3, 0.28)
+
+	local base = Instance.new("Frame")
+	base.Name = "PodiumBase"
+	base.AnchorPoint = Vector2.new(0.5, 0.5)
+	base.BackgroundColor3 = Color3.fromRGB(46, 97, 220)
+	base.BackgroundTransparency = 1
+	base.BorderSizePixel = 0
+	base.Position = UDim2.fromScale(0.5, 0.68)
+	base.Size = UDim2.fromOffset(210, 46)
+	base.ZIndex = 18
+	base.Parent = holder
+	addCorner(base, UDim.new(0, 22))
+
+	return holder
+end
+
 local function createNpcPreview(parent, data, color)
 	local holder = Instance.new("Frame")
 	holder.Name = "NpcPreview"
@@ -430,10 +480,10 @@ local function playReveal(rawPayload)
 	cardGradient.Rotation = 90
 	cardGradient.Parent = card
 
-	local softGlow = imageOrFallback(stage, "SoftRadialGlow", asset("SoftGlow"), color, UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(360, 360), 14, "circle")
+	local softGlow = imageOrFallback(stage, "SoftGlow", asset("SoftGlow"), color, UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(360, 360), 14, "circle")
 	local burstRing = imageOrFallback(stage, "RarityBurstRing", asset("BurstRing"), color, UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(80, 80), 15, "circle")
-	local crackFlash = imageOrFallback(stage, "EggCrackFlash", asset("EggCrackFlash"), Color3.fromRGB(255, 248, 184), UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(100, 100), 46, "circle")
-	local podium = imageOrFallback(stage, "RevealPodium", asset("RevealPodium"), Color3.fromRGB(88, 180, 255), UDim2.fromScale(0.5, 0.62), UDim2.fromOffset(300, 132), 18)
+	local crackFlash = imageOrFallback(stage, "CodeCrackFlash", nil, Color3.fromRGB(255, 248, 184), UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(100, 100), 46, "circle")
+	local podium = createPodium(stage)
 
 	local egg, eggScale, cracks = createEgg(stage, data.eggType)
 	local sparkles = createSparkles(stage, color)
@@ -474,7 +524,11 @@ local function playReveal(rawPayload)
 	tween(card, 0.28, { BackgroundTransparency = 0.04 })
 	tween(cardGlow, 0.28, cardGlow:IsA("ImageLabel") and { ImageTransparency = 0.16 } or { BackgroundTransparency = 0.22 })
 	tween(softGlow, 0.26, softGlow:IsA("ImageLabel") and { ImageTransparency = 0.2 } or { BackgroundTransparency = 0.38 })
-	tween(podium, 0.28, podium:IsA("ImageLabel") and { ImageTransparency = 0 } or { BackgroundTransparency = 0.05 })
+	for _, inst in ipairs(podium:GetDescendants()) do
+		if inst:IsA("Frame") then
+			tween(inst, 0.28, { BackgroundTransparency = inst.Name == "PodiumGlow" and 0.42 or 0.05 })
+		end
+	end
 	waitTween(eggScale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 	for _ = 1, 3 do

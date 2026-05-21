@@ -1,0 +1,10 @@
+{
+  "name": "brainrot-reveal-ui-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web preview and PNG asset exporter for the Roblox NPC egg reveal UI.",
+  "scripts": {
+    "start": "python -m http.server 4173 --directory ../..",
+    "export:assets": "python export_assets.py"
+  }
+}
