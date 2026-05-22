@@ -362,15 +362,20 @@ local function styleHPBarShell(data, isEgg)
 	if isEgg then
 		data.hpBar.outer.Visible = false
 		data.hpBar.eggOuter.Visible = true
+		data.hpBar.eggFill.Visible = true
+		data.hpBar.eggText.Visible = true
 		data.hpBar.outer.BackgroundTransparency = 1
+		data.hpBar.eggOuter.BackgroundTransparency = 1
 		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
 		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
 		data.hpBar.innerClip.BackgroundTransparency = 1
-		data.hpBar.fill.BackgroundTransparency = 0
+		data.hpBar.eggFill.BackgroundTransparency = 0
 		data.hpBar.shine.Visible = false
 	else
 		data.hpBar.outer.Visible = true
 		data.hpBar.eggOuter.Visible = false
+		data.hpBar.eggFill.Visible = false
+		data.hpBar.eggText.Visible = false
 		data.hpBar.outer.BackgroundTransparency = 0
 		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
 		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
@@ -701,6 +706,7 @@ local function setCaptureMode(data, npc)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
 	data.hpBar.eggFill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
+	data.hpBar.eggFill.BackgroundTransparency = 0
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
 	data.hpBar.shine.Visible = not isEgg
 
