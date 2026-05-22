@@ -312,10 +312,16 @@ local function styleHPBarShell(data, isEgg)
 		data.hpBar.outer.BackgroundTransparency = 1
 		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
 		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
+		data.hpBar.innerClip.BackgroundTransparency = 1
+		data.hpBar.fill.BackgroundTransparency = 0
+		data.hpBar.shine.Visible = false
 	else
 		data.hpBar.outer.BackgroundTransparency = 0
 		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
 		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
+		data.hpBar.innerClip.BackgroundTransparency = 1
+		data.hpBar.fill.BackgroundTransparency = 0
+		data.hpBar.shine.Visible = true
 	end
 end
 
@@ -636,6 +642,7 @@ local function setCaptureMode(data, npc)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
+	data.hpBar.shine.Visible = not isEgg
 
 	updateClock(data, timeLeft)
 	updateHPBar(data, npc)
@@ -673,6 +680,7 @@ local function setStunnedMode(data, npc)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 210, 60)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 245, 160)
+	data.hpBar.shine.Visible = not isEgg
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
 end
 
