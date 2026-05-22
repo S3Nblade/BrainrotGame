@@ -89,23 +89,42 @@ local function hideRobloxHumanoidName(npc)
 end
 
 local function isLegacyHealthGui(obj)
-	if not obj:IsA("BillboardGui") or obj.Name == "CaptureChaseTimerGui" or obj.Name == "StunnedPopup" then
+	if not (obj:IsA("BillboardGui") or obj:IsA("SurfaceGui"))
+		or obj.Name == "CaptureChaseTimerGui"
+		or obj.Name == "StunnedPopup"
+	then
 		return false
 	end
 
 	local lowerName = string.lower(obj.Name)
-	return obj.Name == "CaptureHealthBar"
+	if obj.Name == "CaptureHealthBar"
 		or string.find(lowerName, "health", 1, true) ~= nil
 		or string.find(lowerName, "hp", 1, true) ~= nil
 		or string.find(lowerName, "capture", 1, true) ~= nil
+	then
+		return true
+	end
+
+	for _, child in ipairs(obj:GetDescendants()) do
+		local childName = string.lower(child.Name)
+		if string.find(childName, "health", 1, true)
+			or string.find(childName, "hp", 1, true)
+			or string.find(childName, "bar", 1, true)
+		then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function forceLegacyOverheadsHidden(npc, hidden)
 	npc:SetAttribute("ClientCaptureGuiActive", hidden)
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
 
 	for _, obj in ipairs(npc:GetDescendants()) do
-		if obj:IsA("BillboardGui") and obj.Name ~= "CaptureChaseTimerGui" then
-			if isLegacyHealthGui(obj) or (hidden and npc:GetAttribute("EggBrainrot") == true) then
+		if (obj:IsA("BillboardGui") or obj:IsA("SurfaceGui")) and obj.Name ~= "CaptureChaseTimerGui" then
+			if isLegacyHealthGui(obj) or (hidden and isEgg and obj.Name ~= "EggBillboard") then
 				obj:Destroy()
 			else
 				obj.Enabled = not hidden

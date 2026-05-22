@@ -553,6 +553,15 @@ local function configureTemplateParts(model)
 			descendant:Destroy()
 		elseif descendant:IsA("BillboardGui") and descendant.Name == "EggBillboard" then
 			descendant:Destroy()
+		elseif descendant:IsA("BillboardGui") or descendant:IsA("SurfaceGui") then
+			local lowerName = string.lower(descendant.Name)
+			if string.find(lowerName, "health", 1, true)
+				or string.find(lowerName, "hp", 1, true)
+				or string.find(lowerName, "bar", 1, true)
+				or string.find(lowerName, "capture", 1, true)
+			then
+				descendant:Destroy()
+			end
 		end
 	end
 end
