@@ -12,8 +12,8 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local npcFolder = Workspace:WaitForChild("BrainrotNPCs")
-local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
-local clockFolder = guiFolder and guiFolder:FindFirstChild("Clock")
+local guiFolder = ReplicatedStorage:WaitForChild("GUI")
+local clockFolder = guiFolder:WaitForChild("Clock")
 
 local FONT = Enum.Font.FredokaOne
 local tracked = {}
@@ -48,7 +48,7 @@ local function getImageFromAsset(asset)
 	return ""
 end
 
-local clockImage = getImageFromAsset(clockFolder and clockFolder:FindFirstChild("clock"))
+local clockImage = getImageFromAsset(clockFolder:WaitForChild("clock"))
 
 local function getServerTime()
 	return Workspace:GetServerTimeNow()
