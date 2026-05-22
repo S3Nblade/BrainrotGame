@@ -89,42 +89,23 @@ local function hideRobloxHumanoidName(npc)
 end
 
 local function isLegacyHealthGui(obj)
-	if not (obj:IsA("BillboardGui") or obj:IsA("SurfaceGui"))
-		or obj.Name == "CaptureChaseTimerGui"
-		or obj.Name == "StunnedPopup"
-	then
+	if not obj:IsA("BillboardGui") or obj.Name == "CaptureChaseTimerGui" or obj.Name == "StunnedPopup" then
 		return false
 	end
 
 	local lowerName = string.lower(obj.Name)
-	if obj.Name == "CaptureHealthBar"
+	return obj.Name == "CaptureHealthBar"
 		or string.find(lowerName, "health", 1, true) ~= nil
 		or string.find(lowerName, "hp", 1, true) ~= nil
 		or string.find(lowerName, "capture", 1, true) ~= nil
-	then
-		return true
-	end
-
-	for _, child in ipairs(obj:GetDescendants()) do
-		local childName = string.lower(child.Name)
-		if string.find(childName, "health", 1, true)
-			or string.find(childName, "hp", 1, true)
-			or string.find(childName, "bar", 1, true)
-		then
-			return true
-		end
-	end
-
-	return false
 end
 
 local function forceLegacyOverheadsHidden(npc, hidden)
 	npc:SetAttribute("ClientCaptureGuiActive", hidden)
-	local isEgg = npc:GetAttribute("EggBrainrot") == true
 
 	for _, obj in ipairs(npc:GetDescendants()) do
-		if (obj:IsA("BillboardGui") or obj:IsA("SurfaceGui")) and obj.Name ~= "CaptureChaseTimerGui" then
-			if isLegacyHealthGui(obj) or (hidden and isEgg and obj.Name ~= "EggBillboard") then
+		if obj:IsA("BillboardGui") and obj.Name ~= "CaptureChaseTimerGui" then
+			if isLegacyHealthGui(obj) or (hidden and npc:GetAttribute("EggBrainrot") == true) then
 				obj:Destroy()
 			else
 				obj.Enabled = not hidden
@@ -292,97 +273,20 @@ local function createHPBar(parent)
 		30
 	)
 
-	local eggOuter = Instance.new("Frame")
-	eggOuter.Name = "EggHPBar"
-	eggOuter.AnchorPoint = Vector2.new(0.5, 0)
-	eggOuter.Position = UDim2.new(0.5, 0, 0, 62)
-	eggOuter.Size = UDim2.fromOffset(170, 20)
-	eggOuter.BackgroundTransparency = 1
-	eggOuter.BorderSizePixel = 0
-	eggOuter.ClipsDescendants = false
-	eggOuter.ZIndex = 40
-	eggOuter.Visible = false
-	eggOuter.Parent = parent
-
-	local eggClip = Instance.new("Frame")
-	eggClip.Name = "EggClip"
-	eggClip.Position = UDim2.fromScale(0, 0)
-	eggClip.Size = UDim2.fromScale(1, 1)
-	eggClip.BackgroundTransparency = 1
-	eggClip.BorderSizePixel = 0
-	eggClip.ClipsDescendants = true
-	eggClip.ZIndex = 41
-	eggClip.Parent = eggOuter
-
-	local eggFill = Instance.new("Frame")
-	eggFill.Name = "EggFill"
-	eggFill.AnchorPoint = Vector2.new(0, 0.5)
-	eggFill.Position = UDim2.new(0, 0, 0.5, 0)
-	eggFill.Size = UDim2.fromScale(1, 1)
-	eggFill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	eggFill.BorderSizePixel = 0
-	eggFill.ZIndex = 42
-	eggFill.Parent = eggClip
-	addCorner(eggFill, 10)
-
-	local eggText = createText(
-		eggOuter,
-		"EggHPText",
-		UDim2.fromScale(0, 0),
-		UDim2.fromScale(1, 1),
-		"EGG 0/0",
-		Color3.fromRGB(255, 255, 255),
-		13,
-		50
-	)
-
 	return {
 		outer = outer,
 		innerClip = innerClip,
 		fill = fill,
 		shine = shine,
 		text = text,
-		eggOuter = eggOuter,
-		eggFill = eggFill,
-		eggText = eggText,
 	}
 end
 
-local function setBarRatio(barData, ratio, useEggBar)
+local function setBarRatio(barData, ratio)
 	ratio = math.clamp(ratio, 0, 1)
 
-	if useEggBar then
-		barData.eggFill.Size = UDim2.new(ratio, 0, 1, 0)
-	else
-		barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
-	end
-end
-
-local function styleHPBarShell(data, isEgg)
-	if isEgg then
-		data.hpBar.outer.Visible = false
-		data.hpBar.eggOuter.Visible = true
-		data.hpBar.eggFill.Visible = true
-		data.hpBar.eggText.Visible = true
-		data.hpBar.outer.BackgroundTransparency = 1
-		data.hpBar.eggOuter.BackgroundTransparency = 1
-		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
-		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
-		data.hpBar.innerClip.BackgroundTransparency = 1
-		data.hpBar.eggFill.BackgroundTransparency = 0
-		data.hpBar.shine.Visible = false
-	else
-		data.hpBar.outer.Visible = true
-		data.hpBar.eggOuter.Visible = false
-		data.hpBar.eggFill.Visible = false
-		data.hpBar.eggText.Visible = false
-		data.hpBar.outer.BackgroundTransparency = 0
-		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
-		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
-		data.hpBar.innerClip.BackgroundTransparency = 1
-		data.hpBar.fill.BackgroundTransparency = 0
-		data.hpBar.shine.Visible = true
-	end
+	barData.innerClip.Size = UDim2.new(1, -6, 1, -6)
+	barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
 end
 
 local function showStunnedPopup(npc)
@@ -641,10 +545,7 @@ local function updateHPBar(data, npc)
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
 
 	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
-	local labelText = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
-	data.hpBar.text.Text = labelText
-	data.hpBar.eggText.Text = labelText
-	styleHPBarShell(data, isEgg)
+	data.hpBar.text.Text = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
 		return
@@ -653,11 +554,11 @@ local function updateHPBar(data, npc)
 	data.lastHPRatio = ratio
 	stopTween(data.hpTween)
 
-	local targetFill = isEgg and data.hpBar.eggFill or data.hpBar.fill
-	local newSize = UDim2.new(ratio, 0, 1, 0)
+	local newSize
+	newSize = UDim2.new(ratio, 0, 1, 0)
 
 	data.hpTween = TweenService:Create(
-		targetFill,
+		data.hpBar.fill,
 		TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		{ Size = newSize }
 	)
@@ -666,9 +567,9 @@ local function updateHPBar(data, npc)
 
 	if ratio < (data.lastPulseRatio or 1) then
 		stopTween(data.hpPulseTween)
-		targetFill.BackgroundTransparency = 0
+		data.hpBar.fill.BackgroundTransparency = 0
 		data.hpPulseTween = TweenService:Create(
-			targetFill,
+			data.hpBar.fill,
 			TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true),
 			{ BackgroundTransparency = 0.18 }
 		)
@@ -700,15 +601,10 @@ local function setCaptureMode(data, npc)
 	data.clock.timerBack.Visible = true
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
-	data.hpBar.eggOuter.Position = UDim2.new(0.5, 0, 0, 62)
-	data.hpBar.eggOuter.Size = UDim2.fromOffset(170, 20)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	styleHPBarShell(data, isEgg)
+	data.hpBar.outer.BackgroundTransparency = isEgg and 1 or 0
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
-	data.hpBar.eggFill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	data.hpBar.eggFill.BackgroundTransparency = 0
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
-	data.hpBar.shine.Visible = not isEgg
 
 	updateClock(data, timeLeft)
 	updateHPBar(data, npc)
@@ -716,10 +612,9 @@ end
 
 local function setStunnedMode(data, npc)
 	local firstFrame = data.lastMode ~= "stunned"
-	local isEgg = npc:GetAttribute("EggBrainrot") == true
 
 	if firstFrame then
-		setBarRatio(data.hpBar, 1, isEgg)
+		setBarRatio(data.hpBar, 1)
 		popIn(data)
 
 		if not data.stunPopupShown then
@@ -732,6 +627,7 @@ local function setStunnedMode(data, npc)
 
 	data.clock.row.Visible = false
 	data.clock.timerBack.Visible = false
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
 	data.eggName.Visible = isEgg
 	data.luckText.Visible = isEgg
 
@@ -742,16 +638,10 @@ local function setStunnedMode(data, npc)
 
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
-	data.hpBar.eggOuter.Position = UDim2.new(0.5, 0, 0, 34)
-	data.hpBar.eggOuter.Size = UDim2.fromOffset(150, 22)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 210, 60)
-	data.hpBar.eggFill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 245, 160)
-	data.hpBar.shine.Visible = not isEgg
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
-	data.hpBar.eggText.Text = isEgg and "STUNNED" or "READY TO PICKUP"
 end
 
 local function setPanicMode(data)
@@ -771,7 +661,6 @@ local function setPanicMode(data)
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	styleHPBarShell(data, false)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 192, 64)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 232, 128)
 	data.hpBar.text.Text = "EVADING..."
