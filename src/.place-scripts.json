@@ -1,0 +1,1534 @@
+{
+  "place": "places/main.rbxlx",
+  "scriptCount": 191,
+  "scripts": [
+    {
+      "file": "ReplicatedStorage/Configs/MutationConfig.lua",
+      "class": "ModuleScript",
+      "name": "MutationConfig",
+      "referent": "RBX80605C7CCE26453285E7D71AB6B77BFD",
+      "robloxPath": "ReplicatedStorage/Configs/MutationConfig",
+      "sha256": "562602236440f53855eebcef653041c13bab5e3a4d4ff7ec426c009193cdd78f"
+    },
+    {
+      "file": "ReplicatedStorage/FireAura.lua",
+      "class": "ModuleScript",
+      "name": "FireAura",
+      "referent": "RBX90709387D5E54CC181875DFFB983E0C7",
+      "robloxPath": "ReplicatedStorage/FireAura",
+      "sha256": "aaabbdc9a52a393d9c0ef52569e93f9be2144308b1db32bd1ced62138c271171"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Boolean.lua",
+      "class": "ModuleScript",
+      "name": "Boolean",
+      "referent": "RBX551CA85FB0A34D46A90186578085A8CC",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Boolean",
+      "sha256": "2620edb54cc5562877c0961dddf2caa6db52897de9027d94f6a8c3d2b2bfb9b2"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Collections.lua",
+      "class": "ModuleScript",
+      "name": "Collections",
+      "referent": "RBX8317018F1E264CB99AA242CC8E8D0E57",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Collections",
+      "sha256": "0bf8eedc7236792afd8959d3d7e3b686121c6edcc57f9aa3a18e3ac028e6271b"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Console.lua",
+      "class": "ModuleScript",
+      "name": "Console",
+      "referent": "RBXE6171C5322C24363A4602534688D6FC8",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Console",
+      "sha256": "98d4c5b03ebce2b07ad164b30a334d43032ca6fdb7f173179f1def153ee6ce40"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/ES7Types.lua",
+      "class": "ModuleScript",
+      "name": "ES7Types",
+      "referent": "RBXA89C2255830D481EA9385955546A89B5",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/ES7Types",
+      "sha256": "a55638385967d38a08294a79e67dc5f5d1351a40a6a56ef1467db378821745cc"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/InstanceOf.lua",
+      "class": "ModuleScript",
+      "name": "InstanceOf",
+      "referent": "RBXDEA7D6813C6A47E4A071D78CC24DC598",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/InstanceOf",
+      "sha256": "1138b59168c0d2b3dedf96543dfb72240b605fc6d4d9945cb225c88f0b8a9e25"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/LuauPolyfill.lua",
+      "class": "ModuleScript",
+      "name": "LuauPolyfill",
+      "referent": "RBX3170F01DA9CB4E0DBD736C8E79C24518",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/LuauPolyfill",
+      "sha256": "b257d783a29a8e4eedd451f4cf9daba81b52058a401877478c861baad98bcb48"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Math.lua",
+      "class": "ModuleScript",
+      "name": "Math",
+      "referent": "RBX1D3225CAB24243C8B91B39BDE17AEB03",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Math",
+      "sha256": "13da55ff28c3547d25d3533403d1803fb82bae5fd1876a6f617e6830cee26d83"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Number.lua",
+      "class": "ModuleScript",
+      "name": "Number",
+      "referent": "RBXBD9A63EF51424E01B15824483E94E98F",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Number",
+      "sha256": "ca292fe5fba1931dc5766182d68aa2fe0e93ee4dabe9127d0adf07413cb23d47"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Promise.lua",
+      "class": "ModuleScript",
+      "name": "Promise",
+      "referent": "RBX3FB431C9D47E46EBAE7B545532D90DBA",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Promise",
+      "sha256": "d9c16975c35d9f0aa02e98351b8127240a8f2570dd540c0ff29c00de51aadd4f"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/React.lua",
+      "class": "ModuleScript",
+      "name": "React",
+      "referent": "RBX3FD6E3B36FC3446EA02529DFC6F0D403",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/React",
+      "sha256": "3ce66d6d518f3a6b3941449ddd2e1c6986ee98efd694e5443cf13b8d4493707f"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/ReactGlobals.lua",
+      "class": "ModuleScript",
+      "name": "ReactGlobals",
+      "referent": "RBX3E5247FE4F7241C6B35EA0AE7C58A4CA",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/ReactGlobals",
+      "sha256": "f84ec7a719fe365d642111f5567e3a2e497c864ba7336313c71f0aa7da2aa511"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/ReactReconciler.lua",
+      "class": "ModuleScript",
+      "name": "ReactReconciler",
+      "referent": "RBXEEE878B519214A49B21DBA2ABBE4E33C",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/ReactReconciler",
+      "sha256": "7d665e28dd818ef62ae1f6173e9e49456a85c099fab3dd54eccdda767117fbb6"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/ReactRoblox.lua",
+      "class": "ModuleScript",
+      "name": "ReactRoblox",
+      "referent": "RBXFFC08E42EADE433FA4907302161134F7",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/ReactRoblox",
+      "sha256": "2e77ff77611215166c5d9988499644d6ab63c348fdeddaf806c42bf625e2a0f3"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/SafeFlags.lua",
+      "class": "ModuleScript",
+      "name": "SafeFlags",
+      "referent": "RBXFBD31800198E4343A753584C57B45952",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/SafeFlags",
+      "sha256": "a92bdef0ee2aae92241df8b154d3564a2b94c0617f93af76ecad6f48665e75e9"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Scheduler.lua",
+      "class": "ModuleScript",
+      "name": "Scheduler",
+      "referent": "RBX3201E1A188C848728EEEFD0E13829391",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Scheduler",
+      "sha256": "5800ebbf833c413d5bcb3ad721fb884aed21a0ef4ca9e7a0b00d853a023f44e9"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Shared.lua",
+      "class": "ModuleScript",
+      "name": "Shared",
+      "referent": "RBXE140B54FDB1444C586A7B727C19456C0",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Shared",
+      "sha256": "1361d0a8faf0acba5cd99af8d00ce8c3ed9121b30a1fd08a6691bc9df93961cb"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/String.lua",
+      "class": "ModuleScript",
+      "name": "String",
+      "referent": "RBX32BF0EEB43724978AE9BF26C2C84EAAA",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/String",
+      "sha256": "6d404d35cb41d675b7ad7557e5e04e7250e3e7268d3328eed25e47f628cd9e68"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Symbol.lua",
+      "class": "ModuleScript",
+      "name": "Symbol",
+      "referent": "RBX426C0CD76454425AB4B974FC894A9AEE",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Symbol",
+      "sha256": "51d2b80a5e6015463ee7dc8f2ebf318560638145e2345eb5865b1239f4273d36"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts-js/Timers.lua",
+      "class": "ModuleScript",
+      "name": "Timers",
+      "referent": "RBXE59885850629486DAA4D88FB3B2EC2A4",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts-js/Timers",
+      "sha256": "47b32316084121e2cb06348a17ca501308bded7afcd51d56d94707f44824c06f"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts/compiler-types/package.lua",
+      "class": "ModuleScript",
+      "name": "package",
+      "referent": "RBX8AF24012173E413697AE5CA43A4A7ADD",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts/compiler-types/package",
+      "sha256": "bd401203f3299d0f033169da4064fd0edc342216e1ba719f113aed323d19a47c"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts/react-roblox.lua",
+      "class": "ModuleScript",
+      "name": "react-roblox",
+      "referent": "RBXB87CBDD3163048D0B2829197DED59E59",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts/react-roblox",
+      "sha256": "a3f5c92cbdd2b7ff43cda03b9a2a201b53def1e5edb44a317ade5bfa01893bc1"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts/react.lua",
+      "class": "ModuleScript",
+      "name": "react",
+      "referent": "RBXE6909EA23CEC436C89F6FE1FF09AF5B9",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts/react",
+      "sha256": "b23d7f8bb4a8cf1a092e3e43e26393b216426caeccbbab09ef9ba4668860dbc5"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts/types/package.lua",
+      "class": "ModuleScript",
+      "name": "package",
+      "referent": "RBX98F7852702BD46DC9EF807E3FDB5C92D",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts/types/package",
+      "sha256": "5e5d1ce21dfc707a4136dcf10744e06d6b07963cb6de36eaf5145c8a3c7fed96"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts_react-spring/package.lua",
+      "class": "ModuleScript",
+      "name": "package",
+      "referent": "RBX744EA2C5032540FCB6171073DE4EA16F",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts_react-spring/package",
+      "sha256": "9489c843f8727d90707560318f663489ac6b51e3866eed4fd9c151eb44045b0d"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts_react-spring/React.lua",
+      "class": "ModuleScript",
+      "name": "React",
+      "referent": "RBX00D84EBD2726427CB177AF570784919F",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts_react-spring/React",
+      "sha256": "30d2a60675534099cf9e3f2fd14a748c98f7b3df4db34d72a990e39d4111f730"
+    },
+    {
+      "file": "ReplicatedStorage/node_modules/@rbxts_react-spring/src.lua",
+      "class": "ModuleScript",
+      "name": "src",
+      "referent": "RBX25A71DECC377492396738168CF55CC8A",
+      "robloxPath": "ReplicatedStorage/node_modules/@rbxts_react-spring/src",
+      "sha256": "6964be9c0aaa632b015decf61837823bb217ef58b3f772eaf85906e5038493e1"
+    },
+    {
+      "file": "ReplicatedStorage/rbxts_include/Promise.lua",
+      "class": "ModuleScript",
+      "name": "Promise",
+      "referent": "RBX38BE874F36874CF29BDE72367D4B59E1",
+      "robloxPath": "ReplicatedStorage/rbxts_include/Promise",
+      "sha256": "5d69cf99a9741048855decb1d8cb5d7668f362f40c769d1500ce8f9c20dd319f"
+    },
+    {
+      "file": "ReplicatedStorage/rbxts_include/RuntimeLib.lua",
+      "class": "ModuleScript",
+      "name": "RuntimeLib",
+      "referent": "RBX4D19AA400DA0460892ECAF2388D026C3",
+      "robloxPath": "ReplicatedStorage/rbxts_include/RuntimeLib",
+      "sha256": "4f7183154d504d5f20e5d20f208b4c6542a712038923665be58c75aafd043f68"
+    },
+    {
+      "file": "ReplicatedStorage/Shared/utils.shared.lua",
+      "class": "ModuleScript",
+      "name": "utils.shared",
+      "referent": "RBXAB6C9173B6D8428FAEE19E389E694B08",
+      "robloxPath": "ReplicatedStorage/Shared/utils.shared",
+      "sha256": "b09d59407589e89c220517e63226a021adaa8694f117d651f6410ca231dc7a08"
+    },
+    {
+      "file": "ReplicatedStorage/VFX/AnimatedGoldenAuraConfig.lua",
+      "class": "ModuleScript",
+      "name": "AnimatedGoldenAuraConfig",
+      "referent": "RBXB7176936FC8E4B81909B0A9982E82266",
+      "robloxPath": "ReplicatedStorage/VFX/AnimatedGoldenAuraConfig",
+      "sha256": "83b298c8b2d3d4ed57c08311e62dbb1312510a012e250d8007a39cff6cfa33b5"
+    },
+    {
+      "file": "ReplicatedStorage/VFX/AuraTextureConfig.lua",
+      "class": "ModuleScript",
+      "name": "AuraTextureConfig",
+      "referent": "RBXB599277355194C9FB218750EB121109F",
+      "robloxPath": "ReplicatedStorage/VFX/AuraTextureConfig",
+      "sha256": "79256cfee0471bc0c0f6d60f8edb5354ceb1232401cc14357db350c8d4fd0403"
+    },
+    {
+      "file": "ServerScriptService/AuraNpcTagger.server.lua.server.lua",
+      "class": "Script",
+      "name": "AuraNpcTagger.server.lua",
+      "referent": "RBXFC8931B967294DCC9E7A0366208FF429",
+      "robloxPath": "ServerScriptService/AuraNpcTagger.server.lua",
+      "sha256": "aba7623df81a474235e13ac094a944c29f936ecafde480cd924ddeb4ca1afa7c"
+    },
+    {
+      "file": "ServerScriptService/AutoCollect.server.lua.server.lua",
+      "class": "Script",
+      "name": "AutoCollect.server.lua",
+      "referent": "RBX420F7203B3DF468CAFE9D010B15D16AA",
+      "robloxPath": "ServerScriptService/AutoCollect.server.lua",
+      "sha256": "cf18b5408bdd5839b2d7111f8599ed6925dc0d08496b8c839466abcba773aa9f"
+    },
+    {
+      "file": "ServerScriptService/BoxingFistsServer.server.lua",
+      "class": "Script",
+      "name": "BoxingFistsServer",
+      "referent": "RBX6F2D5F52A9B7432E9CC84BBFC3C38ADB",
+      "robloxPath": "ServerScriptService/BoxingFistsServer",
+      "sha256": "452f29204000122e5b9292f2cedfab06b7a243ce6dc4c7b859a818436be29aed"
+    },
+    {
+      "file": "ServerScriptService/BrainrotCatchFeedbackBridge.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotCatchFeedbackBridge.server.lua",
+      "referent": "RBX8598BFB3EED948C0955B197868FD2060",
+      "robloxPath": "ServerScriptService/BrainrotCatchFeedbackBridge.server.lua",
+      "sha256": "7f37a7a76f78814314904f99cd240a5a22f69030b458d353ee4ec47ea3e64d60"
+    },
+    {
+      "file": "ServerScriptService/BrainrotCinematicPickup.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotCinematicPickup.server.lua",
+      "referent": "RBX686F4903347442BABAB0407FDD72EA1A",
+      "robloxPath": "ServerScriptService/BrainrotCinematicPickup.server.lua",
+      "sha256": "32a96ca778b52103fc70540208f0b34206ad3e37b79a0493f1c9eb7a0582bdae"
+    },
+    {
+      "file": "ServerScriptService/BrainrotCore.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotCore.server.lua",
+      "referent": "RBX4D7B65A76E954071B2119E61A54B0C7D",
+      "robloxPath": "ServerScriptService/BrainrotCore.server.lua",
+      "sha256": "be4020dfc741e8cf318ca281d2d4d763e87d47aef2eadffea139209eb45941e2"
+    },
+    {
+      "file": "ServerScriptService/BrainrotDatabaseSaveBridge.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotDatabaseSaveBridge.server.lua",
+      "referent": "RBXE085754DF3724F8096F2C416AA6D2272",
+      "robloxPath": "ServerScriptService/BrainrotDatabaseSaveBridge.server.lua",
+      "sha256": "6f75099abce2f29c341563ee7f79a9236772c87908bbb792d2626a7f657b172a"
+    },
+    {
+      "file": "ServerScriptService/BrainrotLevelUpgrade.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotLevelUpgrade.server.lua",
+      "referent": "RBX7D2B9F5FE8EC492689DFC39E9084D7CD",
+      "robloxPath": "ServerScriptService/BrainrotLevelUpgrade.server.lua",
+      "sha256": "d255b4917ec10cad371f94f9e26b462815d7a4d24feccba91bc1c3e5adeefb46"
+    },
+    {
+      "file": "ServerScriptService/BrainrotLevelUpSystem.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotLevelUpSystem.server.lua",
+      "referent": "RBXBA5EF44D0D604436A5DB98EACB927E04",
+      "robloxPath": "ServerScriptService/BrainrotLevelUpSystem.server.lua",
+      "sha256": "f806d21b0abb54a616327d3785c342e217d53272e4c3a6a2e18d507ccbc74b8a"
+    },
+    {
+      "file": "ServerScriptService/BrainrotMoneyMultiplier.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotMoneyMultiplier.server.lua",
+      "referent": "RBX16D0539682E04A9A89CF82FD9D2AD081",
+      "robloxPath": "ServerScriptService/BrainrotMoneyMultiplier.server.lua",
+      "sha256": "ad1db687c3bc0129a6e983c0a934ea7a52f145e1f78c911e57f09069aad952d9"
+    },
+    {
+      "file": "ServerScriptService/BrainrotMutationReveal.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotMutationReveal.server.lua",
+      "referent": "RBX97F545DCF9FE48239772646EBE9DC272",
+      "robloxPath": "ServerScriptService/BrainrotMutationReveal.server.lua",
+      "sha256": "0fc2de230041a8805c398270c1aa261c14dff0601a98f0341347879948f29418"
+    },
+    {
+      "file": "ServerScriptService/BrainrotPersistentSaveBridge.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotPersistentSaveBridge.server.lua",
+      "referent": "RBX7B5E45BBE99E4D31A8FEA7F52F4D4AA0",
+      "robloxPath": "ServerScriptService/BrainrotPersistentSaveBridge.server.lua",
+      "sha256": "00a67bfb6964da8ea4da2690b6262e04c55e3ffd247718f8bae5186932f273e6"
+    },
+    {
+      "file": "ServerScriptService/BrainrotPlacedCoreRepair.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotPlacedCoreRepair.server.lua",
+      "referent": "RBXF3550955F76748F39314D31FB37C5F11",
+      "robloxPath": "ServerScriptService/BrainrotPlacedCoreRepair.server.lua",
+      "sha256": "ee442f9999d7c310919c302ec4b9a82d26e3ebb861a0c746212043a5978e85bd"
+    },
+    {
+      "file": "ServerScriptService/BrainrotPlacedFeedback.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotPlacedFeedback.server.lua",
+      "referent": "RBXE5BB892AFA6843119B7DDB1355AE85E3",
+      "robloxPath": "ServerScriptService/BrainrotPlacedFeedback.server.lua",
+      "sha256": "1f934c8b6a88c9045169ec8f06d79e9a6cf2baaa8ebc895af2a24b71c70b149a"
+    },
+    {
+      "file": "ServerScriptService/BrainrotPlacementStateGuard.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotPlacementStateGuard.server.lua",
+      "referent": "RBX4B1718F5DD7A478D83195A0C5ED0B53B",
+      "robloxPath": "ServerScriptService/BrainrotPlacementStateGuard.server.lua",
+      "sha256": "bf45f3a49dda785790ba5673ce1d80cfb167d00c54e99007295e27127c2b19ee"
+    },
+    {
+      "file": "ServerScriptService/BrainrotStandSnapFix.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotStandSnapFix.server.lua",
+      "referent": "RBX5327C07CD1DA409CB69C7C7F89964862",
+      "robloxPath": "ServerScriptService/BrainrotStandSnapFix.server.lua",
+      "sha256": "780d1cb606b374ad548bfbb408e6da06a10b25b2b436d45e33d7efde0043a41e"
+    },
+    {
+      "file": "ServerScriptService/BrainrotStateSanitizer.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotStateSanitizer.server.lua",
+      "referent": "RBX4CD1740B82984DB9AE3CDD0EF7CDC062",
+      "robloxPath": "ServerScriptService/BrainrotStateSanitizer.server.lua",
+      "sha256": "19e40b4bea8f4a07be85ef2300e39d4b7fcc2c332920c022ac725953494578d4"
+    },
+    {
+      "file": "ServerScriptService/BrainrotStorageService.server.lua",
+      "class": "Script",
+      "name": "BrainrotStorageService",
+      "referent": "RBXDF21028AA5BE43D3A0E5D00D995F1A84",
+      "robloxPath": "ServerScriptService/BrainrotStorageService",
+      "sha256": "5b37b4acf9a91fec0cd8239b06b32fbbca2ef912e5e23373af3e1232a31cd412"
+    },
+    {
+      "file": "ServerScriptService/BrainrotStrictCollect.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotStrictCollect.server.lua",
+      "referent": "RBX6A67ADB1738A4881B39C195E2D2A4F97",
+      "robloxPath": "ServerScriptService/BrainrotStrictCollect.server.lua",
+      "sha256": "cf958456d4aaf91fdc044fa5e4dcbbf3acac974e218f29acca4a24e990dde548"
+    },
+    {
+      "file": "ServerScriptService/BrainrotToolInventoryRestore.server,lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotToolInventoryRestore.server,lua",
+      "referent": "RBXA0AD35C25F924B0A9A52C52424957C47",
+      "robloxPath": "ServerScriptService/BrainrotToolInventoryRestore.server,lua",
+      "sha256": "5450dafef81420f0c2eba2c2a878ca70d5cc3a537aa9e29eab47f12b5dca1d0a"
+    },
+    {
+      "file": "ServerScriptService/BrainrotToolPlacement.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotToolPlacement.server.lua",
+      "referent": "RBX6D11FDD8408F4C869567FEBF7D7ED16A",
+      "robloxPath": "ServerScriptService/BrainrotToolPlacement.server.lua",
+      "sha256": "75b3f7fe9cdc51170713ecaeb0e665f4c41e5d53153b54e474b6242073f276dd"
+    },
+    {
+      "file": "ServerScriptService/BrainrotToolSanitizer.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainrotToolSanitizer.server.lua",
+      "referent": "RBX418921E2D76C4CD8AA3AFD9E0EF29639",
+      "robloxPath": "ServerScriptService/BrainrotToolSanitizer.server.lua",
+      "sha256": "ae86cf23be7791517d4c8f943066b15c5e835e91d90bf8d52d1aa43b43c4408a"
+    },
+    {
+      "file": "ServerScriptService/BrainTemplateBuilder.server.lua.server.lua",
+      "class": "Script",
+      "name": "BrainTemplateBuilder.server.lua",
+      "referent": "RBX6C73DE9F6E2A44DFB2A2AFBE50886075",
+      "robloxPath": "ServerScriptService/BrainTemplateBuilder.server.lua",
+      "sha256": "b9991c12e4af30157228848d62dac435e5d685044749b6ad42ee6ff98a6e5e2b"
+    },
+    {
+      "file": "ServerScriptService/CaptureFeedbackBridge.server.lua.server.lua",
+      "class": "Script",
+      "name": "CaptureFeedbackBridge.server.lua",
+      "referent": "RBX594907293AF34542A542BE3AA2AC3467",
+      "robloxPath": "ServerScriptService/CaptureFeedbackBridge.server.lua",
+      "sha256": "aca804823b1634a3dd31f0d3127971ff174c7af89ea4d9520547f53da351812d"
+    },
+    {
+      "file": "ServerScriptService/CapturePowerService.server.lua.server.lua",
+      "class": "Script",
+      "name": "CapturePowerService.server.lua",
+      "referent": "RBXAAC5E86117B1453697D8F685648166AB",
+      "robloxPath": "ServerScriptService/CapturePowerService.server.lua",
+      "sha256": "4b41f81bc43e188edd9d03cd787641780b747d2d80dac0d75ee734ba9246cde4"
+    },
+    {
+      "file": "ServerScriptService/CaptureRevealAnnouncements.server.lua.server.lua",
+      "class": "Script",
+      "name": "CaptureRevealAnnouncements.server.lua",
+      "referent": "RBXE34AD87FCE6E409FB846F2589E1C7630",
+      "robloxPath": "ServerScriptService/CaptureRevealAnnouncements.server.lua",
+      "sha256": "d74a61c3e41c8efbe8305d70ea8a3ecde1902846734b2e9f435fed12a3cc0594"
+    },
+    {
+      "file": "ServerScriptService/DailyRewardChest.server.lua",
+      "class": "Script",
+      "name": "DailyRewardChest",
+      "referent": "RBX64628FE73D574E678FE003ACA1F9CC28",
+      "robloxPath": "ServerScriptService/DailyRewardChest",
+      "sha256": "30ee75dcd8f6cd8c081e8c392e2bd7f5b7847be69c5e1674e6f9bb85df802718"
+    },
+    {
+      "file": "ServerScriptService/DirectBrainrotInventory.server.lua.server.lua",
+      "class": "Script",
+      "name": "DirectBrainrotInventory.server.lua",
+      "referent": "RBX87928790EF4547F2AD9BB1F333203BE2",
+      "robloxPath": "ServerScriptService/DirectBrainrotInventory.server.lua",
+      "sha256": "5026a581de5fad37adf5715906c030c0f07d7b24620384ff787ff7ee3bbeee32"
+    },
+    {
+      "file": "ServerScriptService/EggConfig.lua",
+      "class": "ModuleScript",
+      "name": "EggConfig",
+      "referent": "RBX36E0FD882A284C2690269A4C0B0CFE4E",
+      "robloxPath": "ServerScriptService/EggConfig",
+      "sha256": "c68e980c995d9ebbe325852476861db99997a8318f28c0952e52bb70901b2587"
+    },
+    {
+      "file": "ServerScriptService/ForceNPCSpawnBase.server.lua.server.lua",
+      "class": "Script",
+      "name": "ForceNPCSpawnBase.server.lua",
+      "referent": "RBXFA309761F06145B6BEBCC383ACD1DEFB",
+      "robloxPath": "ServerScriptService/ForceNPCSpawnBase.server.lua",
+      "sha256": "f04aa72a35f97d9afe5e60a8b768036622e9c97a5b4d454a94bd51d507c1e908"
+    },
+    {
+      "file": "ServerScriptService/ForestNPCSpawner.server.lua.server.lua",
+      "class": "Script",
+      "name": "ForestNPCSpawner.server.lua",
+      "referent": "RBX367EAC79AA4E46B2972DDA3B47F0F966",
+      "robloxPath": "ServerScriptService/ForestNPCSpawner.server.lua",
+      "sha256": "6a6feaf2216dab52711d017f47c95055eafcd050829b51bae19e53a3dca09a4e"
+    },
+    {
+      "file": "ServerScriptService/GameJuiceRemotes.server.lua.server.lua",
+      "class": "Script",
+      "name": "GameJuiceRemotes.server.lua",
+      "referent": "RBXFAD52493D2B840588DB2C7E49ED3FDD7",
+      "robloxPath": "ServerScriptService/GameJuiceRemotes.server.lua",
+      "sha256": "c892718db9c070286d84755f6d3021f1bb1dbba9e30e7d0ce08d3fbca34f8cd5"
+    },
+    {
+      "file": "ServerScriptService/GameRemotes.server.lua",
+      "class": "Script",
+      "name": "GameRemotes",
+      "referent": "RBX2208651606624252A7BBC132E59AF030",
+      "robloxPath": "ServerScriptService/GameRemotes",
+      "sha256": "8ee83e0d334e1828a26ab7b9421b7056ac9e5f71b17f922312cbe00784e7a018"
+    },
+    {
+      "file": "ServerScriptService/GoldenAuraOnNPC.server.lua",
+      "class": "Script",
+      "name": "GoldenAuraOnNPC",
+      "referent": "RBX1FBBFACE28C543B3BF189DD0745D0DA0",
+      "robloxPath": "ServerScriptService/GoldenAuraOnNPC",
+      "sha256": "157f5015bb43bdee8cc457e9a05a2fd6a1a759c95489c30a9f87cb3a7c2d5e64"
+    },
+    {
+      "file": "ServerScriptService/GoldenAuraOnPlayer.server.lua",
+      "class": "Script",
+      "name": "GoldenAuraOnPlayer",
+      "referent": "RBX870C8A37D75341DFA7BDA8B57DF98494",
+      "robloxPath": "ServerScriptService/GoldenAuraOnPlayer",
+      "sha256": "f25ea20e25381bc40b2efb2eb1167cac8fae364fe2041d791976f5c719022c46"
+    },
+    {
+      "file": "ServerScriptService/GoldenAuraPlayerSpeedTest.server.lua.server.lua",
+      "class": "Script",
+      "name": "GoldenAuraPlayerSpeedTest.server.lua",
+      "referent": "RBX11F84654F4A345E2AC40EFA5D0D27A07",
+      "robloxPath": "ServerScriptService/GoldenAuraPlayerSpeedTest.server.lua",
+      "sha256": "6b591e4217ed3d718cb18225a55d24fbd8a710670b2f833c4c2afed52c61129a"
+    },
+    {
+      "file": "ServerScriptService/GoldenAuraTest.server.lua.server.lua",
+      "class": "Script",
+      "name": "GoldenAuraTest.server.lua",
+      "referent": "RBX57F17D984A024958B872C4636CE9EDB8",
+      "robloxPath": "ServerScriptService/GoldenAuraTest.server.lua",
+      "sha256": "dd03a27a6c3a01726d515c2f6a5504953691d5ede138511dc477c3f718b066ab"
+    },
+    {
+      "file": "ServerScriptService/GoldenBrainrotAura_Installer.server.lua.server.lua",
+      "class": "Script",
+      "name": "GoldenBrainrotAura_Installer.server.lua",
+      "referent": "RBXC652C5D569E34104B1CC7D61519D2A88",
+      "robloxPath": "ServerScriptService/GoldenBrainrotAura_Installer.server.lua",
+      "sha256": "5e58663038a94dbbfcbaf2f31a6ba9b59e0f0f59d10b91c35854507b0c1fdc63"
+    },
+    {
+      "file": "ServerScriptService/HideSpotCoverBuilder.server.lua.server.lua",
+      "class": "Script",
+      "name": "HideSpotCoverBuilder.server.lua",
+      "referent": "RBX1128C288928143078599A7AF78823A25",
+      "robloxPath": "ServerScriptService/HideSpotCoverBuilder.server.lua",
+      "sha256": "7f92252c2ed1c1e4237c6be8b2eccd89454af1cde119f74b643e677869615cd0"
+    },
+    {
+      "file": "ServerScriptService/InventorySell.server.lua.server.lua",
+      "class": "Script",
+      "name": "InventorySell.server.lua",
+      "referent": "RBX83E3CE96F6C04C9BA1D212C3B77A6A89",
+      "robloxPath": "ServerScriptService/InventorySell.server.lua",
+      "sha256": "db5a07e399ccab74b695b9711a38e1ab8a984cbe0d5e9148d03d98071e5c30f5"
+    },
+    {
+      "file": "ServerScriptService/JumpAuthorityFinal.server.lua.server.lua",
+      "class": "Script",
+      "name": "JumpAuthorityFinal.server.lua",
+      "referent": "RBXD8FE947847164A13A456534D25C71FED",
+      "robloxPath": "ServerScriptService/JumpAuthorityFinal.server.lua",
+      "sha256": "118bdaf59ce587ad32734c29006fa4583fd5a3096435be66d4b7588dfa8d2295"
+    },
+    {
+      "file": "ServerScriptService/MoneySaveGuard.server.lua.server.lua",
+      "class": "Script",
+      "name": "MoneySaveGuard.server.lua",
+      "referent": "RBX1196E0761C0347AD9D804967F0A3F765",
+      "robloxPath": "ServerScriptService/MoneySaveGuard.server.lua",
+      "sha256": "e44118c22d27c9e4825068884703655d95bf75498f600d58b32f455afb2ea988"
+    },
+    {
+      "file": "ServerScriptService/MutationRevealBridge.server.lua.server.lua",
+      "class": "Script",
+      "name": "MutationRevealBridge.server.lua",
+      "referent": "RBX725EFCC4805C4E65843A798436EBC463",
+      "robloxPath": "ServerScriptService/MutationRevealBridge.server.lua",
+      "sha256": "d1859eafc853fd0da8609784755eb1aa21ffe1fb0b7e8d2a7420905e0a89b7f8"
+    },
+    {
+      "file": "ServerScriptService/MutationRollService.server.lua.server.lua",
+      "class": "Script",
+      "name": "MutationRollService.server.lua",
+      "referent": "RBX443DFC0A3BC54025B405CA517890C546",
+      "robloxPath": "ServerScriptService/MutationRollService.server.lua",
+      "sha256": "3bb89eac80e2516f28fbfdd2c5983b30d6e249a54240e1d2add79a76e6f9318a"
+    },
+    {
+      "file": "ServerScriptService/PlacedBrainrotVisualRepair.server.lua.server.lua",
+      "class": "Script",
+      "name": "PlacedBrainrotVisualRepair.server.lua",
+      "referent": "RBX6410B220D554426C96F7AD77FBB2F4F9",
+      "robloxPath": "ServerScriptService/PlacedBrainrotVisualRepair.server.lua",
+      "sha256": "26558e139f76b5985a951d3c9111a8c6f9673fcc6c1dd64432de5d630a0538f9"
+    },
+    {
+      "file": "ServerScriptService/PlotFloorUpgrade.server.lua.server.lua",
+      "class": "Script",
+      "name": "PlotFloorUpgrade.server.lua",
+      "referent": "RBX3BC414F5F688444F8082660F99CF6D13",
+      "robloxPath": "ServerScriptService/PlotFloorUpgrade.server.lua",
+      "sha256": "14f96d174c46212323bfa29d2a3facc65bce6da94a2c5ba6f9d879ae8b4f103a"
+    },
+    {
+      "file": "ServerScriptService/PlotPromptPolish.server.lua.server.lua",
+      "class": "Script",
+      "name": "PlotPromptPolish.server.lua",
+      "referent": "RBX607549A007974828ABB24A14D6929980",
+      "robloxPath": "ServerScriptService/PlotPromptPolish.server.lua",
+      "sha256": "a91e6ee800251a1c00ebe804a129b73f9998b80272d0c11d4b848c087386a493"
+    },
+    {
+      "file": "ServerScriptService/PlotService.server.lua",
+      "class": "Script",
+      "name": "PlotService",
+      "referent": "RBX6CCB76536C5B4FECA2A785CBBAFBFE95",
+      "robloxPath": "ServerScriptService/PlotService",
+      "sha256": "c9301d65736f42f7397f3df1e103245577bdd63f43798bc25f6a0766112e6bde"
+    },
+    {
+      "file": "ServerScriptService/QuestService.server.lua.server.lua",
+      "class": "Script",
+      "name": "QuestService.server.lua",
+      "referent": "RBX82C993D0103247D4B60DDDC81A5CC711",
+      "robloxPath": "ServerScriptService/QuestService.server.lua",
+      "sha256": "5f708a4aeab8a0b60225396c056461fc9a9b92cc8c13322d76cccf720096239a"
+    },
+    {
+      "file": "ServerScriptService/RebirthSystem.server.lua.server.lua",
+      "class": "Script",
+      "name": "RebirthSystem.server.lua",
+      "referent": "RBX5658C5C7C94043AEB7C82BF0A4942FB5",
+      "robloxPath": "ServerScriptService/RebirthSystem.server.lua",
+      "sha256": "6e6b859cf5b1604be3e7907b89b4c9c1d0d0292c8349ae7ade82a00ab2e09aed"
+    },
+    {
+      "file": "ServerScriptService/Server.server.lua",
+      "class": "Script",
+      "name": "Server",
+      "referent": "RBXA23BDEFA6FCD42C2BBAE89B71A6C0C40",
+      "robloxPath": "ServerScriptService/Server",
+      "sha256": "7b99b702c751262522f228432f05d98d07a3ab0a5eb9bae21f9afa3b7c7a1f61"
+    },
+    {
+      "file": "ServerScriptService/SimulatorWorldPolish.server.lua.server.lua",
+      "class": "Script",
+      "name": "SimulatorWorldPolish.server.lua",
+      "referent": "RBXD9E90A17D6054804BF8804C598C3F737",
+      "robloxPath": "ServerScriptService/SimulatorWorldPolish.server.lua",
+      "sha256": "6ad1f3aa7e165e6ef98b17442f88334090810efaed1ceaade845a7eefb8ab8c8"
+    },
+    {
+      "file": "ServerScriptService/SpeedAuraTest.server.lua.server.lua",
+      "class": "Script",
+      "name": "SpeedAuraTest.server.lua",
+      "referent": "RBXE58CF4FC311A4A08909F33CB437F4504",
+      "robloxPath": "ServerScriptService/SpeedAuraTest.server.lua",
+      "sha256": "f5f9afabed595ef5bba77a4f3e37b48955518e7f34b2d76c66802af27c48bc09"
+    },
+    {
+      "file": "ServerScriptService/SpeedAuthority.server.lua.server.lua",
+      "class": "Script",
+      "name": "SpeedAuthority.server.lua",
+      "referent": "RBX385A5238957045D9B7346AE233485D27",
+      "robloxPath": "ServerScriptService/SpeedAuthority.server.lua",
+      "sha256": "3359cf1ba094cb79d0c70313ac3bf0687e5f5069a8b740c2bd4b7498359f8d1c"
+    },
+    {
+      "file": "ServerScriptService/SpeedPower.server.lua.server.lua",
+      "class": "Script",
+      "name": "SpeedPower.server.lua",
+      "referent": "RBX00A1E93DE56A44C1BE910C006D0E0AAD",
+      "robloxPath": "ServerScriptService/SpeedPower.server.lua",
+      "sha256": "997e8e680ec6f749bf17554bdebf277b1f8aa8756a1b3a822fbdccf964643410"
+    },
+    {
+      "file": "ServerScriptService/SpeedRemotes.server.lua",
+      "class": "Script",
+      "name": "SpeedRemotes",
+      "referent": "RBX0EEE669A1E8641D6B8202CE6312DF696",
+      "robloxPath": "ServerScriptService/SpeedRemotes",
+      "sha256": "5f7f89969c2dfa0c5eddda36a31d0c87b0e4332e1a609d8b42d03bb057bdc13d"
+    },
+    {
+      "file": "ServerScriptService/TimedWorldEvents.server.lua.server.lua",
+      "class": "Script",
+      "name": "TimedWorldEvents.server.lua",
+      "referent": "RBXE3D7A69769014D29BF5BEAAC37B74A7D",
+      "robloxPath": "ServerScriptService/TimedWorldEvents.server.lua",
+      "sha256": "f758fe3f7c3c99cc009155571125913172b315dd98d47767f2172b4b7def21aa"
+    },
+    {
+      "file": "ServerScriptService/tmp.server.lua",
+      "class": "Script",
+      "name": "tmp",
+      "referent": "RBX327E028344D24646A1E53D81AC0AEC81",
+      "robloxPath": "ServerScriptService/tmp",
+      "sha256": "25c3a71bea36a71fb60f9d37d230c91e123ae991855b7690b4de4c3ffb0c276d"
+    },
+    {
+      "file": "ServerScriptService/TrainWeightRestore.server.lua.server.lua",
+      "class": "Script",
+      "name": "TrainWeightRestore.server.lua",
+      "referent": "RBX9B7FDF28D8044DDB9A38A16E7505C83D",
+      "robloxPath": "ServerScriptService/TrainWeightRestore.server.lua",
+      "sha256": "ca2935aea6635402b9b8c3b9e7493ef45a69342f0ddbec2372879116b81dfa4a"
+    },
+    {
+      "file": "ServerScriptService/UpgradeService.server.lua.server.lua",
+      "class": "Script",
+      "name": "UpgradeService.server.lua",
+      "referent": "RBX304FDEFC9A1645A693FE4FF406412FF9",
+      "robloxPath": "ServerScriptService/UpgradeService.server.lua",
+      "sha256": "8d1a2540015873ff38d4ea6f05b71f1ba5ca338ea667ca444357ab38e85deb09"
+    },
+    {
+      "file": "ServerScriptService/ZoneEggHatching.server.lua",
+      "class": "Script",
+      "name": "ZoneEggHatching",
+      "referent": "RBX8AFB136963C6436B9611A123F29B4AC2",
+      "robloxPath": "ServerScriptService/ZoneEggHatching",
+      "sha256": "fe55e26b574daca4d19ff182225bcb26255acab22806be976587333d6a6145b8"
+    },
+    {
+      "file": "ServerScriptService/ZoneGates.server.lua.server.lua",
+      "class": "Script",
+      "name": "ZoneGates.server.lua",
+      "referent": "RBX7BD1877D7A12433ABE00DC1E4C8E9EB0",
+      "robloxPath": "ServerScriptService/ZoneGates.server.lua",
+      "sha256": "2712fe1ca05e786909dbc807d43688443d2f6a43a77c07c59ab1e0b515bda00f"
+    },
+    {
+      "file": "ServerScriptService/ZoneGateService.server.lua.server.lua",
+      "class": "Script",
+      "name": "ZoneGateService.server.lua",
+      "referent": "RBX68C613F589754B5B8F3343C021772943",
+      "robloxPath": "ServerScriptService/ZoneGateService.server.lua",
+      "sha256": "1437ea416ea238a62cf46a4a244bbe546f93d4345ee5f4d80a8c3df436231b67"
+    },
+    {
+      "file": "ServerScriptService/ZoneNPCSpawner.server.lua.server.lua",
+      "class": "Script",
+      "name": "ZoneNPCSpawner.server.lua",
+      "referent": "RBXD9012081BDEE42E2AA810AAF5CF453AE",
+      "robloxPath": "ServerScriptService/ZoneNPCSpawner.server.lua",
+      "sha256": "e961f5a10059a592fc1bdf23b94b180d12b5f797c793579535fb7764e237e9d2"
+    },
+    {
+      "file": "ServerScriptService/ZoneUnlockService.server.lua.server.lua",
+      "class": "Script",
+      "name": "ZoneUnlockService.server.lua",
+      "referent": "RBXA5308622A69D41EF86A20522CE3E8774",
+      "robloxPath": "ServerScriptService/ZoneUnlockService.server.lua",
+      "sha256": "cb81959621fa4d8f386b1a8d1f0c1845651d59137dac5001b1807c5a6082fb2f"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Common/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX8B9CAC4E02C143C79303CCB1CD0DC9EE",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Common/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Common/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX40314AD3B6DF4B3780568CA149C8344A",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Common/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Epic/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX7511EEABE2994A7583773B99BF727F26",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Epic/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Epic/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX2EF0B55FA4EB43ED9E5C57761190B460",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Epic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Godly/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX27014F1BAE094330A8BB7E118F7ED5AE",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Godly/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Godly/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX5F51001EBB4946C1A6B40C9CE67656A0",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Godly/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Legendary/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX37F8C5A5B689453EB4E08FB3EE9B1348",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Legendary/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Legendary/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXC86DE59424C7444FA96A5D161B86AC5D",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Legendary/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Mythic/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXFCA6465ACEE248F284ABEE39BCD3C2FE",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Mythic/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Mythic/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX8E91E9AA346D40AD9234996C175D2C5D",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Mythic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Rare/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXC2C0038893C8405AB366C3C0F9F940BF",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Rare/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Rare/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX2DF2A71E4A2B47BEBF1FC57CD969BB13",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Rare/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Secret/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXE90D538332C2409BAA1B12AAA6505B2E",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Secret/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/BrainrotNPCPools/Secret/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXD32E9598B3B64F6D972284D7A3082712",
+      "robloxPath": "ServerStorage/BrainrotNPCPools/Secret/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX715B28B8DE5E4D1A96D71077D64FD566",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXB858B6E9CA4B4D47846CEDD546E9FE2A",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX2BA0213153A94B7C89FD5705C357D544",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Common/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXACCA99AE984646C79189168042807013",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX1C3A9AA57293492E82D6F9282831C570",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX5C4429EA7ABA4E4D967A14AFF2E93489",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Epic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX8D7D4EFD6E6D4DF08BE72C231ACA8217",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX31F2FAEC041A434E87E873FA5B1656C0",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXEF2F13F835A544C480F4FA5704ECCDA3",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Godly/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXAF1B156E9C3C461D836DB1AADAB7960C",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXEFAB76600FFC4200963F0575A3D1ACC3",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX41D3ABA7560A44A8ABBE768AFD7007B7",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Legendary/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXAA669976B6D34848B690B2B9A580D0CF",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXFADA453980B74A28BEDA71D20F69C1FB",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX033EF7B75E554B5EBFACA5FF7A949046",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Mythic/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX772378543F044FB0B7F37FAB07E47FA4",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX1FE798B722E4480FBF38BB70DF7B7E56",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXAEB0067470B84FBE8470886C0E637056",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Rare/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBX47B336F982314A4DB9B66DEA0E2E3D3B",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX8FFDC7F1AF324E5EA7F63349CB76F0F4",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungIdleAnimator__2.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBXBD801166602C4171995A9D0A80486728",
+      "robloxPath": "ServerStorage/OldBrainrotNPCPools_Backup/Secret/Tung Tung Sahur/TungIdleAnimator.server.lua",
+      "sha256": "68560c6979184767a7360d9f056de4a663219a3199f59f4c246a66d6e9c46f41"
+    },
+    {
+      "file": "StarterPack/Fists/BoxingFistsClient.client.lua",
+      "class": "LocalScript",
+      "name": "BoxingFistsClient",
+      "referent": "RBX8031ECF8BDB04C299C44D0E7767AF263",
+      "robloxPath": "StarterPack/Fists/BoxingFistsClient",
+      "sha256": "940c785f54f0d8ee4fc7187e7ea42692dd3edc291ff4ec8270724be61a35eb37"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/AutoCollect.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "AutoCollect.client.lua",
+      "referent": "RBX0ACD25FC7C1646B0BBC751C8ECAE80E0",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/AutoCollect.client.lua",
+      "sha256": "5788508ba217d846471d3b2aee7ea533d0d8238e22a7d04005a378b05ca3b018"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BetterTrainingFeedback.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BetterTrainingFeedback.client.lua",
+      "referent": "RBXF11F36FA280F4BC9ABEE2025AAE82D85",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BetterTrainingFeedback.client.lua",
+      "sha256": "070b1e471b18649f8cfe7a4f9c8302cfb6911e5c1f47350e0f5f8d7f75565e40"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotCoreClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotCoreClient.client.lua",
+      "referent": "RBX77058DF72AFE4C96ACDC6FE0F1F981B3",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotCoreClient.client.lua",
+      "sha256": "d2d6d744ee8b5200e489ac6d7cd1f66ac1c36644946be7cb37d12eeace60e1a6"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotCtachReveal.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotCtachReveal.client.lua",
+      "referent": "RBXCC221A409F06433594641B6848C7997D",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotCtachReveal.client.lua",
+      "sha256": "f382cb73853b49869b6e9b486fc0a33706e8a6a7d644076b854874a15afa0eaf"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotDotPickup.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotDotPickup.client.lua",
+      "referent": "RBXB28A1793A892434CA590CC17F0CDCA5B",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotDotPickup.client.lua",
+      "sha256": "789c70ae453aa1e7c30ec8d40896607040dc7f5c28ff73c64dd845d432993dc8"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotMainHUD.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotMainHUD.client.lua",
+      "referent": "RBX28C7D08D0EEE498F8E68FB57173BCBD0",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotMainHUD.client.lua",
+      "sha256": "1d5ff2548e879a2304e5ac651aec56a6c38da75f13985388fa9439fdb45191f9"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotPlacedMoment.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotPlacedMoment.client.lua",
+      "referent": "RBXA3436480B050451198460084B5B21928",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotPlacedMoment.client.lua",
+      "sha256": "96de44d07c0e4abe69815b7b98782fdb3e7e641d92da759adf56cfed8d14d014"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotSlotPromptClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotSlotPromptClient.client.lua",
+      "referent": "RBXA5F5CEE7A21E487F91919AC90B108A63",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotSlotPromptClient.client.lua",
+      "sha256": "693d2e0e103822bead39956ef3f5d6ae813ea9b1dbe94431f627a41f2ad848bf"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/BrainrotStandPromptFilter.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "BrainrotStandPromptFilter.client.lua",
+      "referent": "RBX3FD6C6B3123B474780F0223A75AA5252",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/BrainrotStandPromptFilter.client.lua",
+      "sha256": "fb3635d3ed06dbac8065cc353e89094a2a829bf889dc3d05edec271704b40ab6"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/CaptureChaseTimer.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "CaptureChaseTimer.client.lua",
+      "referent": "RBX93393414299C47689AC6EA0AC70F1F78",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/CaptureChaseTimer.client.lua",
+      "sha256": "6c0b91f16057f3d9ce783f6f570136fac7d2b3a96509b6d1d11997e869da5b87"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/CaptureFeedbackClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "CaptureFeedbackClient.client.lua",
+      "referent": "RBX173538F1FAE44906A227C53C0ECA2F6B",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/CaptureFeedbackClient.client.lua",
+      "sha256": "71f0025e38b76e7f4c33f146405e50a8e17f0362c55ac015b5d501b777ef2812"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/CaptureNetClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "CaptureNetClient.client.lua",
+      "referent": "RBXA3DF9E66AD7845DAB7263C4A549C06AC",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/CaptureNetClient.client.lua",
+      "sha256": "028d9d790c10b2c5bd38dfcde402fc12028cf7f46c04172c012aed1ce0051a96"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/CarryToPlotGuide.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "CarryToPlotGuide.client.lua",
+      "referent": "RBXE937C64651B649EC9C1B5AC3E1B3DEC4",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/CarryToPlotGuide.client.lua",
+      "sha256": "eec332c6abf991057e1aae1e22805c9747e170c5130fcf35947035fb776eb606"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/CleanPrompt.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "CleanPrompt.client.lua",
+      "referent": "RBX0417C66B7F08448FAB447D7764A723ED",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/CleanPrompt.client.lua",
+      "sha256": "219527f3eacf03f1bb238c7905ca4026dcdb95f718b78580d94d402c24ade87e"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/Client.client.lua",
+      "class": "LocalScript",
+      "name": "Client",
+      "referent": "RBX7A99803368F6456DB1C96CFAACB8FD46",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/Client",
+      "sha256": "c9327a118aef17b63c005310b307689ee506a70af1b6f707feec969caf6ec179"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/DropBrainrotButton.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "DropBrainrotButton.client.lua",
+      "referent": "RBX5708E8DFCAA64F0BB9260B28AEA7AE75",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/DropBrainrotButton.client.lua",
+      "sha256": "87c4d5e1bc09eaf8550adf679a127228c021828a1d0aa7df3e211e283ce15a9b"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/GameJuiceClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "GameJuiceClient.client.lua",
+      "referent": "RBX65FF72C7F20A4C5E87ABE31752D01068",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/GameJuiceClient.client.lua",
+      "sha256": "9f8155a7eb97e468f8306fc55136ec04fabb952b7e09cdaa289a9a6ba9c7715d"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/GoldenAnimatedAura.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "GoldenAnimatedAura.client.lua",
+      "referent": "RBX3713B0114FFF45518376041EC83F87D1",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/GoldenAnimatedAura.client.lua",
+      "sha256": "6ae34e145d7228956436153b6b23ba7be4c40d5b2c35431c6a7f9573b1a07c30"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/HideNpcVisualPatch.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "HideNpcVisualPatch.client.lua",
+      "referent": "RBX1E64295F46384FEEA8AF604392AE5054",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/HideNpcVisualPatch.client.lua",
+      "sha256": "db0b98573ea8773aaf669d3e922370f628c7305b5fef09c7cede8b4e97cd8ed7"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/HouseGoalGui.client.lua",
+      "class": "LocalScript",
+      "name": "HouseGoalGui",
+      "referent": "RBX0C19C3C5D2AA4344A370A0F4EA449E10",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/HouseGoalGui",
+      "sha256": "5214d8b8051be6c2653e57464de654d846bd8a4113d15887906093d3604b3c54"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/HUD_LeftButtons.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "HUD_LeftButtons.client.lua",
+      "referent": "RBX24194E9649A44CB0935C7FD89963C3F0",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/HUD_LeftButtons.client.lua",
+      "sha256": "9fdf9e20b5d8e2e511d6963ce6178b1c76823e41e7807f1fce8fde7f103bc592"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/HUD_StatsBars.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "HUD_StatsBars.client.lua",
+      "referent": "RBX3C235831AFDC4868830EB530D7B94037",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/HUD_StatsBars.client.lua",
+      "sha256": "ce9c62eb8ce1978a8342334c4dd7e7998456111c9d94eb59fa17396ef245fbef"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/InventoryModelPreviewPatch.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "InventoryModelPreviewPatch.client.lua",
+      "referent": "RBX20DAB683E2A84EE7A5536CC30BA78D97",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/InventoryModelPreviewPatch.client.lua",
+      "sha256": "18bdb6cec3a15e1c9566e48964d6b38e607c719a1a705cda7ba19bfe4892974a"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/JumpAuthorityFinal.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "JumpAuthorityFinal.client.lua",
+      "referent": "RBXA6A171F20666482E80FF600F02354325",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/JumpAuthorityFinal.client.lua",
+      "sha256": "98a68a9d64d38e671e673763e5444dad60556492863bc65b3cb977ee32bf0b76"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/JumpUnstick.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "JumpUnstick.client.lua",
+      "referent": "RBXE2600235F07F4155A6560600E71A13E2",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/JumpUnstick.client.lua",
+      "sha256": "7af7316c1d2037bb299ac9568ca26cebde7a656a354d45bb5c950cda88480f7c"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/LocalCollectMoneyText.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "LocalCollectMoneyText.client.lua",
+      "referent": "RBX56ECF8F99EED4F8E98CAA771040ADFAB",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/LocalCollectMoneyText.client.lua",
+      "sha256": "b72ec1f1f35c2373222fc60cb044bd46cbe1166837629da633c1e3ef2a9d6259"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MoneyPopup.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MoneyPopup.client.lua",
+      "referent": "RBX44448C506788413DB833A462F1201E1C",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MoneyPopup.client.lua",
+      "sha256": "e8770157fadd00d9c34eb7aebd6af5f00bb098ebcc284b57bce6d11d9546c898"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationAuraAssetDriven.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationAuraAssetDriven.client.lua",
+      "referent": "RBX72B2C92805194B7BA3EC82CA7621C701",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationAuraAssetDriven.client.lua",
+      "sha256": "c494770d8f84de1c206ffed9afb1849b294f7c9744cd63425c03dcefc4d6738c"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationAuraCinematic.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationAuraCinematic.client.lua",
+      "referent": "RBXA6B775F80210494A93372C5E5611E573",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationAuraCinematic.client.lua",
+      "sha256": "0122d2edcab412e6c312e972757efbad57d97f3eb0d4417c47279e084704477c"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationLuckyBloxAura.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationLuckyBloxAura.client.lua",
+      "referent": "RBXB88008BD5BCA4D41969A05DA84F2FC69",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationLuckyBloxAura.client.lua",
+      "sha256": "b6345f92c4957c4f0acde4f6c00d09be2bdbff73de203db05ca5ab5478a50c54"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationLuckyBloxAura3D.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationLuckyBloxAura3D.client.lua",
+      "referent": "RBXE184EB9B72214E248AB9D8045EE4BB62",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationLuckyBloxAura3D.client.lua",
+      "sha256": "dd4d976c5766a17b3259e39541a927653964a8b6e4f8f94ce703624f953f1c17"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationNameplate.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationNameplate.client.lua",
+      "referent": "RBX6B2D81602FB5465793368504421FFA1A",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationNameplate.client.lua",
+      "sha256": "47460ae62b33b8866b17572565d4f5bac25eb910e13e8e609acc61dc0ddcda34"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationPictureAura.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationPictureAura.client.lua",
+      "referent": "RBXF8E960EE6A294C2EBACE87906961AD1F",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationPictureAura.client.lua",
+      "sha256": "195d39d8c9ec7b45760769ea6c0e1033547b5ddbc94d676206440adbfc8ae18a"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationReveal.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationReveal.client.lua",
+      "referent": "RBX218B0C79B09C4D9C9CF2412CC837FB8F",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationReveal.client.lua",
+      "sha256": "11dabc1cdad1f7957bc16a0408497ea5c3cce13b02295efaf58e22584f6495e8"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/MutationRevealClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "MutationRevealClient.client.lua",
+      "referent": "RBX4DA11902F47F4C55A4762D93C27DA04B",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/MutationRevealClient.client.lua",
+      "sha256": "a3a110bb935f84ec46de5fda99fd973d727a8d510bebd87bc41c2e8eb98c77cb"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/NpcAuras.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "NpcAuras.client.lua",
+      "referent": "RBXC8237F2741C84811A3283D84F1A7ECA0",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/NpcAuras.client.lua",
+      "sha256": "8580565e26aa88554ba89c9ef7da317564ed2b8ac07a173de83e1eaf8d971a11"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/NPCOverheadGui.client.lua",
+      "class": "LocalScript",
+      "name": "NPCOverheadGui",
+      "referent": "RBX77DBBB6BF1B6408790550FB3C4272FDC",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/NPCOverheadGui",
+      "sha256": "f9628756ce9eb9a45ed79e05a984f96c1b8db8f59166b8e65809267e74463762"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/NPCRevealAssets.lua",
+      "class": "ModuleScript",
+      "name": "NPCRevealAssets",
+      "referent": "RBXCD4E170AB17F4E47B38A638035522E26",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/NPCRevealAssets",
+      "sha256": "12c65adb406b7977ec2889e6a3e5e0e28a2a02a7d89c223cf3c73d28b7c3100a"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/NPCRevealGui.lua",
+      "class": "ModuleScript",
+      "name": "NPCRevealGui",
+      "referent": "RBX862350900A904E459E90D2DDFA610F28",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/NPCRevealGui",
+      "sha256": "fecaf5459973806e4d5ab6fe6544e76c33d060f4b6dbc0b1c79edcddcf39a79d"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/OwnerCollectMoneyText.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "OwnerCollectMoneyText.client.lua",
+      "referent": "RBXD91855BF0CFA412B82C9E467D209D57E",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/OwnerCollectMoneyText.client.lua",
+      "sha256": "3af8cf242ea8bb8763155a101d404eee5c64e8282f4274b255f3cf7ae658b307"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/PlayerJumpFix.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "PlayerJumpFix.client.lua",
+      "referent": "RBX02DECFF0A8924F0C8D401D2A671AA0BE",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/PlayerJumpFix.client.lua",
+      "sha256": "6550e3737ed325cdc0a42c8e1552630df00abb6fc5c4720e9505a1135edc13db"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/PlotOwnerText.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "PlotOwnerText.client.lua",
+      "referent": "RBX2B0F992712354A7190A1CBD445D5CA4B",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/PlotOwnerText.client.lua",
+      "sha256": "07a99e137d64a7f64f588b912cfa807c45540ac5ce9b52eae12782dc7ca10cca"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/PrivateCollectMoneyText.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "PrivateCollectMoneyText.client.lua",
+      "referent": "RBX3BB4EE3F5CFE4C3B802C7FEFACDB702A",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/PrivateCollectMoneyText.client.lua",
+      "sha256": "4803fbe914378b7362e6abf74ca634b5d483d1deb4e9aa5a723d3bbe1bc5b98b"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/PrivateCollectMoneyText.client.lua.client_2.lua",
+      "class": "ModuleScript",
+      "name": "PrivateCollectMoneyText.client.lua.client_2",
+      "referent": "RBX61AF020AC24F46C9BBA9D5B1FB6FB5E7",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/PrivateCollectMoneyText.client.lua.client_2",
+      "sha256": "f207c74bdf25f2e866cd5ce04968a0b8771827eb91986153a1e4a0a884a9b99b"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ProfessionalCartoonUI.client.lua",
+      "class": "LocalScript",
+      "name": "ProfessionalCartoonUI",
+      "referent": "RBXB1AAD5F979D443F08A4C0FB3AB168FBA",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ProfessionalCartoonUI",
+      "sha256": "b5d49f54d47db75c5e579c12c982d8651d072bcc3ae17668a9356ebb6357d3c2"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/QuestProgressClientSink.client.lua.server.lua",
+      "class": "Script",
+      "name": "QuestProgressClientSink.client.lua",
+      "referent": "RBX3717096366F74CB19C27B39ADD816D4F",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/QuestProgressClientSink.client.lua",
+      "sha256": "d99661150eb20209a3ee0a3739593946388c062f151190538fdc992a1cfdf491"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/RebirthGui.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "RebirthGui.client.lua",
+      "referent": "RBXD6453F33AA3F44F4BE68128FC84030AC",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/RebirthGui.client.lua",
+      "sha256": "dc948dbd3114ce11e42040ceecd850105b52fc6ea36ddac69b001f7656cd77b3"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ScreenGoalArrow.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "ScreenGoalArrow.client.lua",
+      "referent": "RBX5796ECD1F19C4B2EB3E34D69A11CC658",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ScreenGoalArrow.client.lua",
+      "sha256": "01003e8924a8dfc2d8be3322690a49d4862f997ea02aac49f3b479963171c56b"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/SpeedAuthority.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "SpeedAuthority.client.lua",
+      "referent": "RBX48D67B67C5F14C6EA137BAFA88F0BD6F",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/SpeedAuthority.client.lua",
+      "sha256": "ab045de498b022af4e5ebf3ca5149ec955005781b62da68b9ef5e6c21580d03c"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ToolInventoryRefreshPatch.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "ToolInventoryRefreshPatch.client.lua",
+      "referent": "RBX16F90318992E48B8ACE47DAD4D76AF5F",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ToolInventoryRefreshPatch.client.lua",
+      "sha256": "f83af07389c29616d9789fb0f36bfc966182320c0813edac963fc17227e18f84"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/TrainingShopUpgrades.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "TrainingShopUpgrades.client.lua",
+      "referent": "RBX7A03D06C585747708798B752D062A335",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/TrainingShopUpgrades.client.lua",
+      "sha256": "8272692d8734e4547ef8ef55f06524f8a6e1619b3ea0bb64f42156db19a4fed7"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/WeightTraining.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "WeightTraining.client.lua",
+      "referent": "RBX738896BA49BD47BC9C7DA1CE18525D74",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/WeightTraining.client.lua",
+      "sha256": "c8b7143fd2755e188734fd2666f97d9e3a3d6f454aad5bc4117a0897cd4fc5a1"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ZoneEggHatchClient.client.lua",
+      "class": "LocalScript",
+      "name": "ZoneEggHatchClient",
+      "referent": "RBX7D125A782B344120845B8ABD2A434804",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ZoneEggHatchClient",
+      "sha256": "ac4a7af6f04563287f1d1f3f62fe2ac01340258a333a526bdbb483ed4d77968c"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ZoneGateClient.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "ZoneGateClient.client.lua",
+      "referent": "RBXC4AE14F4C7FE42748F533C487C6C5238",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ZoneGateClient.client.lua",
+      "sha256": "2527496bb2783dad1c61dc67eabf677bbeccf143050152a2e6449535a83816c0"
+    },
+    {
+      "file": "StarterPlayer/StarterPlayerScripts/ZonePortalUI.client.lua.client.lua",
+      "class": "LocalScript",
+      "name": "ZonePortalUI.client.lua",
+      "referent": "RBX31E21EE5CE45489289D32069089CC8F9",
+      "robloxPath": "StarterPlayer/StarterPlayerScripts/ZonePortalUI.client.lua",
+      "sha256": "824dfb4f9c26da3a75ab584215b3081a84aa357b6624c19285ceed9397980b20"
+    },
+    {
+      "file": "Workspace/tung/TungAutoAnchor.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungAutoAnchor.server.lua",
+      "referent": "RBXECAAEEED3D544DEEB0F422660F65B3F1",
+      "robloxPath": "Workspace/tung/TungAutoAnchor.server.lua",
+      "sha256": "9d2bcb80d593724cb88cfd13ba83b1621bbedaf484dbd27aca89997992fcc21a"
+    },
+    {
+      "file": "Workspace/tung/TungIdleAnimator.server.lua.server.lua",
+      "class": "Script",
+      "name": "TungIdleAnimator.server.lua",
+      "referent": "RBX9EB6505E4BFA4920BE74C2CF82F81A72",
+      "robloxPath": "Workspace/tung/TungIdleAnimator.server.lua",
+      "sha256": "caa49d140deee0932bfb16abf174443b115cefe402a5ae89b65b4568be1c72c2"
+    }
+  ]
+}

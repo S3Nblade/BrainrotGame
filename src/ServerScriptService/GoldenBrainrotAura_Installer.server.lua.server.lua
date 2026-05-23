@@ -227,7 +227,7 @@ local function createTemplate(): Model
 	lowAttachment.Parent = center
 
 	-- Ground ring / soft UI cards
-	local ringImage = makeSurfaceImage(groundRing, TEXTURES.GroundRing, "GroundRingImage")	
+	local ringImage = makeSurfaceImage(groundRing, TEXTURES.GroundRing, "GroundRingImage")
 	local glowImage = makeBillboardImage(billboardPart, TEXTURES.SoftGlow, "SoftCoreGlow", 5.6, 0.18)
 	local swirlImage = makeBillboardImage(billboardPart, TEXTURES.SwirlCrescent, "SwirlCrescent", 4.7, 0.10)
 

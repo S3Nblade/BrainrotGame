@@ -12,8 +12,8 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local npcFolder = Workspace:WaitForChild("BrainrotNPCs")
-local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
-local clockFolder = guiFolder and guiFolder:FindFirstChild("Clock")
+local guiFolder = ReplicatedStorage:WaitForChild("GUI")
+local clockFolder = guiFolder:WaitForChild("Clock")
 
 local FONT = Enum.Font.FredokaOne
 local tracked = {}
@@ -48,7 +48,7 @@ local function getImageFromAsset(asset)
 	return ""
 end
 
-local clockImage = getImageFromAsset(clockFolder and clockFolder:FindFirstChild("clock"))
+local clockImage = getImageFromAsset(clockFolder:WaitForChild("clock"))
 
 local function getServerTime()
 	return Workspace:GetServerTimeNow()
@@ -243,7 +243,7 @@ local function createHPBar(parent)
 	fill.AnchorPoint = Vector2.new(0, 0.5)
 	fill.Position = UDim2.new(0, 0, 0.5, 0)
 	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = Color3.fromRGB(255, 66, 78)
+	fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	fill.BorderSizePixel = 0
 	fill.ZIndex = 12
 	fill.Parent = innerClip
@@ -285,8 +285,19 @@ end
 local function setBarRatio(barData, ratio)
 	ratio = math.clamp(ratio, 0, 1)
 
-	barData.innerClip.Size = UDim2.new(1, -6, 1, -6)
 	barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
+end
+
+local function styleHPBarShell(data, isEgg)
+	if isEgg then
+		data.hpBar.outer.BackgroundTransparency = 1
+		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
+		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
+	else
+		data.hpBar.outer.BackgroundTransparency = 0
+		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
+		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
+	end
 end
 
 local function showStunnedPopup(npc)
@@ -433,7 +444,8 @@ local function createGui(npc)
 		hpBar = hpBar,
 		eggName = eggName,
 		luckText = luckText,
-		hpTween = nil,
+		hpVisualRatio = nil,
+		hpTargetRatio = nil,
 		lastMode = "hidden",
 		lastHPRatio = nil,
 		stunPopupShown = false,
@@ -450,8 +462,6 @@ local function destroyGui(npc)
 	local data = tracked[npc]
 
 	if data then
-		stopTween(data.hpTween)
-
 		if data.billboard then
 			data.billboard:Destroy()
 		end
@@ -546,36 +556,39 @@ local function updateHPBar(data, npc)
 
 	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
 	data.hpBar.text.Text = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
+	styleHPBarShell(data, isEgg)
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
 		return
 	end
 
 	data.lastHPRatio = ratio
-	stopTween(data.hpTween)
+	stopTween(data.hpPulseTween)
+	data.hpBar.fill.BackgroundTransparency = 0
+	data.hpTargetRatio = ratio
+	data.hpVisualRatio = data.hpVisualRatio or data.hpBar.fill.Size.X.Scale
+end
 
-	local newSize
-	newSize = UDim2.new(ratio, 0, 1, 0)
-
-	data.hpTween = TweenService:Create(
-		data.hpBar.fill,
-		TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-		{ Size = newSize }
-	)
-
-	data.hpTween:Play()
-
-	if ratio < (data.lastPulseRatio or 1) then
-		stopTween(data.hpPulseTween)
-		data.hpBar.fill.BackgroundTransparency = 0
-		data.hpPulseTween = TweenService:Create(
-			data.hpBar.fill,
-			TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true),
-			{ BackgroundTransparency = 0.18 }
-		)
-		data.hpPulseTween:Play()
+local function animateHPBar(data, dt)
+	if not data.hpTargetRatio then
+		return
 	end
-	data.lastPulseRatio = ratio
+
+	local visual = data.hpVisualRatio
+	if visual == nil then
+		visual = data.hpBar.fill.Size.X.Scale
+	end
+
+	local target = math.clamp(data.hpTargetRatio, 0, 1)
+	local alpha = 1 - math.exp(-math.max(dt or 0, 0) * 12)
+	visual += (target - visual) * alpha
+
+	if math.abs(visual - target) < 0.003 then
+		visual = target
+	end
+
+	data.hpVisualRatio = visual
+	data.hpBar.fill.Size = UDim2.new(visual, 0, 1, 0)
 end
 
 local function setCaptureMode(data, npc)
@@ -602,9 +615,9 @@ local function setCaptureMode(data, npc)
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.outer.BackgroundTransparency = isEgg and 1 or 0
-	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 66, 78)
-	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 170, 175)
+	styleHPBarShell(data, isEgg)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
 
 	updateClock(data, timeLeft)
 	updateHPBar(data, npc)
@@ -614,7 +627,6 @@ local function setStunnedMode(data, npc)
 	local firstFrame = data.lastMode ~= "stunned"
 
 	if firstFrame then
-		setBarRatio(data.hpBar, 1)
 		popIn(data)
 
 		if not data.stunPopupShown then
@@ -639,8 +651,10 @@ local function setStunnedMode(data, npc)
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.fill.BackgroundColor3 = isEgg and Color3.fromRGB(86, 235, 106) or Color3.fromRGB(255, 210, 60)
-	data.hpBar.shine.BackgroundColor3 = isEgg and Color3.fromRGB(190, 255, 185) or Color3.fromRGB(255, 245, 160)
+	styleHPBarShell(data, isEgg)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
+	updateHPBar(data, npc)
 	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
 end
 
@@ -661,8 +675,9 @@ local function setPanicMode(data)
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)
 	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 192, 64)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 232, 128)
+	styleHPBarShell(data, false)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
 	data.hpBar.text.Text = "EVADING..."
 end
 
@@ -687,10 +702,12 @@ local function updateNpc(npc)
 		local data = tracked[npc]
 		if data then
 			setVisible(data, false)
-			stopTween(data.hpTween)
 
 			data.lastMode = "hidden"
 			data.lastHPRatio = nil
+			data.hpVisualRatio = nil
+			data.hpTargetRatio = nil
+			setBarRatio(data.hpBar, 1)
 			data.stunPopupShown = false
 
 			if data.clock then
@@ -729,6 +746,25 @@ local function watchNpc(npc)
 	hideRobloxHumanoidName(npc)
 	ensureGui(npc)
 
+	local function refreshHP()
+		if not npc.Parent then
+			return
+		end
+
+		local data = ensureGui(npc)
+		if data and data.billboard and data.billboard.Enabled then
+			updateHPBar(data, npc)
+		elseif data then
+			data.lastHPRatio = nil
+			data.hpTargetRatio = nil
+		end
+	end
+
+	npc:GetAttributeChangedSignal("CaptureHP"):Connect(refreshHP)
+	npc:GetAttributeChangedSignal("EggHP"):Connect(refreshHP)
+	npc:GetAttributeChangedSignal("CaptureMaxHP"):Connect(refreshHP)
+	npc:GetAttributeChangedSignal("EggMaxHP"):Connect(refreshHP)
+
 	npc.AncestryChanged:Connect(function(_, parent)
 		if not parent then
 			destroyGui(npc)
@@ -749,10 +785,14 @@ npcFolder.ChildAdded:Connect(function(npc)
 	end
 end)
 
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(dt)
 	for _, npc in ipairs(npcFolder:GetChildren()) do
 		if npc:IsA("Model") then
 			updateNpc(npc)
+			local data = tracked[npc]
+			if data and data.billboard and data.billboard.Enabled then
+				animateHPBar(data, dt)
+			end
 		end
 	end
 end)

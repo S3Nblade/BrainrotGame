@@ -1188,7 +1188,7 @@ local function bindNpcIndexTracking()
 			if npc:IsA("Model") then
 				markSeenFromInstance(npc)
 			end
-		end
+		end)
 	end
 
 	bindToolContainer(player:FindFirstChild("Backpack"))

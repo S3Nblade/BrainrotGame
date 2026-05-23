@@ -1,136 +1,60 @@
 --!nonstrict
--- Reusable simulator-style egg NPC reveal GUI.
+-- Professional code-created 2D egg hatch reveal.
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
-local Assets = require(script.Parent:WaitForChild("NPCRevealAssets"))
-
 local RevealNPC = {}
 
-local FONT_BOLD = Enum.Font.GothamBold
-local FONT = Enum.Font.GothamMedium
-local DISPLAY_ORDER = 1200
+local DISPLAY_ORDER = 1400
 local QUEUE_LIMIT = 4
-
-local RARITY_COLORS = {
-	Common = Color3.fromRGB(238, 242, 248),
-	Rare = Color3.fromRGB(72, 175, 255),
-	Epic = Color3.fromRGB(190, 90, 255),
-	Legendary = Color3.fromRGB(255, 189, 44),
-	Mythic = Color3.fromRGB(255, 76, 148),
-	Secret = Color3.fromRGB(72, 255, 176),
-	Huge = Color3.fromRGB(255, 224, 82),
-	Divine = Color3.fromRGB(106, 240, 255),
-	Celestial = Color3.fromRGB(170, 138, 255),
-	Godly = Color3.fromRGB(255, 92, 92),
-}
+local FONT = Enum.Font.GothamMedium
+local FONT_BOLD = Enum.Font.GothamBold
+local FONT_BLACK = Enum.Font.GothamBlack
 
 local queue = {}
 local playing = false
 local activeGui = nil
 local activeBlur = nil
-local revealAssetFolder = nil
-local triedRevealAssetFolder = false
+local activeColor = nil
 
-local ASSET_ALIASES = {
-	SoftGlow = { "SoftGlow", "soft_glow", "soft glow", "soft_glow.png", "soft-glow" },
-	BurstRing = { "BurstRing", "burst_ring", "burst ring", "burst_ring.png", "burst-ring" },
-	SparkleStar = { "SparkleStar", "sparkle_star", "sparkle star", "sparkle_star.png", "sparkle-star" },
-	ShineStreak = { "ShineStreak", "shine_streak", "shine streak", "shine_streak.png", "shine-streak" },
-	CardGlow = { "CardGlow", "reveal_card_glow", "card_glow", "reveal card glow", "reveal_card_glow.png" },
-	NewBadge = { "NewBadge", "new_badge", "new badge", "new_badge.png", "new-badge" },
-	TapPanel = { "TapPanel", "tap_panel", "tap panel", "tap_panel.png", "tap-panel" },
+local RARITY_COLORS = {
+	Common = Color3.fromRGB(234, 240, 248),
+	Rare = Color3.fromRGB(69, 174, 255),
+	Epic = Color3.fromRGB(185, 91, 255),
+	Legendary = Color3.fromRGB(255, 190, 49),
+	Mythic = Color3.fromRGB(255, 75, 147),
+	Secret = Color3.fromRGB(68, 255, 184),
+	Huge = Color3.fromRGB(255, 226, 82),
+	Divine = Color3.fromRGB(106, 240, 255),
+	Celestial = Color3.fromRGB(171, 140, 255),
+	Godly = Color3.fromRGB(255, 90, 90),
 }
-
-local function cleanAssetId(id)
-	if type(id) ~= "string" then
-		return nil
-	end
-	if id == "" or string.find(id, "PASTE_") or string.find(id, "PASTE") then
-		return nil
-	end
-	return id
-end
-
-local function normalizeAssetName(name)
-	return string.lower(tostring(name or "")):gsub("[^%w]", "")
-end
-
-local function getRevealAssetFolder()
-	if revealAssetFolder and revealAssetFolder.Parent then
-		return revealAssetFolder
-	end
-	if triedRevealAssetFolder then
-		return nil
-	end
-
-	triedRevealAssetFolder = true
-	local guiFolder = ReplicatedStorage:FindFirstChild("GUI") or ReplicatedStorage:WaitForChild("GUI", 2)
-	if not guiFolder then
-		return nil
-	end
-
-	revealAssetFolder = guiFolder:FindFirstChild("RevealEgg") or guiFolder:WaitForChild("RevealEgg", 2)
-	return revealAssetFolder
-end
-
-local function readAssetIdFromInstance(instance)
-	if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
-		return cleanAssetId(instance.Image)
-	end
-	if instance:IsA("Decal") or instance:IsA("Texture") then
-		return cleanAssetId(instance.Texture)
-	end
-	if instance:IsA("StringValue") then
-		return cleanAssetId(instance.Value)
-	end
-
-	return cleanAssetId(instance:GetAttribute("Image"))
-		or cleanAssetId(instance:GetAttribute("Texture"))
-		or cleanAssetId(instance:GetAttribute("AssetId"))
-		or cleanAssetId(instance:GetAttribute("ImageId"))
-end
-
-local function findReplicatedAssetId(name)
-	local folder = getRevealAssetFolder()
-	if not folder then
-		return nil
-	end
-
-	local names = ASSET_ALIASES[name] or { name }
-	local wanted = {}
-	for _, alias in ipairs(names) do
-		wanted[normalizeAssetName(alias)] = true
-	end
-
-	for _, descendant in ipairs(folder:GetDescendants()) do
-		if wanted[normalizeAssetName(descendant.Name)] then
-			local id = readAssetIdFromInstance(descendant)
-			if id then
-				return id
-			end
-		end
-	end
-
-	return nil
-end
-
-local function asset(name)
-	return findReplicatedAssetId(name) or cleanAssetId(Assets[name])
-end
 
 local function rarityColor(rarity)
 	return RARITY_COLORS[tostring(rarity or "Common")] or RARITY_COLORS.Common
 end
 
+local function cleanAssetId(id)
+	if type(id) ~= "string" then
+		return nil
+	end
+	if id == "" or string.find(id, "PASTE", 1, true) then
+		return nil
+	end
+	return id
+end
+
 local function tween(instance, duration, props, style, direction)
-	local info = TweenInfo.new(duration, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
-	local tw = TweenService:Create(instance, info, props)
+	local tw = TweenService:Create(
+		instance,
+		TweenInfo.new(duration, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out),
+		props
+	)
 	tw:Play()
 	return tw
 end
@@ -140,36 +64,53 @@ local function waitTween(instance, duration, props, style, direction)
 	tw.Completed:Wait()
 end
 
-local function addCorner(parent, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = radius
-	corner.Parent = parent
-	return corner
+local function corner(parent, radius)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = radius
+	c.Parent = parent
+	return c
 end
 
-local function addStroke(parent, color, thickness, transparency)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = thickness
-	stroke.Transparency = transparency or 0
-	stroke.Parent = parent
-	return stroke
+local function stroke(parent, color, thickness, transparency)
+	local s = Instance.new("UIStroke")
+	s.Color = color
+	s.Thickness = thickness
+	s.Transparency = transparency or 0
+	s.Parent = parent
+	return s
 end
 
-local function addScale(parent, value)
-	local scale = Instance.new("UIScale")
-	scale.Scale = value or 1
-	scale.Parent = parent
-	return scale
+local function scale(parent, value)
+	local s = Instance.new("UIScale")
+	s.Scale = value or 1
+	s.Parent = parent
+	return s
 end
 
-local function makeText(parent, name, text, position, size, color, maxSize, zIndex)
+local function makeFrame(parent, name, position, size, color, zIndex, radius)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.BackgroundColor3 = color
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	frame.Position = position
+	frame.Size = size
+	frame.ZIndex = zIndex or 10
+	frame.Parent = parent
+	if radius then
+		corner(frame, radius)
+	end
+	return frame
+end
+
+local function makeText(parent, name, text, position, size, color, maxSize, zIndex, font)
 	local label = Instance.new("TextLabel")
 	label.Name = name
 	label.BackgroundTransparency = 1
 	label.Position = position
 	label.Size = size
-	label.Font = FONT_BOLD
+	label.Font = font or FONT_BOLD
 	label.Text = text
 	label.TextColor3 = color
 	label.TextScaled = true
@@ -178,280 +119,46 @@ local function makeText(parent, name, text, position, size, color, maxSize, zInd
 	label.ZIndex = zIndex or 30
 	label.Parent = parent
 
-	local constraint = Instance.new("UITextSizeConstraint")
-	constraint.MinTextSize = 10
-	constraint.MaxTextSize = maxSize or 32
-	constraint.Parent = label
+	local limit = Instance.new("UITextSizeConstraint")
+	limit.MinTextSize = 8
+	limit.MaxTextSize = maxSize or 32
+	limit.Parent = label
 
-	addStroke(label, Color3.fromRGB(21, 24, 34), 2.3, 0.05)
+	stroke(label, Color3.fromRGB(8, 10, 18), 2.2, 1)
 	return label
 end
 
 local function fadeText(label, visible, duration)
 	tween(label, duration or 0.18, { TextTransparency = visible and 0 or 1 })
-	local stroke = label:FindFirstChildOfClass("UIStroke")
-	if stroke then
-		tween(stroke, duration or 0.18, { Transparency = visible and 0.05 or 1 })
+	local s = label:FindFirstChildOfClass("UIStroke")
+	if s then
+		tween(s, duration or 0.18, { Transparency = visible and 0.06 or 1 })
 	end
 end
 
-local function imageOrFallback(parent, name, imageId, color, position, size, zIndex, fallbackShape)
-	if imageId then
-		local image = Instance.new("ImageLabel")
-		image.Name = name
-		image.AnchorPoint = Vector2.new(0.5, 0.5)
-		image.BackgroundTransparency = 1
-		image.Image = imageId
-		image.ImageColor3 = color or Color3.new(1, 1, 1)
-		image.ImageTransparency = 1
-		image.Position = position
-		image.Size = size
-		image.ZIndex = zIndex or 10
-		image.Parent = parent
-		return image
-	end
-
-	local frame = Instance.new("Frame")
-	frame.Name = name .. "Fallback"
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.BackgroundColor3 = color or Color3.fromRGB(255, 255, 255)
-	frame.BackgroundTransparency = 1
-	frame.BorderSizePixel = 0
-	frame.Position = position
-	frame.Size = size
-	frame.ZIndex = zIndex or 10
-	frame.Parent = parent
-	addCorner(frame, fallbackShape == "circle" and UDim.new(1, 0) or UDim.new(0, 24))
+local function glow(parent, name, color, position, size, zIndex)
+	local g = makeFrame(parent, name, position, size, color, zIndex, UDim.new(1, 0))
 	local gradient = Instance.new("UIGradient")
 	gradient.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 0.05),
-		NumberSequenceKeypoint.new(0.62, 0.55),
+		NumberSequenceKeypoint.new(0.48, 0.38),
 		NumberSequenceKeypoint.new(1, 1),
 	})
-	gradient.Parent = frame
-	return frame
-end
-
-local function createEgg(parent, rarity)
-	local holder = Instance.new("Frame")
-	holder.Name = "AnimatedEgg"
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.42)
-	holder.Size = UDim2.fromOffset(170, 210)
-	holder.ZIndex = 24
-	holder.Parent = parent
-
-	local scale = addScale(holder, 0.18)
-
-	local egg = Instance.new("Frame")
-	egg.Name = "EggBody"
-	egg.AnchorPoint = Vector2.new(0.5, 0.5)
-	egg.BackgroundColor3 = Color3.fromRGB(255, 248, 219)
-	egg.BorderSizePixel = 0
-	egg.Position = UDim2.fromScale(0.5, 0.5)
-	egg.Size = UDim2.fromOffset(132, 172)
-	egg.ZIndex = 25
-	egg.Parent = holder
-	addCorner(egg, UDim.new(1, 0))
-	addStroke(egg, Color3.fromRGB(255, 255, 255), 4, 0.12)
-
-	local bodyGradient = Instance.new("UIGradient")
-	bodyGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 248)),
-		ColorSequenceKeypoint.new(1, rarityColor(rarity):Lerp(Color3.fromRGB(255, 244, 204), 0.72)),
-	})
-	bodyGradient.Rotation = 90
-	bodyGradient.Parent = egg
-
-	local shine = Instance.new("Frame")
-	shine.Name = "EggHighlight"
-	shine.AnchorPoint = Vector2.new(0.5, 0.5)
-	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	shine.BackgroundTransparency = 0.35
-	shine.BorderSizePixel = 0
-	shine.Position = UDim2.fromScale(0.35, 0.28)
-	shine.Rotation = -22
-	shine.Size = UDim2.fromOffset(24, 58)
-	shine.ZIndex = 26
-	shine.Parent = egg
-	addCorner(shine, UDim.new(1, 0))
-
-	local crackA = Instance.new("Frame")
-	crackA.Name = "CrackA"
-	crackA.AnchorPoint = Vector2.new(0.5, 0.5)
-	crackA.BackgroundColor3 = Color3.fromRGB(133, 105, 72)
-	crackA.BackgroundTransparency = 1
-	crackA.BorderSizePixel = 0
-	crackA.Position = UDim2.fromScale(0.5, 0.42)
-	crackA.Rotation = 32
-	crackA.Size = UDim2.fromOffset(5, 54)
-	crackA.ZIndex = 27
-	crackA.Parent = egg
-	addCorner(crackA, UDim.new(1, 0))
-
-	local crackB = crackA:Clone()
-	crackB.Name = "CrackB"
-	crackB.Position = UDim2.fromScale(0.57, 0.54)
-	crackB.Rotation = -35
-	crackB.Size = UDim2.fromOffset(5, 44)
-	crackB.Parent = egg
-
-	local crackC = crackA:Clone()
-	crackC.Name = "CrackC"
-	crackC.Position = UDim2.fromScale(0.42, 0.52)
-	crackC.Rotation = -20
-	crackC.Size = UDim2.fromOffset(5, 36)
-	crackC.Parent = egg
-
-	local crackD = crackA:Clone()
-	crackD.Name = "CrackD"
-	crackD.Position = UDim2.fromScale(0.5, 0.32)
-	crackD.Rotation = -8
-	crackD.Size = UDim2.fromOffset(5, 34)
-	crackD.Parent = egg
-
-	return holder, scale, { crackA, crackB, crackC, crackD }
-end
-
-local function createPodium(parent)
-	local holder = Instance.new("Frame")
-	holder.Name = "CodePodiumFallback"
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.62)
-	holder.Size = UDim2.fromOffset(300, 130)
-	holder.ZIndex = 18
-	holder.Parent = parent
-
-	local glow = Instance.new("Frame")
-	glow.Name = "PodiumGlow"
-	glow.AnchorPoint = Vector2.new(0.5, 0.5)
-	glow.BackgroundColor3 = Color3.fromRGB(91, 203, 255)
-	glow.BackgroundTransparency = 1
-	glow.BorderSizePixel = 0
-	glow.Position = UDim2.fromScale(0.5, 0.62)
-	glow.Size = UDim2.fromOffset(260, 44)
-	glow.ZIndex = 18
-	glow.Parent = holder
-	addCorner(glow, UDim.new(1, 0))
-
-	local top = Instance.new("Frame")
-	top.Name = "PodiumTop"
-	top.AnchorPoint = Vector2.new(0.5, 0.5)
-	top.BackgroundColor3 = Color3.fromRGB(82, 169, 255)
-	top.BackgroundTransparency = 1
-	top.BorderSizePixel = 0
-	top.Position = UDim2.fromScale(0.5, 0.46)
-	top.Size = UDim2.fromOffset(260, 58)
-	top.ZIndex = 19
-	top.Parent = holder
-	addCorner(top, UDim.new(0, 28))
-	addStroke(top, Color3.fromRGB(255, 255, 255), 3, 0.28)
-
-	local base = Instance.new("Frame")
-	base.Name = "PodiumBase"
-	base.AnchorPoint = Vector2.new(0.5, 0.5)
-	base.BackgroundColor3 = Color3.fromRGB(46, 97, 220)
-	base.BackgroundTransparency = 1
-	base.BorderSizePixel = 0
-	base.Position = UDim2.fromScale(0.5, 0.68)
-	base.Size = UDim2.fromOffset(210, 46)
-	base.ZIndex = 18
-	base.Parent = holder
-	addCorner(base, UDim.new(0, 22))
-
-	return holder
-end
-
-local function createNpcPreview(parent, data, color)
-	local holder = Instance.new("Frame")
-	holder.Name = "NpcPreview"
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.41)
-	holder.Size = UDim2.fromOffset(214, 214)
-	holder.ZIndex = 35
-	holder.Parent = parent
-
-	local scale = addScale(holder, 0.08)
-
-	local npcImage = cleanAssetId(data.npcImage or data.NPCImage or data.image or data.Image)
-	if npcImage then
-		local image = Instance.new("ImageLabel")
-		image.Name = "NpcImage"
-		image.AnchorPoint = Vector2.new(0.5, 0.5)
-		image.BackgroundTransparency = 1
-		image.Image = npcImage
-		image.ImageTransparency = 1
-		image.Position = UDim2.fromScale(0.5, 0.5)
-		image.Size = UDim2.fromScale(1, 1)
-		image.ZIndex = 36
-		image.Parent = holder
-		return holder, scale, image
-	end
-
-	local body = Instance.new("Frame")
-	body.Name = "FallbackBody"
-	body.AnchorPoint = Vector2.new(0.5, 0.5)
-	body.BackgroundColor3 = color
-	body.BackgroundTransparency = 1
-	body.BorderSizePixel = 0
-	body.Position = UDim2.fromScale(0.5, 0.6)
-	body.Size = UDim2.fromOffset(112, 118)
-	body.ZIndex = 36
-	body.Parent = holder
-	addCorner(body, UDim.new(0, 34))
-	addStroke(body, Color3.fromRGB(255, 255, 255), 4, 0.18)
-
-	local head = Instance.new("Frame")
-	head.Name = "FallbackHead"
-	head.AnchorPoint = Vector2.new(0.5, 0.5)
-	head.BackgroundColor3 = color:Lerp(Color3.fromRGB(255, 255, 255), 0.24)
-	head.BackgroundTransparency = 1
-	head.BorderSizePixel = 0
-	head.Position = UDim2.fromScale(0.5, 0.3)
-	head.Size = UDim2.fromOffset(96, 96)
-	head.ZIndex = 37
-	head.Parent = holder
-	addCorner(head, UDim.new(1, 0))
-	addStroke(head, Color3.fromRGB(255, 255, 255), 4, 0.15)
-
-	local face = makeText(holder, "FallbackFace", ":)", UDim2.fromScale(0.31, 0.19), UDim2.fromScale(0.38, 0.18), Color3.fromRGB(255, 255, 255), 34, 38)
-	face.TextTransparency = 1
-	face.Font = FONT
-
-	return holder, scale, nil
-end
-
-local function createSparkles(parent, color)
-	local sparkles = {}
-	for i = 1, 18 do
-		local angle = math.rad((i / 18) * 360)
-		local distance = 110 + (i % 4) * 22
-		local x = math.cos(angle) * distance
-		local y = math.sin(angle) * distance * 0.76
-		local sparkle = imageOrFallback(
-			parent,
-			"Sparkle_" .. i,
-			asset("SparkleStar"),
-			i % 3 == 0 and Color3.fromRGB(255, 255, 255) or color,
-			UDim2.new(0.5, x, 0.42, y),
-			UDim2.fromOffset(22 + (i % 4) * 8, 22 + (i % 4) * 8),
-			45,
-			"circle"
-		)
-		sparkle.Rotation = i * 23
-		table.insert(sparkles, sparkle)
-	end
-	return sparkles
+	gradient.Parent = g
+	return g
 end
 
 local function normalizePayload(payload)
 	payload = type(payload) == "table" and payload or {}
 	local selected = type(payload.selectedNPC) == "table" and payload.selectedNPC or {}
 	local rarity = payload.rarity or payload.Rarity or payload.selectedRarity or selected.rarity or selected.Rarity or "Common"
-	local name = payload.npcName or payload.ResultName or selected.displayName or selected.DisplayName or selected.name or selected.Name or "Mystery NPC"
+	local name = payload.npcName
+		or payload.ResultName
+		or selected.displayName
+		or selected.DisplayName
+		or selected.name
+		or selected.Name
+		or "Mystery NPC"
 	local mutation = payload.mutation
 		or payload.Mutation
 		or payload.mutationName
@@ -467,28 +174,11 @@ local function normalizePayload(payload)
 		npcName = tostring(name),
 		rarity = tostring(rarity),
 		mutation = tostring(mutation),
-		isNew = payload.isNew == true or payload.IsNew == true or payload.New == true or payload.FirstTime == true,
 		eggType = tostring(payload.eggType or payload.EggName or payload.eggName or "Egg"),
-		npcImage = payload.npcImage or payload.NPCImage or selected.image or selected.Image or selected.icon or selected.Icon,
+		npcImage = cleanAssetId(payload.npcImage or payload.NPCImage or selected.image or selected.Image or selected.icon or selected.Icon),
+		mps = tonumber(payload.MPS or payload.CashPerSecond or selected.mps or selected.MPS),
+		isNew = payload.isNew == true or payload.IsNew == true or payload.New == true or payload.FirstTime == true,
 	}
-end
-
-local function setFrameTransparency(root, value, duration)
-	for _, inst in ipairs(root:GetDescendants()) do
-		if inst:IsA("Frame") then
-			tween(inst, duration, { BackgroundTransparency = math.max(inst.BackgroundTransparency, value) })
-		elseif inst:IsA("ImageLabel") then
-			tween(inst, duration, { ImageTransparency = value })
-		elseif inst:IsA("TextLabel") then
-			tween(inst, duration, { TextTransparency = value })
-			local stroke = inst:FindFirstChildOfClass("UIStroke")
-			if stroke then
-				tween(stroke, duration, { Transparency = value })
-			end
-		elseif inst:IsA("UIStroke") then
-			tween(inst, duration, { Transparency = value })
-		end
-	end
 end
 
 local function destroyActive()
@@ -500,6 +190,189 @@ local function destroyActive()
 		activeBlur:Destroy()
 		activeBlur = nil
 	end
+	if activeColor then
+		activeColor:Destroy()
+		activeColor = nil
+	end
+end
+
+local function createEgg(parent, color)
+	local holder = Instance.new("Frame")
+	holder.Name = "PremiumEgg"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.Position = UDim2.fromScale(0.5, 0.43)
+	holder.Size = UDim2.fromOffset(190, 232)
+	holder.ZIndex = 40
+	holder.Parent = parent
+	local eggScale = scale(holder, 0.08)
+
+	local shadow = glow(holder, "EggShadow", Color3.fromRGB(8, 10, 18), UDim2.fromScale(0.5, 0.88), UDim2.fromOffset(150, 34), 39)
+
+	local egg = makeFrame(holder, "EggBody", UDim2.fromScale(0.5, 0.48), UDim2.fromOffset(134, 174), Color3.fromRGB(255, 248, 222), 42, UDim.new(1, 0))
+	egg.BackgroundTransparency = 0
+	stroke(egg, Color3.fromRGB(255, 255, 255), 5, 0.08)
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 252)),
+		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255, 239, 190)),
+		ColorSequenceKeypoint.new(1, color:Lerp(Color3.fromRGB(255, 237, 192), 0.68)),
+	})
+	gradient.Rotation = 90
+	gradient.Parent = egg
+
+	local highlight = makeFrame(holder, "EggHighlight", UDim2.fromScale(0.36, 0.31), UDim2.fromOffset(26, 66), Color3.fromRGB(255, 255, 255), 46, UDim.new(1, 0))
+	highlight.BackgroundTransparency = 0.34
+	highlight.Rotation = -24
+
+	local cracks = {}
+	local crackData = {
+		{ UDim2.fromScale(0.5, 0.39), 5, 58, 26 },
+		{ UDim2.fromScale(0.57, 0.49), 5, 46, -34 },
+		{ UDim2.fromScale(0.43, 0.5), 5, 42, 38 },
+		{ UDim2.fromScale(0.51, 0.28), 4, 36, -12 },
+	}
+	for i, data in ipairs(crackData) do
+		local crack = makeFrame(holder, "Crack_" .. i, data[1], UDim2.fromOffset(data[2], data[3]), Color3.fromRGB(116, 86, 57), 50, UDim.new(1, 0))
+		crack.Rotation = data[4]
+		table.insert(cracks, crack)
+	end
+
+	return {
+		holder = holder,
+		scale = eggScale,
+		shadow = shadow,
+		cracks = cracks,
+	}
+end
+
+local function createRings(parent, color)
+	local rings = {}
+	for i = 1, 4 do
+		local ring = makeFrame(parent, "EnergyRing_" .. i, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(160 + i * 56, 160 + i * 56), color, 12 + i, UDim.new(1, 0))
+		local ringStroke = stroke(ring, i % 2 == 0 and Color3.fromRGB(255, 255, 255) or color, i == 1 and 3 or 2, 1)
+		table.insert(rings, { ring = ring, stroke = ringStroke })
+	end
+	return rings
+end
+
+local function createParticles(parent, color)
+	local particles = {}
+	for i = 1, 28 do
+		local size = 6 + (i % 5) * 3
+		local part = makeFrame(parent, "BurstParticle_" .. i, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(size, size), i % 4 == 0 and Color3.fromRGB(255, 255, 255) or color, 80, UDim.new(1, 0))
+		table.insert(particles, part)
+	end
+	return particles
+end
+
+local function createReward(parent, data, color)
+	local holder = Instance.new("Frame")
+	holder.Name = "RewardStage"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.Position = UDim2.fromScale(0.5, 0.46)
+	holder.Size = UDim2.fromOffset(330, 350)
+	holder.ZIndex = 90
+	holder.Parent = parent
+	local rewardScale = scale(holder, 0.18)
+
+	local aura = glow(holder, "RewardAura", color, UDim2.fromScale(0.5, 0.35), UDim2.fromOffset(280, 280), 90)
+	local plate = makeFrame(holder, "RewardPlate", UDim2.fromScale(0.5, 0.72), UDim2.fromOffset(260, 68), color:Lerp(Color3.fromRGB(26, 31, 48), 0.42), 93, UDim.new(0, 30))
+	stroke(plate, Color3.fromRGB(255, 255, 255), 2.5, 1)
+
+	local preview = Instance.new("Frame")
+	preview.Name = "RewardPreview"
+	preview.AnchorPoint = Vector2.new(0.5, 0.5)
+	preview.BackgroundTransparency = 1
+	preview.Position = UDim2.fromScale(0.5, 0.35)
+	preview.Size = UDim2.fromOffset(210, 210)
+	preview.ZIndex = 96
+	preview.Parent = holder
+
+	local npcImage
+	if data.npcImage then
+		npcImage = Instance.new("ImageLabel")
+		npcImage.Name = "NpcImage"
+		npcImage.AnchorPoint = Vector2.new(0.5, 0.5)
+		npcImage.BackgroundTransparency = 1
+		npcImage.Image = data.npcImage
+		npcImage.ImageTransparency = 1
+		npcImage.Position = UDim2.fromScale(0.5, 0.5)
+		npcImage.Size = UDim2.fromScale(1, 1)
+		npcImage.ZIndex = 98
+		npcImage.Parent = preview
+	else
+		local body = makeFrame(preview, "NpcBody", UDim2.fromScale(0.5, 0.61), UDim2.fromOffset(120, 118), color, 98, UDim.new(0, 34))
+		stroke(body, Color3.fromRGB(255, 255, 255), 4, 1)
+		local head = makeFrame(preview, "NpcHead", UDim2.fromScale(0.5, 0.3), UDim2.fromOffset(104, 104), color:Lerp(Color3.fromRGB(255, 255, 255), 0.22), 99, UDim.new(1, 0))
+		stroke(head, Color3.fromRGB(255, 255, 255), 4, 1)
+		local face = makeText(preview, "NpcFace", ":)", UDim2.fromScale(0.33, 0.18), UDim2.fromScale(0.34, 0.18), Color3.fromRGB(255, 255, 255), 32, 100, FONT_BLACK)
+		npcImage = { body = body, head = head, face = face }
+	end
+
+	local rewardName = data.mutation == "Normal" and data.npcName or (data.mutation .. " " .. data.npcName)
+	local title = makeText(holder, "UnlockedLabel", "UNLOCKED", UDim2.fromScale(0.2, 0.02), UDim2.fromScale(0.6, 0.08), Color3.fromRGB(255, 255, 255), 25, 102, FONT_BLACK)
+	local name = makeText(holder, "RewardName", rewardName, UDim2.fromScale(0.04, 0.76), UDim2.fromScale(0.92, 0.13), Color3.fromRGB(255, 255, 255), 36, 102, FONT_BLACK)
+	local pill = makeFrame(holder, "RarityPill", UDim2.fromScale(0.5, 0.91), UDim2.fromOffset(174, 36), color, 102, UDim.new(1, 0))
+	stroke(pill, Color3.fromRGB(255, 255, 255), 2, 1)
+	local rarity = makeText(pill, "Rarity", string.upper(data.rarity), UDim2.fromScale(0.08, 0.14), UDim2.fromScale(0.84, 0.68), Color3.fromRGB(255, 255, 255), 18, 103, FONT_BOLD)
+
+	local value = nil
+	if data.mps then
+		value = makeText(holder, "Value", "+" .. tostring(math.floor(data.mps)) .. "/s", UDim2.fromScale(0.62, 0.64), UDim2.fromScale(0.27, 0.08), Color3.fromRGB(255, 246, 182), 20, 102, FONT_BOLD)
+	end
+
+	return {
+		holder = holder,
+		scale = rewardScale,
+		aura = aura,
+		plate = plate,
+		image = npcImage,
+		title = title,
+		name = name,
+		pill = pill,
+		rarity = rarity,
+		value = value,
+	}
+end
+
+local function revealReward(reward)
+	tween(reward.aura, 0.2, { BackgroundTransparency = 0.24, Size = UDim2.fromOffset(350, 350) })
+	tween(reward.plate, 0.2, { BackgroundTransparency = 0.04 })
+	local plateStroke = reward.plate:FindFirstChildOfClass("UIStroke")
+	if plateStroke then
+		tween(plateStroke, 0.2, { Transparency = 0.18 })
+	end
+
+	if typeof(reward.image) == "Instance" then
+		tween(reward.image, 0.2, { ImageTransparency = 0 })
+	else
+		tween(reward.image.body, 0.18, { BackgroundTransparency = 0.04 })
+		tween(reward.image.head, 0.18, { BackgroundTransparency = 0.04 })
+		for _, part in ipairs({ reward.image.body, reward.image.head }) do
+			local partStroke = part:FindFirstChildOfClass("UIStroke")
+			if partStroke then
+				tween(partStroke, 0.18, { Transparency = 0.12 })
+			end
+		end
+		fadeText(reward.image.face, true, 0.16)
+	end
+
+	waitTween(reward.scale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	fadeText(reward.title, true, 0.14)
+	fadeText(reward.name, true, 0.18)
+	tween(reward.pill, 0.18, { BackgroundTransparency = 0.05 })
+	local pillStroke = reward.pill:FindFirstChildOfClass("UIStroke")
+	if pillStroke then
+		tween(pillStroke, 0.18, { Transparency = 0.18 })
+	end
+	fadeText(reward.rarity, true, 0.14)
+	if reward.value then
+		fadeText(reward.value, true, 0.18)
+	end
+	tween(reward.aura, 1.6, { Rotation = 180 }, Enum.EasingStyle.Linear)
 end
 
 local function playReveal(rawPayload)
@@ -518,14 +391,23 @@ local function playReveal(rawPayload)
 	activeGui = gui
 
 	local blur = Instance.new("BlurEffect")
-	blur.Name = "NPCRevealSoftBlur"
+	blur.Name = "NPCRevealBlur"
 	blur.Size = 0
 	blur.Parent = Lighting
 	activeBlur = blur
 
+	local colorFx = Instance.new("ColorCorrectionEffect")
+	colorFx.Name = "NPCRevealColor"
+	colorFx.Brightness = 0
+	colorFx.Contrast = 0
+	colorFx.Saturation = 0
+	colorFx.TintColor = Color3.fromRGB(255, 255, 255)
+	colorFx.Parent = Lighting
+	activeColor = colorFx
+
 	local overlay = Instance.new("Frame")
-	overlay.Name = "SoftWorldOverlay"
-	overlay.BackgroundColor3 = Color3.fromRGB(255, 246, 196)
+	overlay.Name = "CinematicOverlay"
+	overlay.BackgroundColor3 = Color3.fromRGB(8, 11, 20)
 	overlay.BackgroundTransparency = 1
 	overlay.BorderSizePixel = 0
 	overlay.Size = UDim2.fromScale(1, 1)
@@ -534,11 +416,11 @@ local function playReveal(rawPayload)
 
 	local overlayGradient = Instance.new("UIGradient")
 	overlayGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 250, 214)),
-		ColorSequenceKeypoint.new(0.52, color:Lerp(Color3.fromRGB(130, 230, 255), 0.38)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 188, 230)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 11, 20)),
+		ColorSequenceKeypoint.new(0.48, color:Lerp(Color3.fromRGB(20, 25, 40), 0.62)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 11, 20)),
 	})
-	overlayGradient.Rotation = 28
+	overlayGradient.Rotation = 22
 	overlayGradient.Parent = overlay
 
 	local stage = Instance.new("Frame")
@@ -546,78 +428,39 @@ local function playReveal(rawPayload)
 	stage.AnchorPoint = Vector2.new(0.5, 0.5)
 	stage.BackgroundTransparency = 1
 	stage.Position = UDim2.fromScale(0.5, 0.5)
-	stage.Size = UDim2.fromScale(0.92, 0.86)
+	stage.Size = UDim2.fromScale(0.92, 0.88)
 	stage.ZIndex = 10
 	stage.Parent = gui
-	local stageScale = addScale(stage, 0.82)
+	local stageScale = scale(stage, 0.92)
 
-	local stageSize = Instance.new("UISizeConstraint")
-	stageSize.MinSize = Vector2.new(310, 420)
-	stageSize.MaxSize = Vector2.new(470, 560)
-	stageSize.Parent = stage
+	local stageConstraint = Instance.new("UISizeConstraint")
+	stageConstraint.MinSize = Vector2.new(320, 440)
+	stageConstraint.MaxSize = Vector2.new(520, 620)
+	stageConstraint.Parent = stage
 
-	local cardGlow = imageOrFallback(stage, "RevealCardGlow", asset("CardGlow"), color, UDim2.fromScale(0.5, 0.5), UDim2.fromScale(1.08, 1), 11)
+	local floorGlow = glow(stage, "FloorGlow", color, UDim2.fromScale(0.5, 0.76), UDim2.fromOffset(360, 86), 11)
+	local coreGlow = glow(stage, "CoreGlow", color, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(260, 260), 11)
+	local rings = createRings(stage, color)
+	local particles = createParticles(stage, color)
+	local egg = createEgg(stage, color)
+	local reward = createReward(stage, data, color)
+	reward.holder.Visible = false
 
-	local card = Instance.new("Frame")
-	card.Name = "RevealCard"
-	card.AnchorPoint = Vector2.new(0.5, 0.5)
-	card.BackgroundColor3 = Color3.fromRGB(255, 248, 224)
-	card.BackgroundTransparency = 1
-	card.BorderSizePixel = 0
-	card.Position = UDim2.fromScale(0.5, 0.51)
-	card.Size = UDim2.fromScale(0.88, 0.86)
-	card.ZIndex = 12
-	card.Parent = stage
-	addCorner(card, UDim.new(0, 26))
-	addStroke(card, Color3.fromRGB(255, 255, 255), 4, 0.18)
+	local title = makeText(stage, "HatchTitle", "HATCHING", UDim2.fromScale(0.22, 0.08), UDim2.fromScale(0.56, 0.07), Color3.fromRGB(255, 255, 255), 26, 95, FONT_BLACK)
+	local subtitle = makeText(stage, "EggName", data.eggType, UDim2.fromScale(0.18, 0.15), UDim2.fromScale(0.64, 0.055), color:Lerp(Color3.fromRGB(255, 255, 255), 0.24), 18, 95, FONT_BOLD)
 
-	local cardGradient = Instance.new("UIGradient")
-	cardGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 248)),
-		ColorSequenceKeypoint.new(0.72, Color3.fromRGB(255, 234, 173)),
-		ColorSequenceKeypoint.new(1, color:Lerp(Color3.fromRGB(255, 255, 255), 0.7)),
-	})
-	cardGradient.Rotation = 90
-	cardGradient.Parent = card
+	local flash = Instance.new("Frame")
+	flash.Name = "WhiteFlash"
+	flash.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	flash.BackgroundTransparency = 1
+	flash.BorderSizePixel = 0
+	flash.Size = UDim2.fromScale(1, 1)
+	flash.ZIndex = 200
+	flash.Parent = gui
 
-	local softGlow = imageOrFallback(stage, "SoftGlow", asset("SoftGlow"), color, UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(360, 360), 14, "circle")
-	local burstRing = imageOrFallback(stage, "RarityBurstRing", asset("BurstRing"), color, UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(80, 80), 15, "circle")
-	local crackFlash = imageOrFallback(stage, "CodeCrackFlash", nil, Color3.fromRGB(255, 248, 184), UDim2.fromScale(0.5, 0.42), UDim2.fromOffset(100, 100), 46, "circle")
-	local podium = createPodium(stage)
-
-	local egg, eggScale, cracks = createEgg(stage, data.eggType)
-	local sparkles = createSparkles(stage, color)
-
-	local rewardText = data.mutation == "Normal" and data.npcName or (data.mutation .. " " .. data.npcName)
-	local rewardLabel = makeText(stage, "RewardLabel", rewardText, UDim2.fromScale(0.06, 0.7), UDim2.fromScale(0.88, 0.12), Color3.fromRGB(255, 255, 255), 38, 42)
-	local rewardGradient = Instance.new("UIGradient")
-	rewardGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 76, 125)),
-		ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 210, 74)),
-		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(98, 255, 131)),
-		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(78, 216, 255)),
-		ColorSequenceKeypoint.new(0.8, Color3.fromRGB(155, 124, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 76, 203)),
-	})
-	rewardGradient.Parent = rewardLabel
-
-	local newBadge
-	if data.isNew then
-		newBadge = imageOrFallback(stage, "NewBadge", asset("NewBadge"), Color3.fromRGB(255, 74, 96), UDim2.fromScale(0.78, 0.16), UDim2.fromOffset(108, 52), 50)
-		newBadge.Rotation = -8
-		local newText = makeText(newBadge, "NewText", "NEW!", UDim2.fromScale(0.12, 0.16), UDim2.fromScale(0.76, 0.66), Color3.fromRGB(255, 255, 255), 26, 51)
-		newText.TextTransparency = 1
-	end
-
-	local shine = imageOrFallback(stage, "ShineSweep", asset("ShineStreak"), Color3.fromRGB(255, 255, 255), UDim2.fromScale(-0.1, 0.46), UDim2.fromOffset(90, 360), 55)
-	shine.Rotation = -20
-
-	local tapPanel = imageOrFallback(stage, "TapPanel", asset("TapPanel"), Color3.fromRGB(16, 20, 30), UDim2.fromScale(0.5, 0.91), UDim2.fromOffset(256, 58), 58)
-	local tapText = makeText(tapPanel, "TapText", "Tap to continue", UDim2.fromScale(0.08, 0.18), UDim2.fromScale(0.84, 0.62), Color3.fromRGB(255, 255, 255), 21, 59)
-	tapText.Font = FONT
-
-	local npcHolder, npcScale, npcImage = createNpcPreview(stage, data, color)
-	npcHolder.Visible = false
+	local continue = makeFrame(stage, "ContinueButton", UDim2.fromScale(0.5, 0.94), UDim2.fromOffset(230, 48), Color3.fromRGB(15, 18, 30), 110, UDim.new(1, 0))
+	stroke(continue, color, 2, 1)
+	local continueText = makeText(continue, "Text", "Tap to continue", UDim2.fromScale(0.08, 0.2), UDim2.fromScale(0.84, 0.58), Color3.fromRGB(255, 255, 255), 18, 111, FONT_BOLD)
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.Name = "CloseHitbox"
@@ -625,111 +468,121 @@ local function playReveal(rawPayload)
 	closeButton.Text = ""
 	closeButton.Size = UDim2.fromScale(1, 1)
 	closeButton.Visible = false
-	closeButton.ZIndex = 100
+	closeButton.ZIndex = 250
 	closeButton.Parent = gui
 
-	overlay.BackgroundTransparency = 1
-	blur.Size = 0
-	tween(stageScale, 0.36, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	card.BackgroundTransparency = 1
-	local cardStroke = card:FindFirstChildOfClass("UIStroke")
-	if cardStroke then
-		cardStroke.Transparency = 1
-	end
-	if cardGlow:IsA("ImageLabel") then
-		cardGlow.ImageTransparency = 1
-	else
-		cardGlow.BackgroundTransparency = 1
-	end
-	tween(softGlow, 0.26, softGlow:IsA("ImageLabel") and { ImageTransparency = 0.2 } or { BackgroundTransparency = 0.38 })
-	podium.Visible = false
-	waitTween(eggScale, 0.34, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	tween(overlay, 0.28, { BackgroundTransparency = 0.1 })
+	tween(blur, 0.28, { Size = 16 })
+	tween(colorFx, 0.28, { Contrast = 0.12, Saturation = 0.1, TintColor = color:Lerp(Color3.fromRGB(255, 255, 255), 0.72) })
+	tween(stageScale, 0.32, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	tween(floorGlow, 0.28, { BackgroundTransparency = 0.48 })
+	tween(coreGlow, 0.28, { BackgroundTransparency = 0.36, Size = UDim2.fromOffset(330, 330) })
+	fadeText(title, true, 0.18)
+	fadeText(subtitle, true, 0.18)
+	waitTween(egg.scale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	tween(egg.shadow, 0.22, { BackgroundTransparency = 0.42 })
 
-	for _ = 1, 3 do
-		tween(eggScale, 0.12, { Scale = 1.08 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-		task.wait(0.12)
-		tween(eggScale, 0.12, { Scale = 0.98 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-		task.wait(0.12)
+	for _, item in ipairs(rings) do
+		tween(item.stroke, 0.18, { Transparency = 0.2 })
+		local ringSize = item.ring.AbsoluteSize
+		tween(item.ring, 0.72, {
+			Rotation = item.ring.Rotation + 160,
+			Size = UDim2.fromOffset(ringSize.X + 44, ringSize.Y + 44),
+		}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 	end
 
-	for i = 1, 8 do
-		local amount = i % 2 == 0 and -11 or 11
-		tween(egg, 0.055, { Rotation = amount, Position = UDim2.new(0.5, amount * 0.7, 0.42, 0) })
-		task.wait(0.055)
-	end
-	tween(egg, 0.08, { Rotation = 0, Position = UDim2.fromScale(0.5, 0.42) })
-
-	for _, crack in ipairs(cracks) do
-		tween(crack, 0.1, { BackgroundTransparency = 0.05 })
-	end
-	tween(softGlow, 0.18, softGlow:IsA("ImageLabel") and { ImageTransparency = 0.02, Size = UDim2.fromOffset(430, 430) } or { BackgroundTransparency = 0.18, Size = UDim2.fromOffset(430, 430) })
-	task.wait(0.16)
-
-	tween(crackFlash, 0.12, crackFlash:IsA("ImageLabel") and { ImageTransparency = 0, Size = UDim2.fromOffset(310, 310) } or { BackgroundTransparency = 0.08, Size = UDim2.fromOffset(310, 310) })
-	tween(burstRing, 0.34, burstRing:IsA("ImageLabel") and { ImageTransparency = 0.03, Size = UDim2.fromOffset(390, 390), Rotation = 90 } or { BackgroundTransparency = 0.25, Size = UDim2.fromOffset(390, 390), Rotation = 90 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	tween(eggScale, 0.15, { Scale = 1.32 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	task.wait(0.08)
-	tween(eggScale, 0.14, { Scale = 0.02 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-
-	for _, sparkle in ipairs(sparkles) do
-		local goal = sparkle:IsA("ImageLabel") and { ImageTransparency = 0, Rotation = sparkle.Rotation + 80 } or { BackgroundTransparency = 0.2, Rotation = sparkle.Rotation + 80 }
-		tween(sparkle, 0.22 + math.random() * 0.1, goal, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	for i = 1, 4 do
+		tween(egg.scale, 0.09, { Scale = 1.05 + i * 0.025 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+		tween(egg.holder, 0.09, { Rotation = i % 2 == 0 and -8 or 8 })
+		task.wait(0.09)
+		tween(egg.scale, 0.1, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		task.wait(0.08)
 	end
 
-	task.wait(0.16)
-	egg.Visible = false
-	tween(crackFlash, 0.22, crackFlash:IsA("ImageLabel") and { ImageTransparency = 1, Size = UDim2.fromOffset(460, 460) } or { BackgroundTransparency = 1, Size = UDim2.fromOffset(460, 460) })
-
-	npcHolder.Visible = true
-	if npcImage then
-		tween(npcImage, 0.2, { ImageTransparency = 0 })
-	else
-		for _, inst in ipairs(npcHolder:GetDescendants()) do
-			if inst:IsA("Frame") then
-				tween(inst, 0.2, { BackgroundTransparency = 0.04 })
-			elseif inst:IsA("TextLabel") then
-				fadeText(inst, true, 0.18)
-			end
-		end
-	end
-	tween(npcScale, 0.42, { Scale = data.rarity == "Huge" and 1.18 or 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	tween(burstRing, 1.4, { Rotation = 330 }, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-
-	task.wait(0.08)
-	fadeText(rewardLabel, true, 0.22)
-
-	if newBadge then
-		tween(newBadge, 0.22, newBadge:IsA("ImageLabel") and { ImageTransparency = 0 } or { BackgroundTransparency = 0.04 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-		for _, child in ipairs(newBadge:GetChildren()) do
-			if child:IsA("TextLabel") then
-				fadeText(child, true, 0.16)
-			end
-		end
+	for _, crack in ipairs(egg.cracks) do
+		tween(crack, 0.08, { BackgroundTransparency = 0.02 })
+		task.wait(0.035)
 	end
 
-	tween(shine, 0.58, shine:IsA("ImageLabel") and { ImageTransparency = 0.2, Position = UDim2.fromScale(1.12, 0.46) } or { BackgroundTransparency = 0.2, Position = UDim2.fromScale(1.12, 0.46) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-	task.wait(0.48)
-	tween(shine, 0.14, shine:IsA("ImageLabel") and { ImageTransparency = 1 } or { BackgroundTransparency = 1 })
+	waitTween(flash, 0.08, { BackgroundTransparency = 0.05 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	tween(flash, 0.24, { BackgroundTransparency = 1 })
+	tween(coreGlow, 0.16, { BackgroundTransparency = 0.08, Size = UDim2.fromOffset(470, 470) })
+	tween(egg.scale, 0.16, { Scale = 1.28 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	task.wait(0.07)
+	tween(egg.scale, 0.13, { Scale = 0.02 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
-	tween(tapPanel, 0.22, tapPanel:IsA("ImageLabel") and { ImageTransparency = 0 } or { BackgroundTransparency = 0.05 })
-	fadeText(tapText, true, 0.18)
+	for i, part in ipairs(particles) do
+		local angle = math.rad((i / #particles) * 360)
+		local distance = 112 + (i % 6) * 22
+		local x = math.cos(angle) * distance
+		local y = math.sin(angle) * distance * 0.72
+		local partSize = part.AbsoluteSize
+		part.BackgroundTransparency = 0
+		tween(part, 0.38 + (i % 4) * 0.035, {
+			Position = UDim2.new(0.5, x, 0.43, y),
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(partSize.X + 12, partSize.Y + 12),
+		}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	end
+
+	fadeText(title, false, 0.12)
+	fadeText(subtitle, false, 0.12)
+	task.wait(0.14)
+	egg.holder.Visible = false
+
+	reward.holder.Visible = true
+	revealReward(reward)
+	tween(coreGlow, 0.42, { BackgroundTransparency = 0.28, Size = UDim2.fromOffset(360, 360) })
+	for _, item in ipairs(rings) do
+		tween(item.ring, 1.2, { Rotation = item.ring.Rotation + 220 }, Enum.EasingStyle.Linear)
+	end
+
+	task.wait(0.3)
+	tween(continue, 0.2, { BackgroundTransparency = 0.08 })
+	local continueStroke = continue:FindFirstChildOfClass("UIStroke")
+	if continueStroke then
+		tween(continueStroke, 0.2, { Transparency = 0.22 })
+	end
+	fadeText(continueText, true, 0.16)
 	closeButton.Visible = true
 
 	local closeRequested = false
-	local conn = closeButton.Activated:Connect(function()
+	local clickConn = closeButton.Activated:Connect(function()
 		closeRequested = true
+	end)
+	local inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.Space
+			or input.KeyCode == Enum.KeyCode.Return
+			or input.KeyCode == Enum.KeyCode.ButtonA then
+			closeRequested = true
+		end
 	end)
 
 	local started = os.clock()
-	while not closeRequested and os.clock() - started < 3 do
+	while not closeRequested and os.clock() - started < 5 do
 		task.wait(0.05)
 	end
-	conn:Disconnect()
+	clickConn:Disconnect()
+	inputConn:Disconnect()
 
-	tween(overlay, 0.18, { BackgroundTransparency = 1 })
-	tween(blur, 0.18, { Size = 0 })
-	tween(stageScale, 0.2, { Scale = 0.88 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	setFrameTransparency(stage, 1, 0.16)
+	tween(overlay, 0.2, { BackgroundTransparency = 1 })
+	tween(blur, 0.2, { Size = 0 })
+	tween(colorFx, 0.2, { Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255) })
+	tween(stageScale, 0.18, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	for _, inst in ipairs(stage:GetDescendants()) do
+		if inst:IsA("Frame") then
+			tween(inst, 0.16, { BackgroundTransparency = 1 })
+		elseif inst:IsA("TextLabel") then
+			fadeText(inst, false, 0.14)
+		elseif inst:IsA("ImageLabel") then
+			tween(inst, 0.16, { ImageTransparency = 1 })
+		elseif inst:IsA("UIStroke") then
+			tween(inst, 0.16, { Transparency = 1 })
+		end
+	end
 	task.wait(0.22)
 	destroyActive()
 end

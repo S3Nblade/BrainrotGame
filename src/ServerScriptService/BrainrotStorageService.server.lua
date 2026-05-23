@@ -80,7 +80,7 @@ local function createBrainrotModel(kind: string): Model
 	local m = Instance.new("Model")
 	m.Name = kind
 
-	local base = Instance.new("Part")	
+	local base = Instance.new("Part")
 	base.Name = "Brainrot"
 	base.Anchored = true
 	base.Size = Vector3.new(4, 4, 4)
