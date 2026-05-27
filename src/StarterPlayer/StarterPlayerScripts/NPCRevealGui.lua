@@ -5,8 +5,11 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
+local RevealAssets = require(script.Parent:WaitForChild("NPCRevealAssets"))
 
 local RevealNPC = {}
 
@@ -21,6 +24,21 @@ local playing = false
 local activeGui = nil
 local activeBlur = nil
 local activeColor = nil
+local soundLastPlayed = {}
+
+local RARITY_ORDER = {
+	Common = 1,
+	Uncommon = 2,
+	Rare = 3,
+	Epic = 4,
+	Legendary = 5,
+	Mythic = 6,
+	Secret = 7,
+	Huge = 7,
+	Divine = 7,
+	Celestial = 8,
+	Godly = 9,
+}
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(234, 240, 248),
@@ -58,6 +76,88 @@ local function cleanAssetId(id)
 		return nil
 	end
 	return id
+end
+
+local function getSoundId(name)
+	local sounds = type(RevealAssets) == "table" and RevealAssets.Sounds or nil
+	return cleanAssetId(sounds and sounds[name])
+end
+
+local function getSoundVolume(name)
+	local volumes = type(RevealAssets) == "table" and RevealAssets.Volumes or nil
+	local value = volumes and tonumber(volumes[name])
+	return value or 0.45
+end
+
+local function playSound(name, minInterval)
+	local soundId = getSoundId(name)
+	if not soundId then
+		return
+	end
+
+	local now = os.clock()
+	local last = soundLastPlayed[name] or 0
+	if now - last < (minInterval or 0.04) then
+		return
+	end
+	soundLastPlayed[name] = now
+
+	local sound = Instance.new("Sound")
+	sound.Name = "NPCReveal_" .. tostring(name)
+	sound.SoundId = soundId
+	sound.Volume = getSoundVolume(name)
+	sound.RollOffMode = Enum.RollOffMode.InverseTapered
+	sound.Parent = SoundService
+	sound:Play()
+
+	sound.Ended:Connect(function()
+		sound:Destroy()
+	end)
+
+	task.delay(4, function()
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+end
+
+local function rarityOrder(rarity)
+	return RARITY_ORDER[tostring(rarity or "Common")] or 1
+end
+
+local function shakeCamera(strength, duration)
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+
+	strength = tonumber(strength) or 0.06
+	duration = tonumber(duration) or 0.28
+
+	local started = os.clock()
+	local seed = math.floor(started * 1000) % 10000
+	local connection = nil
+	connection = RunService.RenderStepped:Connect(function()
+		if not camera or not camera.Parent then
+			if connection then
+				connection:Disconnect()
+			end
+			return
+		end
+
+		local elapsed = os.clock() - started
+		if elapsed >= duration then
+			if connection then
+				connection:Disconnect()
+			end
+			return
+		end
+
+		local fade = 1 - (elapsed / duration)
+		local x = math.noise(seed, elapsed * 28, 0) * strength * fade
+		local y = math.noise(seed, 0, elapsed * 28) * strength * fade
+		camera.CFrame = camera.CFrame * CFrame.new(x, y, 0)
+	end)
 end
 
 local function hashText(text)
@@ -549,6 +649,12 @@ end
 local function playCandidate(stage, candidate, index, holdTime, isFinal)
 	stage.world:ClearAllChildren()
 
+	if isFinal then
+		playSound("reveal_final_pop", 0.2)
+	else
+		playSound("reveal_tick", 0.055)
+	end
+
 	local model = createPartNpc(stage.world, candidate, index, isFinal)
 	setModelTransparency(model, 1)
 	stage.scale.Scale = 0.08
@@ -596,6 +702,10 @@ local function playRollSequence(stage, data)
 	local rollCount = math.clamp(#data.rollPool + 2, 6, 9)
 
 	for index = 1, rollCount do
+		if index == math.ceil(rollCount * 0.62) then
+			playSound("reveal_speedup", 0.25)
+		end
+
 		local candidate = chooseRollCandidate(data, index)
 		local hold = math.max(0.035, 0.11 - index * 0.008)
 		playCandidate(stage, candidate, index, hold, false)
@@ -611,6 +721,7 @@ local function playReveal(rawPayload)
 	local playerGui = player:WaitForChild("PlayerGui")
 
 	destroyActive()
+	playSound("capture_success", 0.25)
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "NPCRevealGui"
@@ -677,6 +788,10 @@ local function playReveal(rawPayload)
 	local eggName = makeText(stage, "EggName", data.eggType, UDim2.fromScale(0.2, 0.1), UDim2.fromScale(0.6, 0.055), color:Lerp(Color3.fromRGB(255, 255, 255), 0.18), 18, 95, FONT_BOLD)
 	local rewardName = makeText(stage, "RewardName", rewardText(data), UDim2.fromScale(0.06, 0.78), UDim2.fromScale(0.88, 0.1), Color3.fromRGB(255, 255, 255), 34, 102, FONT_BLACK)
 	local rarityLabel = makeText(stage, "RewardRarity", string.upper(data.rarity), UDim2.fromScale(0.28, 0.875), UDim2.fromScale(0.44, 0.052), color, 18, 102, FONT_BLACK)
+	local newLabel = nil
+	if data.isNew then
+		newLabel = makeText(stage, "NewDiscovery", "NEW!", UDim2.fromScale(0.36, 0.69), UDim2.fromScale(0.28, 0.065), Color3.fromRGB(255, 239, 80), 24, 104, FONT_BLACK)
+	end
 	local valueLabel = nil
 	if data.mps then
 		valueLabel = makeText(stage, "RewardValue", "+" .. tostring(math.floor(data.mps)) .. "/s", UDim2.fromScale(0.34, 0.925), UDim2.fromScale(0.32, 0.04), Color3.fromRGB(255, 246, 182), 16, 102, FONT_BOLD)
@@ -716,6 +831,15 @@ local function playReveal(rawPayload)
 
 	playRollSequence(rollStage, data)
 
+	local order = rarityOrder(data.rarity)
+	if order >= rarityOrder("Rare") then
+		playSound("reveal_rare", 0.35)
+		shakeCamera(order >= rarityOrder("Legendary") and 0.11 or 0.055, order >= rarityOrder("Legendary") and 0.42 or 0.24)
+	end
+	if order >= rarityOrder("Legendary") then
+		playSound("reveal_legendary", 0.35)
+	end
+
 	waitTween(flash, 0.06, { BackgroundTransparency = 0.12 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	tween(flash, 0.2, { BackgroundTransparency = 1 })
 	burstParticles(particles)
@@ -724,6 +848,7 @@ local function playReveal(rawPayload)
 	fadeText(eggName, false, 0.12)
 	fadeText(rewardName, true, 0.16)
 	fadeText(rarityLabel, true, 0.16)
+	fadeText(newLabel, true, 0.16)
 	fadeText(valueLabel, true, 0.16)
 
 	for _, item in ipairs(rings) do
@@ -736,6 +861,7 @@ local function playReveal(rawPayload)
 
 	local closeRequested = false
 	local clickConn = closeButton.Activated:Connect(function()
+		playSound("ui_click", 0.08)
 		closeRequested = true
 	end)
 	local inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
