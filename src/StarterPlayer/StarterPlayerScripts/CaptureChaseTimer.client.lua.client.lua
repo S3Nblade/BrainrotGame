@@ -12,8 +12,8 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local npcFolder = Workspace:WaitForChild("BrainrotNPCs")
-local guiFolder = ReplicatedStorage:WaitForChild("GUI")
-local clockFolder = guiFolder:WaitForChild("Clock")
+local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
+local clockFolder = guiFolder and guiFolder:FindFirstChild("Clock")
 
 local FONT = Enum.Font.FredokaOne
 local tracked = {}
@@ -48,7 +48,10 @@ local function getImageFromAsset(asset)
 	return ""
 end
 
-local clockImage = getImageFromAsset(clockFolder:WaitForChild("clock"))
+local clockImage = ""
+if clockFolder then
+	clockImage = getImageFromAsset(clockFolder:FindFirstChild("clock"))
+end
 
 local function getServerTime()
 	return Workspace:GetServerTimeNow()
@@ -708,8 +711,12 @@ local function updateNpc(npc)
 	local stunned = npc:GetAttribute("CaptureStunned") == true
 	local panic = npc:GetAttribute("CapturePanic") == true
 	local shielded = npc:GetAttribute("CaptureShielded") == true
+	local isEgg = npc:GetAttribute("EggBrainrot") == true
+	local eggHP = tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP"))
+	local eggMaxHP = tonumber(npc:GetAttribute("EggMaxHP")) or tonumber(npc:GetAttribute("CaptureMaxHP"))
+	local eggDamaged = isEgg and eggHP ~= nil and eggMaxHP ~= nil and eggHP < eggMaxHP
 
-	local shouldShow = active or stunned or panic or shielded
+	local shouldShow = active or stunned or panic or shielded or eggDamaged
 
 	if not shouldShow then
 		forceLegacyOverheadsHidden(npc, false)
@@ -748,7 +755,7 @@ local function updateNpc(npc)
 		setStunnedMode(data, npc)
 	elseif panic or shielded then
 		setPanicMode(data)
-	elseif active then
+	elseif active or eggDamaged then
 		setCaptureMode(data, npc)
 	end
 end

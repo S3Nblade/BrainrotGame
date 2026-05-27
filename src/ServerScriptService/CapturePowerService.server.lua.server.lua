@@ -873,8 +873,10 @@ local function damageNpc(player, npc)
 	if isEggNpc(npc) then
 		local eggApi = _G.CleanEggDamageApi
 		if eggApi and eggApi.DamageEgg then
-			eggApi.DamageEgg(player, npc, getPlayerCatchPower(player), getPlayerCatchRange(player))
-			return
+			local handled = eggApi.DamageEgg(player, npc, getPlayerCatchPower(player), getPlayerCatchRange(player))
+			if handled ~= false then
+				return
+			end
 		end
 	end
 
