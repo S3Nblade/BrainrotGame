@@ -714,10 +714,14 @@ local function ensureMoneyGuis(part)
 		gui.AlwaysOnTop = true
 		gui.LightInfluence = 0
 		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-		gui.PixelsPerStud = 85
+		gui.PixelsPerStud = 110
 		gui.Parent = part
 
 		local label = createCleanLabel(gui, Color3.fromRGB(255, 255, 255), 0)
+		local constraint = Instance.new("UITextSizeConstraint")
+		constraint.MaxTextSize = 90
+		constraint.MinTextSize = 20
+		constraint.Parent = label
 
 		table.insert(list, {
 			gui = gui,

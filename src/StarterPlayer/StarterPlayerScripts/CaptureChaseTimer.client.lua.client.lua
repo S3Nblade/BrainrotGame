@@ -226,6 +226,7 @@ local function createHPBar(parent)
 	outer.Position = UDim2.new(0.5, 0, 0, 56)
 	outer.Size = UDim2.fromOffset(194, 25)
 	outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	outer.BackgroundTransparency = 1
 	outer.BorderSizePixel = 0
 	outer.ZIndex = 10
 	outer.Parent = parent
@@ -234,8 +235,8 @@ local function createHPBar(parent)
 
 	local innerClip = Instance.new("Frame")
 	innerClip.Name = "InnerClip"
-	innerClip.Position = UDim2.fromOffset(3, 3)
-	innerClip.Size = UDim2.new(1, -6, 1, -6)
+	innerClip.Position = UDim2.fromScale(0, 0)
+	innerClip.Size = UDim2.fromScale(1, 1)
 	innerClip.BackgroundTransparency = 1
 	innerClip.ClipsDescendants = true
 	innerClip.ZIndex = 11
@@ -257,8 +258,8 @@ local function createHPBar(parent)
 	shine.Name = "Shine"
 	shine.Position = UDim2.fromScale(0, 0)
 	shine.Size = UDim2.new(1, 0, 0.34, 0)
-	shine.BackgroundColor3 = Color3.fromRGB(255, 170, 175)
-	shine.BackgroundTransparency = 0.38
+	shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
+	shine.BackgroundTransparency = 0.22
 	shine.BorderSizePixel = 0
 	shine.ZIndex = 13
 	shine.Parent = fill
@@ -275,6 +276,7 @@ local function createHPBar(parent)
 		13,
 		30
 	)
+	text.Visible = false
 
 	return {
 		outer = outer,
@@ -292,15 +294,10 @@ local function setBarRatio(barData, ratio)
 end
 
 local function styleHPBarShell(data, isEgg)
-	if isEgg then
-		data.hpBar.outer.BackgroundTransparency = 1
-		data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
-		data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
-	else
-		data.hpBar.outer.BackgroundTransparency = 0
-		data.hpBar.innerClip.Position = UDim2.fromOffset(3, 3)
-		data.hpBar.innerClip.Size = UDim2.new(1, -6, 1, -6)
-	end
+	data.hpBar.outer.BackgroundTransparency = 1
+	data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
+	data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
+	data.hpBar.text.Visible = false
 end
 
 local function showStunnedPopup(npc)
@@ -629,10 +626,9 @@ local function setCaptureMode(data, npc)
 	end
 
 	data.clock.row.Position = isEgg and UDim2.new(0.5, 0, 0, 22) or UDim2.new(0.5, 0, 0, 2)
-	data.clock.timerBack.Visible = true
+	data.clock.timerBack.Visible = false
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
@@ -668,12 +664,11 @@ local function setStunnedMode(data, npc)
 
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
 	updateHPBar(data, npc)
-	data.hpBar.text.Text = isEgg and "STUNNED" or "READY TO PICKUP"
+	data.hpBar.text.Visible = false
 end
 
 local function setPanicMode(data)
@@ -692,11 +687,10 @@ local function setPanicMode(data)
 
 	data.hpBar.outer.Position = UDim2.new(0.5, 0, 0, 28)
 	data.hpBar.outer.Size = UDim2.fromOffset(145, 23)
-	data.hpBar.outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
 	styleHPBarShell(data, false)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
-	data.hpBar.text.Text = "EVADING..."
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 146, 42)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 212, 112)
+	data.hpBar.text.Visible = false
 end
 
 local function updateNpc(npc)

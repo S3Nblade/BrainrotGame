@@ -804,86 +804,22 @@ function createBillboard(model, eggDef)
 	luckStroke.Thickness = 2
 	luckStroke.Parent = luck
 
-	local hpBack = Instance.new("Frame")
-	hpBack.Name = "EggHPBack"
-	hpBack.AnchorPoint = Vector2.new(0.5, 0)
-	hpBack.Position = UDim2.fromScale(0.5, 0.18)
-	hpBack.Size = UDim2.fromScale(0.9, 0.24)
-	hpBack.BackgroundColor3 = Color3.fromRGB(13, 18, 32)
-	hpBack.BackgroundTransparency = 0.06
-	hpBack.BorderSizePixel = 0
-	hpBack.Visible = false
-	hpBack.Parent = gui
-	local hpBackCorner = Instance.new("UICorner")
-	hpBackCorner.CornerRadius = UDim.new(1, 0)
-	hpBackCorner.Parent = hpBack
-
-	local hpFill = Instance.new("Frame")
-	hpFill.Name = "EggHPFill"
-	hpFill.AnchorPoint = Vector2.new(0, 0.5)
-	hpFill.Position = UDim2.fromScale(0, 0.5)
-	hpFill.Size = UDim2.fromScale(1, 1)
-	hpFill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	hpFill.BorderSizePixel = 0
-	hpFill.Parent = hpBack
-	local hpFillCorner = Instance.new("UICorner")
-	hpFillCorner.CornerRadius = UDim.new(1, 0)
-	hpFillCorner.Parent = hpFill
-
-	local hpText = Instance.new("TextLabel")
-	hpText.Name = "EggHPText"
-	hpText.BackgroundTransparency = 1
-	hpText.Size = UDim2.fromScale(1, 1)
-	hpText.Font = Enum.Font.GothamBold
-	hpText.Text = "EGG"
-	hpText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	hpText.TextScaled = true
-	hpText.Parent = hpBack
-	local hpTextStroke = Instance.new("UIStroke")
-	hpTextStroke.Color = Color3.fromRGB(10, 12, 18)
-	hpTextStroke.Thickness = 2
-	hpTextStroke.Parent = hpText
-
 	local function refresh()
 		local active = model:GetAttribute("CaptureChaseActive") == true
 		local busy = active
 			or model:GetAttribute("CaptureStunned") == true
 			or model:GetAttribute("CapturePanic") == true
 			or model:GetAttribute("CaptureShielded") == true
-		local hp = tonumber(model:GetAttribute("EggHP")) or tonumber(model:GetAttribute("CaptureHP")) or 0
-		local maxHP = tonumber(model:GetAttribute("EggMaxHP")) or tonumber(model:GetAttribute("CaptureMaxHP")) or math.max(hp, 1)
-		local damaged = hp < maxHP
-		local showHP = busy or damaged
 
-		gui.Enabled = true
+		gui.Enabled = not busy
 		name.Text = tostring(model:GetAttribute("EggOverheadName") or getEggOverheadName(eggDef))
 		luck.Text = "Luck +" .. tostring(math.floor(tonumber(model:GetAttribute("LuckBonus")) or tonumber(eggDef.LuckBonus) or 0)) .. "%"
-		name.Visible = not showHP
-		luck.Visible = not showHP
-		hpBack.Visible = showHP
-
-		if showHP then
-			local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
-			hpFill.Size = UDim2.fromScale(ratio, 1)
-
-			if model:GetAttribute("CaptureStunned") == true then
-				hpText.Text = "STUNNED"
-			elseif model:GetAttribute("CapturePanic") == true or model:GetAttribute("CaptureShielded") == true then
-				hpText.Text = "EVADING"
-			else
-				hpText.Text = "EGG " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
-			end
-		end
 	end
 
 	model:GetAttributeChangedSignal("CaptureChaseActive"):Connect(refresh)
 	model:GetAttributeChangedSignal("CaptureStunned"):Connect(refresh)
 	model:GetAttributeChangedSignal("CapturePanic"):Connect(refresh)
 	model:GetAttributeChangedSignal("CaptureShielded"):Connect(refresh)
-	model:GetAttributeChangedSignal("EggHP"):Connect(refresh)
-	model:GetAttributeChangedSignal("CaptureHP"):Connect(refresh)
-	model:GetAttributeChangedSignal("EggMaxHP"):Connect(refresh)
-	model:GetAttributeChangedSignal("CaptureMaxHP"):Connect(refresh)
 	model:GetAttributeChangedSignal("LuckBonus"):Connect(refresh)
 	task.spawn(function()
 		while model.Parent and gui.Parent do

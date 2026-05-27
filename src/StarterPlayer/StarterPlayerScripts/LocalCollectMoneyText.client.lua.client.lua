@@ -372,7 +372,7 @@ local function createLocalCollectText(part)
 		gui.AlwaysOnTop = true
 		gui.LightInfluence = 0
 		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-		gui.PixelsPerStud = 45
+		gui.PixelsPerStud = 80
 		gui.Parent = part
 
 		local label = Instance.new("TextLabel")
@@ -386,6 +386,11 @@ local function createLocalCollectText(part)
 		label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 		label.TextStrokeTransparency = 0
 		label.Parent = gui
+
+		local constraint = Instance.new("UITextSizeConstraint")
+		constraint.MaxTextSize = 72
+		constraint.MinTextSize = 18
+		constraint.Parent = label
 	end
 
 	return gui:FindFirstChild("Text")

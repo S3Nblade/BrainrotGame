@@ -82,8 +82,8 @@ local function createGui(prompt)
 	billboard.Name = "CleanCartoonPrompt"
 	billboard.Adornee = adornee
 	billboard.AlwaysOnTop = true
-	billboard.Size = UDim2.fromOffset(170, 56)
-	billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0)
+	billboard.Size = UDim2.fromOffset(198, 66)
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.85, 0)
 	billboard.MaxDistance = prompt.MaxActivationDistance + 8
 	billboard.Parent = playerGui
 
@@ -101,12 +101,12 @@ local function createGui(prompt)
 	local key = Instance.new("TextLabel")
 	key.Name = "Key"
 	key.BackgroundTransparency = 1
-	key.Position = UDim2.fromOffset(8, 4)
-	key.Size = UDim2.fromOffset(48, 48)
+	key.Position = UDim2.fromOffset(8, 2)
+	key.Size = UDim2.fromOffset(58, 58)
 	key.Font = Enum.Font.FredokaOne
 	key.Text = prompt.KeyboardKeyCode.Name
 	key.TextScaled = true
-	key.TextColor3 = Color3.fromRGB(255, 255, 255)
+	key.TextColor3 = Color3.fromRGB(255, 239, 105)
 	key.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	key.TextStrokeTransparency = 0
 	key.Parent = holder
@@ -119,8 +119,8 @@ local function createGui(prompt)
 	local action = Instance.new("TextLabel")
 	action.Name = "Action"
 	action.BackgroundTransparency = 1
-	action.Position = UDim2.fromOffset(58, 9)
-	action.Size = UDim2.fromOffset(104, 38)
+	action.Position = UDim2.fromOffset(68, 9)
+	action.Size = UDim2.fromOffset(122, 42)
 	action.Font = Enum.Font.FredokaOne
 	action.Text = makeActionText(prompt)
 	action.TextScaled = true
@@ -133,9 +133,9 @@ local function createGui(prompt)
 	local progress = Instance.new("Frame")
 	progress.Name = "HoldProgress"
 	progress.AnchorPoint = Vector2.new(0.5, 1)
-	progress.Position = UDim2.new(0, 32, 1, -1)
-	progress.Size = UDim2.fromOffset(0, 4)
-	progress.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	progress.Position = UDim2.new(0, 37, 1, -2)
+	progress.Size = UDim2.fromOffset(0, 6)
+	progress.BackgroundColor3 = Color3.fromRGB(115, 255, 88)
 	progress.BorderSizePixel = 0
 	progress.Parent = holder
 
@@ -146,7 +146,7 @@ local function createGui(prompt)
 	local progressStroke = Instance.new("UIStroke")
 	progressStroke.Thickness = 2
 	progressStroke.Color = Color3.fromRGB(0, 0, 0)
-	progressStroke.Transparency = 0.15
+	progressStroke.Transparency = 0
 	progressStroke.Parent = progress
 
 	TweenService:Create(
@@ -222,7 +222,7 @@ local function beginHold(prompt)
 		data.holdTween:Cancel()
 	end
 
-	data.progress.Size = UDim2.fromOffset(0, 4)
+	data.progress.Size = UDim2.fromOffset(0, 6)
 
 	TweenService:Create(
 		data.keyScale,
@@ -233,7 +233,7 @@ local function beginHold(prompt)
 	data.holdTween = TweenService:Create(
 		data.progress,
 		TweenInfo.new(math.max(prompt.HoldDuration, 0.08), Enum.EasingStyle.Linear),
-		{ Size = UDim2.fromOffset(48, 4) }
+		{ Size = UDim2.fromOffset(58, 6) }
 	)
 
 	data.holdTween:Play()
@@ -258,7 +258,7 @@ local function endHold(prompt)
 	TweenService:Create(
 		data.progress,
 		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{ Size = UDim2.fromOffset(0, 4) }
+		{ Size = UDim2.fromOffset(0, 6) }
 	):Play()
 end
 
@@ -272,7 +272,7 @@ local function triggered(prompt)
 		data.holdTween:Cancel()
 	end
 
-	data.progress.Size = UDim2.fromOffset(0, 4)
+	data.progress.Size = UDim2.fromOffset(0, 6)
 
 	TweenService:Create(
 		data.keyScale,

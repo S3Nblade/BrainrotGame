@@ -73,7 +73,7 @@ local root = Instance.new("Frame")
 root.Name = "Root"
 root.AnchorPoint = Vector2.new(0, 1)
 root.Position = UDim2.new(0, 18, 1, -18)
-root.Size = UDim2.fromOffset(470, 120)
+root.Size = UDim2.fromOffset(520, 142)
 root.BackgroundTransparency = 1
 root.Parent = screenGui
 
@@ -81,7 +81,7 @@ local layout = Instance.new("UIListLayout")
 layout.FillDirection = Enum.FillDirection.Vertical
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-layout.Padding = UDim.new(0, 6)
+layout.Padding = UDim.new(0, 8)
 layout.Parent = root
 
 local function formatNumber(value)
@@ -151,7 +151,7 @@ end
 local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, textColor)
 	local row = Instance.new("Frame")
 	row.Name = rowName
-	row.Size = UDim2.fromOffset(470, 52)
+	row.Size = UDim2.fromOffset(520, 62)
 	row.BackgroundTransparency = 1
 	row.Parent = root
 
@@ -170,7 +170,7 @@ local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, 
 	pill.Parent = row
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 18)
+	corner.CornerRadius = UDim.new(0, 22)
 	corner.Parent = pill
 
 	local stroke = Instance.new("UIStroke")
@@ -207,7 +207,7 @@ local function createRow(rowName, imageId, fallbackText, iconSize, maxTextSize, 
 
 	local constraint = Instance.new("UITextSizeConstraint")
 	constraint.MaxTextSize = maxTextSize
-	constraint.MinTextSize = 14
+	constraint.MinTextSize = 16
 	constraint.Parent = text
 
 	return text, scale
@@ -217,8 +217,8 @@ local strengthLabel, strengthScale = createRow(
 	"StrengthRow",
 	strengthImage,
 	"STR",
-	46,
-	35,
+	54,
+	40,
 	Color3.fromRGB(255, 191, 45)
 )
 
@@ -226,8 +226,8 @@ local moneyLabel, moneyScale = createRow(
 	"MoneyRow",
 	moneyImage,
 	"$",
-	46,
-	44,
+	54,
+	50,
 	Color3.fromRGB(70, 255, 90)
 )
 

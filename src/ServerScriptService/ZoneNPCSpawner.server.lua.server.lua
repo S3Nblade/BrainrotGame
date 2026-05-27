@@ -422,6 +422,11 @@ local function addHighlight(model, fill, outline)
 end
 
 local function addBillboardMarker(model, head, def, zoneConfig)
+	local displayName = string.lower(tostring(zoneConfig.DisplayName or ""))
+	if displayName == "forest" or displayName == "desert" or displayName == "dessert" then
+		return
+	end
+
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "ZoneNPCStyleMarker"
 	billboard.Size = UDim2.new(0, 120, 0, 34)
