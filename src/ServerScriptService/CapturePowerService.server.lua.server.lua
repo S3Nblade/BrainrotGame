@@ -207,6 +207,16 @@ local function isWildNpc(npc)
 	return true
 end
 
+local function isEggNpc(npc)
+	if not npc or not npc:IsA("Model") then
+		return false
+	end
+
+	return npc:GetAttribute("EggBrainrot") == true
+		or npc:GetAttribute("IsEgg") == true
+		or npc:GetAttribute("EggSpawnerId") ~= nil
+end
+
 local function getGrabPrompt(npc)
 	local root = getNpcRoot(npc)
 
@@ -860,6 +870,14 @@ local function damageNpc(player, npc)
 
 	hitCooldowns[key] = now
 
+	if isEggNpc(npc) then
+		local eggApi = _G.CleanEggDamageApi
+		if eggApi and eggApi.DamageEgg then
+			eggApi.DamageEgg(player, npc, getPlayerCatchPower(player), getPlayerCatchRange(player))
+			return
+		end
+	end
+
 	local valid, reason = validateHit(player, npc)
 	if not valid then
 		if reason == "Too far" then
@@ -877,10 +895,20 @@ local function damageNpc(player, npc)
 	startChase(player, npc)
 
 	local damage = getPlayerCatchPower(player)
-	local maxHP = tonumber(npc:GetAttribute("CaptureMaxHP")) or getCaptureMaxHP(npc)
-	local hp = tonumber(npc:GetAttribute("CaptureHP")) or maxHP
+	local isEgg = isEggNpc(npc)
+	local maxHP = if isEgg
+		then tonumber(npc:GetAttribute("EggMaxHP")) or tonumber(npc:GetAttribute("CaptureMaxHP")) or getCaptureMaxHP(npc)
+		else tonumber(npc:GetAttribute("CaptureMaxHP")) or getCaptureMaxHP(npc)
+	local hp = if isEgg
+		then tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP")) or maxHP
+		else tonumber(npc:GetAttribute("CaptureHP")) or maxHP
 
 	hp = math.max(0, hp - damage)
+	if isEgg then
+		npc:SetAttribute("EggMaxHP", maxHP)
+		npc:SetAttribute("EggHP", hp)
+		npc:SetAttribute("CaptureMaxHP", maxHP)
+	end
 	npc:SetAttribute("CaptureHP", hp)
 
 	local rarity = getRarity(npc)

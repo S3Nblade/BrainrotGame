@@ -548,10 +548,25 @@ end
 
 local function updateHPBar(data, npc)
 	local isEgg = npc:GetAttribute("EggBrainrot") == true
-	local hp = isEgg and tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP"))
-	local maxHP = isEgg and tonumber(npc:GetAttribute("EggMaxHP")) or tonumber(npc:GetAttribute("CaptureMaxHP"))
-	hp = hp or tonumber(npc:GetAttribute("CaptureHP")) or 0
-	maxHP = maxHP or tonumber(npc:GetAttribute("CaptureMaxHP")) or 1
+	local eggHP = tonumber(npc:GetAttribute("EggHP"))
+	local captureHP = tonumber(npc:GetAttribute("CaptureHP"))
+	local eggMaxHP = tonumber(npc:GetAttribute("EggMaxHP"))
+	local captureMaxHP = tonumber(npc:GetAttribute("CaptureMaxHP"))
+	local hp = captureHP
+	local maxHP = captureMaxHP
+
+	if isEgg then
+		if eggHP and captureHP then
+			hp = math.min(eggHP, captureHP)
+		else
+			hp = eggHP or captureHP
+		end
+
+		maxHP = eggMaxHP or captureMaxHP
+	end
+
+	hp = hp or 0
+	maxHP = maxHP or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
 
 	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name

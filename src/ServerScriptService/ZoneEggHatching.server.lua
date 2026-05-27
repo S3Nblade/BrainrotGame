@@ -1401,7 +1401,7 @@ hatchRequestRemote.OnServerEvent:Connect(function(player, egg)
 	end
 end)
 
-local function damageEgg(player, egg, amount)
+local function damageEgg(player, egg, amount, maxDistance)
 	if typeof(egg) ~= "Instance" then
 		return false
 	end
@@ -1423,7 +1423,8 @@ local function damageEgg(player, egg, amount)
 	local root = getRoot(egg)
 	local character = player and player.Character
 	local playerRoot = character and character:FindFirstChild("HumanoidRootPart")
-	if not root or not playerRoot or (root.Position - playerRoot.Position).Magnitude > 12 then
+	local hitRange = math.max(1, tonumber(maxDistance) or 12)
+	if not root or not playerRoot or (root.Position - playerRoot.Position).Magnitude > hitRange then
 		return true
 	end
 
