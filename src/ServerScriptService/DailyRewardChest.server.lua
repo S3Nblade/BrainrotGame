@@ -1,6 +1,6 @@
 --!nonstrict
 -- ServerScriptService/DailyRewardChest.server.lua
--- Fixed: only sends one daily reward GUI message.
+-- Daily streak chest with simulator-style reward scaling.
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -15,6 +15,16 @@ local CHEST_NAMES = {
 local PROMPT_NAME = "DailyRewardPrompt"
 local COOLDOWN_SECONDS = 24 * 60 * 60
 local CHECK_EVERY = 1
+local STREAK_RESET_SECONDS = COOLDOWN_SECONDS * 2
+local STREAK_REWARDS = {
+	{ Day = 1, Multiplier = 1.0, Label = "Day 1" },
+	{ Day = 2, Multiplier = 1.25, Label = "Day 2" },
+	{ Day = 3, Multiplier = 1.55, Label = "Day 3" },
+	{ Day = 4, Multiplier = 1.9, Label = "Day 4" },
+	{ Day = 5, Multiplier = 2.35, Label = "Day 5" },
+	{ Day = 6, Multiplier = 2.8, Label = "Day 6" },
+	{ Day = 7, Multiplier = 4.0, Label = "MEGA" },
+}
 
 local dailyStore = DataStoreService:GetDataStore("DailyRewardChest_v2")
 
@@ -33,7 +43,7 @@ if not dailyRemote then
 end
 
 local boundChests = {}
-local lastClaimCache = {}
+local dailyStateCache = {}
 
 local function formatTime(seconds)
 	seconds = math.max(0, math.floor(seconds))
@@ -108,32 +118,6 @@ local function addMoney(player, amount)
 	end
 end
 
-local function getLastClaim(player)
-	if lastClaimCache[player.UserId] ~= nil then
-		return lastClaimCache[player.UserId]
-	end
-
-	local success, result = pcall(function()
-		return dailyStore:GetAsync(tostring(player.UserId))
-	end)
-
-	if success and typeof(result) == "number" then
-		lastClaimCache[player.UserId] = result
-		return result
-	end
-
-	lastClaimCache[player.UserId] = 0
-	return 0
-end
-
-local function setLastClaim(player, timestamp)
-	lastClaimCache[player.UserId] = timestamp
-
-	pcall(function()
-		dailyStore:SetAsync(tostring(player.UserId), timestamp)
-	end)
-end
-
 local function isChest(obj)
 	return CHEST_NAMES[obj.Name] == true or obj:GetAttribute("IsDailyRewardChest") == true
 end
@@ -152,7 +136,7 @@ local function getChestPart(chest)
 	return nil
 end
 
-local function calculateReward(player, chest)
+local function getBaseReward(player, chest)
 	local baseReward = tonumber(chest:GetAttribute("RewardMoney")) or 5000
 	local rebirths = tonumber(player:GetAttribute("Rebirths")) or 0
 
@@ -167,32 +151,131 @@ local function calculateReward(player, chest)
 	return math.floor(baseReward + (rebirths * 15000))
 end
 
+local function getStreakDay(streak)
+	return ((math.max(1, math.floor(tonumber(streak) or 1)) - 1) % #STREAK_REWARDS) + 1
+end
+
+local function normalizeState(raw)
+	if typeof(raw) == "number" then
+		return {
+			lastClaim = raw,
+			streak = raw > 0 and 1 or 0,
+			bestStreak = raw > 0 and 1 or 0,
+		}
+	end
+
+	if typeof(raw) == "table" then
+		return {
+			lastClaim = tonumber(raw.lastClaim) or tonumber(raw.LastClaim) or 0,
+			streak = math.max(0, math.floor(tonumber(raw.streak) or tonumber(raw.Streak) or 0)),
+			bestStreak = math.max(0, math.floor(tonumber(raw.bestStreak) or tonumber(raw.BestStreak) or 0)),
+		}
+	end
+
+	return {
+		lastClaim = 0,
+		streak = 0,
+		bestStreak = 0,
+	}
+end
+
+local function getDailyState(player)
+	if dailyStateCache[player.UserId] then
+		return dailyStateCache[player.UserId]
+	end
+
+	local success, result = pcall(function()
+		return dailyStore:GetAsync(tostring(player.UserId))
+	end)
+
+	local state = success and normalizeState(result) or normalizeState(nil)
+	dailyStateCache[player.UserId] = state
+	return state
+end
+
+local function saveDailyState(player, state)
+	dailyStateCache[player.UserId] = state
+
+	pcall(function()
+		dailyStore:SetAsync(tostring(player.UserId), state)
+	end)
+end
+
+local function buildCalendar(baseReward, streak, claimedToday)
+	local calendar = {}
+	local currentDay = getStreakDay(math.max(1, streak + (claimedToday and 0 or 1)))
+
+	for _, rewardInfo in ipairs(STREAK_REWARDS) do
+		table.insert(calendar, {
+			day = rewardInfo.Day,
+			label = rewardInfo.Label,
+			multiplier = rewardInfo.Multiplier,
+			reward = math.floor(baseReward * rewardInfo.Multiplier),
+			rewardText = "$" .. formatMoney(baseReward * rewardInfo.Multiplier),
+			current = rewardInfo.Day == currentDay,
+			claimed = claimedToday and rewardInfo.Day == currentDay,
+		})
+	end
+
+	return calendar
+end
+
+local function buildPayload(player, chest, success, message, reward, remaining)
+	local state = getDailyState(player)
+	local baseReward = getBaseReward(player, chest)
+	local now = os.time()
+	local cooldown = tonumber(chest:GetAttribute("CooldownSeconds")) or COOLDOWN_SECONDS
+	local claimedToday = (now - (tonumber(state.lastClaim) or 0)) < cooldown
+
+	return {
+		success = success,
+		message = message,
+		reward = reward or 0,
+		rewardText = reward and ("$" .. formatMoney(reward)) or "$0",
+		remaining = math.max(0, math.floor(remaining or 0)),
+		remainingText = formatTime(remaining or 0),
+		streak = state.streak or 0,
+		bestStreak = state.bestStreak or 0,
+		nextDay = getStreakDay(math.max(1, (state.streak or 0) + 1)),
+		calendar = buildCalendar(baseReward, state.streak or 0, claimedToday),
+	}
+end
+
 local function claim(player, chest)
 	local now = os.time()
 	local cooldown = tonumber(chest:GetAttribute("CooldownSeconds")) or COOLDOWN_SECONDS
-	local lastClaim = getLastClaim(player)
+	local state = getDailyState(player)
+	local lastClaim = tonumber(state.lastClaim) or 0
 	local remaining = cooldown - (now - lastClaim)
 
 	if remaining > 0 then
-		dailyRemote:FireClient(player, {
-			success = false,
-			message = "Daily chest ready in " .. formatTime(remaining) .. ".",
-			remaining = remaining,
-		})
+		dailyRemote:FireClient(
+			player,
+			buildPayload(player, chest, false, "Daily chest ready in " .. formatTime(remaining) .. ".", 0, remaining)
+		)
 		return
 	end
 
-	local reward = calculateReward(player, chest)
+	if lastClaim > 0 and now - lastClaim <= STREAK_RESET_SECONDS then
+		state.streak = math.max(1, math.floor(tonumber(state.streak) or 0) + 1)
+	else
+		state.streak = 1
+	end
+
+	state.bestStreak = math.max(math.floor(tonumber(state.bestStreak) or 0), state.streak)
+	state.lastClaim = now
+
+	local baseReward = getBaseReward(player, chest)
+	local streakInfo = STREAK_REWARDS[getStreakDay(state.streak)]
+	local reward = math.floor(baseReward * (streakInfo.Multiplier or 1))
 
 	addMoney(player, reward)
-	setLastClaim(player, now)
+	saveDailyState(player, state)
 
-	dailyRemote:FireClient(player, {
-		success = true,
-		message = "Daily reward: $" .. formatMoney(reward) .. "!",
-		reward = reward,
-		remaining = cooldown,
-	})
+	dailyRemote:FireClient(
+		player,
+		buildPayload(player, chest, true, "Daily streak " .. tostring(state.streak) .. ": $" .. formatMoney(reward) .. "!", reward, cooldown)
+	)
 end
 
 local function bindChest(chest)
@@ -231,7 +314,7 @@ local function bindChest(chest)
 end
 
 Players.PlayerRemoving:Connect(function(player)
-	lastClaimCache[player.UserId] = nil
+	dailyStateCache[player.UserId] = nil
 end)
 
 task.spawn(function()
@@ -246,4 +329,4 @@ task.spawn(function()
 	end
 end)
 
-print("[DailyRewardChest] Loaded fixed one-message daily chest.")
+print("[DailyRewardChest] Loaded streak daily chest.")

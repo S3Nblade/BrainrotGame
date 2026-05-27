@@ -702,6 +702,176 @@ local function showRebirthComplete(data)
 	end)
 end
 
+local function showDailyReward(data)
+	data = type(data) == "table" and data or {}
+
+	local frame = Instance.new("Frame")
+	frame.Name = "DailyRewardCalendar"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.5)
+	frame.Size = UDim2.fromOffset(560, 330)
+	frame.BackgroundColor3 = Color3.fromRGB(80, 195, 255)
+	frame.BorderSizePixel = 0
+	frame.Parent = gui
+	addCorner(frame, 24)
+	addStroke(frame, Color3.fromRGB(24, 27, 54), 4, 0)
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 90
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(102, 219, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(88, 92, 235)),
+	})
+	gradient.Parent = frame
+
+	local frameScale = Instance.new("UIScale")
+	frameScale.Scale = 0.72
+	frameScale.Parent = frame
+
+	local title = makeText(
+		frame,
+		"Title",
+		UDim2.new(0.05, 0, 0.05, 0),
+		UDim2.new(0.9, 0, 0.14, 0),
+		data.success and "DAILY CLAIMED!" or "DAILY CHEST",
+		data.success and Color3.fromRGB(255, 241, 100) or Color3.fromRGB(255, 255, 255)
+	)
+	title.ZIndex = 3
+
+	local streak = makeText(
+		frame,
+		"Streak",
+		UDim2.new(0.08, 0, 0.18, 0),
+		UDim2.new(0.84, 0, 0.1, 0),
+		"Streak: " .. tostring(data.streak or 0) .. "   Best: " .. tostring(data.bestStreak or 0),
+		Color3.fromRGB(255, 246, 210)
+	)
+	streak.ZIndex = 3
+
+	local calendarFrame = Instance.new("Frame")
+	calendarFrame.Name = "Calendar"
+	calendarFrame.BackgroundTransparency = 1
+	calendarFrame.Position = UDim2.new(0.05, 0, 0.32, 0)
+	calendarFrame.Size = UDim2.new(0.9, 0, 0.32, 0)
+	calendarFrame.ZIndex = 3
+	calendarFrame.Parent = frame
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0, 8)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = calendarFrame
+
+	local calendar = type(data.calendar) == "table" and data.calendar or {}
+	for index = 1, 7 do
+		local day = calendar[index] or {
+			day = index,
+			label = index == 7 and "MEGA" or ("Day " .. tostring(index)),
+			rewardText = "$?",
+			current = false,
+			claimed = false,
+		}
+
+		local card = Instance.new("Frame")
+		card.Name = "Day" .. tostring(index)
+		card.LayoutOrder = index
+		card.Size = UDim2.fromOffset(64, 86)
+		card.BackgroundColor3 = day.claimed and Color3.fromRGB(105, 240, 104)
+			or (day.current and Color3.fromRGB(255, 212, 76) or Color3.fromRGB(255, 248, 222))
+		card.BorderSizePixel = 0
+		card.ZIndex = 4
+		card.Parent = calendarFrame
+		addCorner(card, 14)
+		addStroke(card, Color3.fromRGB(24, 27, 54), day.current and 3 or 2, 0)
+
+		local dayLabel = makeText(
+			card,
+			"DayLabel",
+			tostring(day.label or ("Day " .. tostring(index))),
+			UDim2.new(1, -8, 0, 25),
+			UDim2.new(0, 4, 0, 8),
+			day.current and Color3.fromRGB(24, 27, 54) or Color3.fromRGB(55, 63, 92)
+		)
+		dayLabel.ZIndex = 5
+
+		local rewardLabel = makeText(
+			card,
+			"Reward",
+			tostring(day.rewardText or "$?"),
+			UDim2.new(1, -8, 0, 25),
+			UDim2.new(0, 4, 0, 48),
+			day.current and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(52, 167, 83)
+		)
+		rewardLabel.ZIndex = 5
+
+		if day.current then
+			local scale = Instance.new("UIScale")
+			scale.Scale = 1
+			scale.Parent = card
+
+			TweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Scale = 1.08,
+			}):Play()
+		end
+	end
+
+	local message = makeText(
+		frame,
+		"Message",
+		UDim2.new(0.08, 0, 0.68, 0),
+		UDim2.new(0.84, 0, 0.13, 0),
+		tostring(data.message or "Come back tomorrow for the next reward."),
+		data.success and Color3.fromRGB(145, 255, 125) or Color3.fromRGB(255, 246, 180)
+	)
+	message.ZIndex = 3
+
+	local footerText = data.success and ("You got " .. tostring(data.rewardText or "$0")) or ("Ready in " .. tostring(data.remainingText or "soon"))
+	local footer = makeText(
+		frame,
+		"Footer",
+		UDim2.new(0.12, 0, 0.82, 0),
+		UDim2.new(0.76, 0, 0.1, 0),
+		footerText,
+		Color3.fromRGB(255, 255, 255)
+	)
+	footer.ZIndex = 3
+
+	TweenService:Create(frameScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Scale = 1,
+	}):Play()
+
+	task.delay(4, function()
+		if not frame.Parent then
+			return
+		end
+
+		TweenService:Create(frameScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Scale = 0.78,
+		}):Play()
+
+		for _, obj in ipairs(frame:GetDescendants()) do
+			if obj:IsA("TextLabel") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1,
+				}):Play()
+			elseif obj:IsA("Frame") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					BackgroundTransparency = 1,
+				}):Play()
+			elseif obj:IsA("UIStroke") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					Transparency = 1,
+				}):Play()
+			end
+		end
+
+		Debris:AddItem(frame, 0.25)
+	end)
+end
+
 local function popGift()
 	giftScale.Scale = 1.08
 	TweenService:Create(
@@ -767,6 +937,8 @@ collectionMilestoneRemote.OnClientEvent:Connect(showCollectionMilestone)
 rebirthCompleteRemote.OnClientEvent:Connect(showRebirthComplete)
 
 dailyRewardRemote.OnClientEvent:Connect(function(data)
+	data = type(data) == "table" and data or {}
+	showDailyReward(data)
 	showAnnouncement({
 		text = tostring(data.message or "Daily reward claimed!"),
 		color = data.success and { R = 80, G = 255, B = 120 } or { R = 255, G = 90, B = 90 },
