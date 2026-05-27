@@ -218,6 +218,7 @@ claimConstraint.Parent = claimButton
 
 local latestPayload = nil
 local claimReady = false
+local burstRunning = false
 
 local function formatNumber(value)
 	value = tonumber(value) or 0
@@ -243,6 +244,173 @@ local function pop()
 		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 		{ Scale = 1 }
 	):Play()
+end
+
+local function makeBurstLabel(parent, name, text, position, size, color, maxSize)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Position = position
+	label.Size = size
+	label.Text = text
+	label.TextColor3 = color
+	label.TextScaled = true
+	label.TextWrapped = true
+	label.Font = FONT
+	label.ZIndex = 210
+	label.Parent = parent
+	addTextStroke(label, 3)
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = maxSize
+	constraint.MinTextSize = 12
+	constraint.Parent = label
+
+	return label
+end
+
+local function showRewardBurst(payload)
+	if burstRunning or type(payload) ~= "table" then
+		return
+	end
+
+	burstRunning = true
+
+	local amountText = "+" .. formatNumber(payload.rewardAmount)
+	local rewardType = tostring(payload.rewardType or "Coins")
+
+	local burstGui = Instance.new("Frame")
+	burstGui.Name = "QuestRewardBurst"
+	burstGui.AnchorPoint = Vector2.new(0.5, 0.5)
+	burstGui.Position = UDim2.fromScale(0.5, 0.42)
+	burstGui.Size = UDim2.fromOffset(390, 178)
+	burstGui.BackgroundTransparency = 1
+	burstGui.ZIndex = 200
+	burstGui.Parent = gui
+
+	local burstScale = Instance.new("UIScale")
+	burstScale.Scale = 0.58
+	burstScale.Parent = burstGui
+
+	local glow = Instance.new("Frame")
+	glow.Name = "Glow"
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.Position = UDim2.fromScale(0.5, 0.52)
+	glow.Size = UDim2.fromOffset(270, 120)
+	glow.BackgroundColor3 = Color3.fromRGB(255, 232, 96)
+	glow.BackgroundTransparency = 0.34
+	glow.BorderSizePixel = 0
+	glow.ZIndex = 201
+	glow.Parent = burstGui
+
+	local glowCorner = Instance.new("UICorner")
+	glowCorner.CornerRadius = UDim.new(1, 0)
+	glowCorner.Parent = glow
+
+	local headline = makeBurstLabel(
+		burstGui,
+		"Headline",
+		"QUEST COMPLETE!",
+		UDim2.fromScale(0.5, 0.24),
+		UDim2.fromOffset(340, 44),
+		Color3.fromRGB(255, 255, 255),
+		32
+	)
+
+	local amount = makeBurstLabel(
+		burstGui,
+		"Amount",
+		amountText .. " " .. string.upper(rewardType),
+		UDim2.fromScale(0.5, 0.58),
+		UDim2.fromOffset(360, 66),
+		rewardType == "Gems" and Color3.fromRGB(95, 235, 255) or Color3.fromRGB(255, 239, 91),
+		42
+	)
+
+	for i = 1, 14 do
+		local dot = Instance.new("TextLabel")
+		dot.Name = "RewardSpark"
+		dot.BackgroundTransparency = 1
+		dot.AnchorPoint = Vector2.new(0.5, 0.5)
+		dot.Position = UDim2.fromScale(0.5, 0.55)
+		dot.Size = UDim2.fromOffset(30, 30)
+		dot.Text = rewardType == "Gems" and "◆" or "$"
+		dot.TextColor3 = rewardType == "Gems" and Color3.fromRGB(124, 241, 255) or Color3.fromRGB(255, 232, 89)
+		dot.TextScaled = true
+		dot.Font = FONT
+		dot.ZIndex = 209
+		dot.Parent = burstGui
+		addTextStroke(dot, 2)
+
+		local angle = (math.pi * 2 * i) / 14
+		local distance = 80 + ((i % 4) * 15)
+		local target = UDim2.new(0.5, math.cos(angle) * distance, 0.55, math.sin(angle) * distance)
+
+		TweenService:Create(
+			dot,
+			TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{ Position = target, Rotation = (i % 2 == 0 and 35 or -35) }
+		):Play()
+
+		task.delay(0.45, function()
+			if dot.Parent then
+				TweenService:Create(
+					dot,
+					TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+					{ TextTransparency = 1 }
+				):Play()
+			end
+		end)
+	end
+
+	TweenService:Create(
+		burstScale,
+		TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	):Play()
+
+	TweenService:Create(
+		glow,
+		TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = UDim2.fromOffset(360, 150), BackgroundTransparency = 0.58 }
+	):Play()
+
+	task.delay(0.85, function()
+		if not burstGui.Parent then
+			burstRunning = false
+			return
+		end
+
+		TweenService:Create(
+			burstScale,
+			TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Scale = 0.72 }
+		):Play()
+
+		for _, obj in ipairs(burstGui:GetDescendants()) do
+			if obj:IsA("TextLabel") then
+				TweenService:Create(
+					obj,
+					TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+					{ TextTransparency = 1 }
+				):Play()
+			elseif obj:IsA("Frame") then
+				TweenService:Create(
+					obj,
+					TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+					{ BackgroundTransparency = 1 }
+				):Play()
+			end
+		end
+
+		task.delay(0.18, function()
+			if burstGui then
+				burstGui:Destroy()
+			end
+			burstRunning = false
+		end)
+	end)
 end
 
 local function applyQuest(payload)
@@ -281,6 +449,7 @@ end)
 
 claimButton.MouseButton1Click:Connect(function()
 	if claimReady then
+		showRewardBurst(latestPayload)
 		claimQuestRemote:FireServer()
 		setClaimReady(false)
 		pop()

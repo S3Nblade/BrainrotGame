@@ -23,6 +23,7 @@ end
 
 local updateQuestRemote = getOrCreateRemote("UpdateQuestProgress")
 local claimQuestRemote = getOrCreateRemote("ClaimQuestReward")
+local notifyRemote = getOrCreateRemote("NotifyUser")
 
 local updateCoinsRemote = ReplicatedStorage:FindFirstChild("UpdateCoins")
 local updateGemsRemote = ReplicatedStorage:FindFirstChild("UpdateGems")
@@ -224,6 +225,10 @@ claimQuestRemote.OnServerEvent:Connect(function(player)
 	end
 
 	addCurrency(player, quest.RewardType, quest.RewardAmount)
+	notifyRemote:FireClient(player, {
+		message = "Quest complete! +" .. tostring(quest.RewardAmount) .. " " .. tostring(quest.RewardType),
+		variant = "success",
+	})
 
 	setQuestLevel(player, level + 1)
 
