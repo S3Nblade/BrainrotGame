@@ -1,5 +1,5 @@
 --!nonstrict
--- Professional code-created 2D egg hatch reveal.
+-- Lightweight 3D part-based egg reward roll.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -12,7 +12,7 @@ local RevealNPC = {}
 
 local DISPLAY_ORDER = 1400
 local QUEUE_LIMIT = 4
-local FONT = Enum.Font.GothamMedium
+local MAX_ROLL_CANDIDATES = 8
 local FONT_BOLD = Enum.Font.GothamBold
 local FONT_BLACK = Enum.Font.GothamBlack
 
@@ -35,6 +35,17 @@ local RARITY_COLORS = {
 	Godly = Color3.fromRGB(255, 90, 90),
 }
 
+local SYNTHETIC_ROLL_NAMES = {
+	"Blocky Brainrot",
+	"Tiny Brainrot",
+	"Round Brainrot",
+	"Tall Brainrot",
+	"Spark Brainrot",
+	"Chunky Brainrot",
+	"Glow Brainrot",
+	"Zippy Brainrot",
+}
+
 local function rarityColor(rarity)
 	return RARITY_COLORS[tostring(rarity or "Common")] or RARITY_COLORS.Common
 end
@@ -47,6 +58,15 @@ local function cleanAssetId(id)
 		return nil
 	end
 	return id
+end
+
+local function hashText(text)
+	text = tostring(text or "")
+	local hash = 0
+	for i = 1, #text do
+		hash = (hash * 31 + string.byte(text, i)) % 100000
+	end
+	return hash
 end
 
 local function tween(instance, duration, props, style, direction)
@@ -129,10 +149,14 @@ local function makeText(parent, name, text, position, size, color, maxSize, zInd
 end
 
 local function fadeText(label, visible, duration)
+	if not label then
+		return
+	end
+
 	tween(label, duration or 0.18, { TextTransparency = visible and 0 or 1 })
-	local s = label:FindFirstChildOfClass("UIStroke")
-	if s then
-		tween(s, duration or 0.18, { Transparency = visible and 0.06 or 1 })
+	local textStroke = label:FindFirstChildOfClass("UIStroke")
+	if textStroke then
+		tween(textStroke, duration or 0.18, { Transparency = visible and 0.08 or 1 })
 	end
 end
 
@@ -140,45 +164,166 @@ local function glow(parent, name, color, position, size, zIndex)
 	local g = makeFrame(parent, name, position, size, color, zIndex, UDim.new(1, 0))
 	local gradient = Instance.new("UIGradient")
 	gradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.05),
-		NumberSequenceKeypoint.new(0.48, 0.38),
+		NumberSequenceKeypoint.new(0, 0.08),
+		NumberSequenceKeypoint.new(0.5, 0.42),
 		NumberSequenceKeypoint.new(1, 1),
 	})
 	gradient.Parent = g
 	return g
 end
 
+local function normalizeCandidate(entry, index, fallbackRarity)
+	local name = "Mystery NPC"
+	local rarity = fallbackRarity or "Common"
+	local id = nil
+	local mps = nil
+	local mutation = nil
+
+	if type(entry) == "table" then
+		name = entry.displayName
+			or entry.DisplayName
+			or entry.name
+			or entry.Name
+			or entry.ResultName
+			or entry.id
+			or entry.Id
+			or name
+		rarity = entry.rarity or entry.Rarity or entry.selectedRarity or fallbackRarity or rarity
+		id = entry.id or entry.Id or entry.TemplateName or entry.templateName or name
+		mps = tonumber(entry.mps or entry.MPS or entry.CashPerSecond)
+		mutation = entry.mutation or entry.Mutation or entry.mutationDisplayName or entry.MutationDisplayName
+	elseif entry ~= nil then
+		name = tostring(entry)
+		id = name
+	end
+
+	name = tostring(name or ("Mystery NPC " .. tostring(index or 1)))
+	rarity = tostring(rarity or "Common")
+
+	return {
+		id = tostring(id or name .. "_" .. tostring(index or 1)),
+		name = name,
+		displayName = name,
+		rarity = rarity,
+		mps = mps,
+		mutation = mutation and tostring(mutation) or nil,
+	}
+end
+
+local function appendCandidateList(target, source, fallbackRarity)
+	if type(source) ~= "table" then
+		return
+	end
+
+	if #source > 0 then
+		for index, entry in ipairs(source) do
+			if #target >= MAX_ROLL_CANDIDATES then
+				return
+			end
+			table.insert(target, normalizeCandidate(entry, index, fallbackRarity))
+		end
+	else
+		local index = 0
+		for _, entry in pairs(source) do
+			if #target >= MAX_ROLL_CANDIDATES then
+				return
+			end
+			index += 1
+			table.insert(target, normalizeCandidate(entry, index, fallbackRarity))
+		end
+	end
+end
+
+local function sameCandidate(a, b)
+	if not a or not b then
+		return false
+	end
+	return tostring(a.id) == tostring(b.id) or tostring(a.displayName) == tostring(b.displayName)
+end
+
+local function buildRollPool(payload, selected)
+	local pool = {}
+	payload = type(payload) == "table" and payload or {}
+
+	appendCandidateList(pool, payload.possibleNPCs or payload.PossibleNPCs or payload.rollPool or payload.RollPool, selected.rarity)
+	appendCandidateList(pool, payload.candidates or payload.Candidates, selected.rarity)
+
+	for index, name in ipairs(SYNTHETIC_ROLL_NAMES) do
+		if #pool >= 6 then
+			break
+		end
+		table.insert(pool, {
+			id = "synthetic_" .. tostring(index),
+			name = name,
+			displayName = name,
+			rarity = selected.rarity,
+			mps = nil,
+			mutation = nil,
+		})
+	end
+
+	local filtered = {}
+	for _, candidate in ipairs(pool) do
+		if not sameCandidate(candidate, selected) then
+			table.insert(filtered, candidate)
+		end
+	end
+
+	if #filtered == 0 then
+		table.insert(filtered, {
+			id = "synthetic_backup",
+			name = "Mystery Brainrot",
+			displayName = "Mystery Brainrot",
+			rarity = selected.rarity,
+		})
+	end
+
+	return filtered
+end
+
 local function normalizePayload(payload)
 	payload = type(payload) == "table" and payload or {}
-	local selected = type(payload.selectedNPC) == "table" and payload.selectedNPC or {}
-	local rarity = payload.rarity or payload.Rarity or payload.selectedRarity or selected.rarity or selected.Rarity or "Common"
+	local selectedPayload = type(payload.selectedNPC) == "table" and payload.selectedNPC or {}
+	local rarity = payload.rarity or payload.Rarity or payload.selectedRarity or selectedPayload.rarity or selectedPayload.Rarity or "Common"
 	local name = payload.npcName
 		or payload.ResultName
-		or selected.displayName
-		or selected.DisplayName
-		or selected.name
-		or selected.Name
+		or selectedPayload.displayName
+		or selectedPayload.DisplayName
+		or selectedPayload.name
+		or selectedPayload.Name
 		or "Mystery NPC"
 	local mutation = payload.mutation
 		or payload.Mutation
 		or payload.mutationName
 		or payload.MutationName
 		or payload.MutationDisplayName
-		or selected.mutation
-		or selected.Mutation
-		or selected.mutationDisplayName
+		or selectedPayload.mutation
+		or selectedPayload.Mutation
+		or selectedPayload.mutationDisplayName
 		or "Normal"
 
-	return {
+	local selected = normalizeCandidate({
+		id = selectedPayload.id or selectedPayload.Id or payload.ResultName or name,
+		displayName = name,
+		rarity = rarity,
+		mps = payload.MPS or payload.CashPerSecond or selectedPayload.mps or selectedPayload.MPS,
+		mutation = mutation,
+	}, 0, rarity)
+
+	local data = {
 		revealId = tostring(payload.revealId or payload.RevealId or payload.EggId or name .. "_" .. tostring(os.clock())),
 		npcName = tostring(name),
 		rarity = tostring(rarity),
 		mutation = tostring(mutation),
 		eggType = tostring(payload.eggType or payload.EggName or payload.eggName or "Egg"),
-		npcImage = cleanAssetId(payload.npcImage or payload.NPCImage or selected.image or selected.Image or selected.icon or selected.Icon),
-		mps = tonumber(payload.MPS or payload.CashPerSecond or selected.mps or selected.MPS),
+		npcImage = cleanAssetId(payload.npcImage or payload.NPCImage or selectedPayload.image or selectedPayload.Image or selectedPayload.icon or selectedPayload.Icon),
+		mps = tonumber(payload.MPS or payload.CashPerSecond or selectedPayload.mps or selectedPayload.MPS),
 		isNew = payload.isNew == true or payload.IsNew == true or payload.New == true or payload.FirstTime == true,
+		selected = selected,
 	}
+
+	data.rollPool = buildRollPool(payload, selected)
+	return data
 end
 
 local function destroyActive()
@@ -196,61 +341,179 @@ local function destroyActive()
 	end
 end
 
-local function createEgg(parent, color)
+local function candidateColor(candidate, index)
+	local base = rarityColor(candidate and candidate.rarity)
+	local hash = hashText((candidate and candidate.id or "") .. ":" .. tostring(index or 0))
+	local hue = ((hash % 360) / 360)
+	local variant = Color3.fromHSV(hue, 0.68, 1)
+	return variant:Lerp(base, 0.42)
+end
+
+local function addNpcPart(model, name, size, cframe, color, shape, material)
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = true
+	part.Color = color
+	part.Material = material or Enum.Material.SmoothPlastic
+	part.Size = size
+	if shape then
+		part.Shape = shape
+	end
+	part.CFrame = cframe
+	part.Parent = model
+	return part
+end
+
+local function sanitizeModelName(name)
+	name = tostring(name or "RolledNPC")
+	return string.gsub(name, "[^%w_]", "_")
+end
+
+local function createPartNpc(world, candidate, index, isFinal)
+	local model = Instance.new("Model")
+	model.Name = sanitizeModelName(candidate.displayName or candidate.name)
+	model.Parent = world
+
+	local base = candidateColor(candidate, index)
+	local accent = rarityColor(candidate.rarity):Lerp(Color3.fromRGB(255, 255, 255), isFinal and 0.2 or 0.42)
+	local dark = base:Lerp(Color3.fromRGB(8, 10, 18), 0.42)
+	local hash = hashText(candidate.id .. ":" .. candidate.displayName)
+	local heightBoost = ((hash % 4) - 1) * 0.08
+	local widthBoost = (((math.floor(hash / 7)) % 4) - 1) * 0.06
+
+	local body = addNpcPart(
+		model,
+		"Body",
+		Vector3.new(1.16 + widthBoost, 1.34 + heightBoost, 0.66),
+		CFrame.new(0, 1.45 + heightBoost * 0.4, 0),
+		base,
+		Enum.PartType.Block,
+		Enum.Material.SmoothPlastic
+	)
+	model.PrimaryPart = body
+
+	addNpcPart(
+		model,
+		"Head",
+		Vector3.new(0.94, 0.94, 0.94),
+		CFrame.new(0, 2.47 + heightBoost, 0),
+		base:Lerp(Color3.fromRGB(255, 255, 255), 0.18),
+		Enum.PartType.Ball,
+		Enum.Material.SmoothPlastic
+	)
+	addNpcPart(model, "LeftArm", Vector3.new(0.34, 1.02, 0.34), CFrame.new(-0.84 - widthBoost, 1.48, 0), accent, Enum.PartType.Block)
+	addNpcPart(model, "RightArm", Vector3.new(0.34, 1.02, 0.34), CFrame.new(0.84 + widthBoost, 1.48, 0), accent, Enum.PartType.Block)
+	addNpcPart(model, "LeftLeg", Vector3.new(0.42, 0.92, 0.42), CFrame.new(-0.32, 0.38, 0), dark, Enum.PartType.Block)
+	addNpcPart(model, "RightLeg", Vector3.new(0.42, 0.92, 0.42), CFrame.new(0.32, 0.38, 0), dark, Enum.PartType.Block)
+	addNpcPart(model, "LeftEye", Vector3.new(0.12, 0.12, 0.04), CFrame.new(-0.18, 2.55 + heightBoost, -0.44), Color3.fromRGB(8, 10, 18), Enum.PartType.Ball)
+	addNpcPart(model, "RightEye", Vector3.new(0.12, 0.12, 0.04), CFrame.new(0.18, 2.55 + heightBoost, -0.44), Color3.fromRGB(8, 10, 18), Enum.PartType.Ball)
+
+	local variant = hash % 4
+	if variant == 0 then
+		addNpcPart(model, "Crown", Vector3.new(0.86, 0.18, 0.76), CFrame.new(0, 3.05 + heightBoost, 0), accent, Enum.PartType.Block, Enum.Material.Neon)
+	elseif variant == 1 then
+		addNpcPart(model, "TopOrb", Vector3.new(0.42, 0.42, 0.42), CFrame.new(0, 3.08 + heightBoost, 0), accent, Enum.PartType.Ball, Enum.Material.Neon)
+	elseif variant == 2 then
+		addNpcPart(model, "BellyCore", Vector3.new(0.42, 0.42, 0.1), CFrame.new(0, 1.56, -0.36), accent, Enum.PartType.Ball, Enum.Material.Neon)
+	else
+		addNpcPart(model, "Backpack", Vector3.new(0.86, 0.98, 0.24), CFrame.new(0, 1.45, 0.48), accent:Lerp(Color3.fromRGB(8, 10, 18), 0.25), Enum.PartType.Block)
+	end
+
+	model:PivotTo(CFrame.new(0, -0.55, 0))
+	return model
+end
+
+local function setModelTransparency(model, transparency)
+	for _, descendant in ipairs(model:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			descendant.Transparency = transparency
+		elseif descendant:IsA("Decal") then
+			descendant.Transparency = transparency
+		end
+	end
+end
+
+local function tweenModelTransparency(model, duration, transparency)
+	for _, descendant in ipairs(model:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			tween(descendant, duration, { Transparency = transparency })
+		elseif descendant:IsA("Decal") then
+			tween(descendant, duration, { Transparency = transparency })
+		end
+	end
+end
+
+local function tweenModelYaw(model, duration, startYaw, endYaw)
+	local yawValue = Instance.new("NumberValue")
+	yawValue.Value = startYaw
+	local basePivot = CFrame.new(0, -0.55, 0)
+	local connection = yawValue:GetPropertyChangedSignal("Value"):Connect(function()
+		if model and model.Parent then
+			model:PivotTo(basePivot * CFrame.Angles(0, yawValue.Value, 0))
+		end
+	end)
+
+	local tw = tween(yawValue, duration, { Value = endYaw }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	tw.Completed:Connect(function()
+		connection:Disconnect()
+		yawValue:Destroy()
+	end)
+	return tw
+end
+
+local function createRollViewport(parent, color)
 	local holder = Instance.new("Frame")
-	holder.Name = "PremiumEgg"
+	holder.Name = "PartNpcRollStage"
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.43)
-	holder.Size = UDim2.fromOffset(190, 232)
-	holder.ZIndex = 40
+	holder.Position = UDim2.fromScale(0.5, 0.47)
+	holder.Size = UDim2.fromScale(0.9, 0.64)
+	holder.ZIndex = 70
 	holder.Parent = parent
-	local eggScale = scale(holder, 0.08)
 
-	local shadow = glow(holder, "EggShadow", Color3.fromRGB(8, 10, 18), UDim2.fromScale(0.5, 0.88), UDim2.fromOffset(150, 34), 39)
+	local holderScale = scale(holder, 0.1)
 
-	local egg = makeFrame(holder, "EggBody", UDim2.fromScale(0.5, 0.48), UDim2.fromOffset(134, 174), Color3.fromRGB(255, 248, 222), 42, UDim.new(1, 0))
-	egg.BackgroundTransparency = 0
-	stroke(egg, Color3.fromRGB(255, 255, 255), 5, 0.08)
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Name = "NpcViewport"
+	viewport.AnchorPoint = Vector2.new(0.5, 0.5)
+	viewport.BackgroundTransparency = 1
+	viewport.BorderSizePixel = 0
+	viewport.Position = UDim2.fromScale(0.5, 0.5)
+	viewport.Size = UDim2.fromScale(1, 1)
+	viewport.Ambient = color:Lerp(Color3.fromRGB(255, 255, 255), 0.5)
+	viewport.LightColor = Color3.fromRGB(255, 255, 255)
+	viewport.LightDirection = Vector3.new(-0.25, -1, -0.35)
+	viewport.ZIndex = 72
+	viewport.Parent = holder
 
-	local gradient = Instance.new("UIGradient")
-	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 252)),
-		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255, 239, 190)),
-		ColorSequenceKeypoint.new(1, color:Lerp(Color3.fromRGB(255, 237, 192), 0.68)),
-	})
-	gradient.Rotation = 90
-	gradient.Parent = egg
+	local camera = Instance.new("Camera")
+	camera.Name = "NpcRollCamera"
+	camera.CFrame = CFrame.new(Vector3.new(0, 2.0, 7.6), Vector3.new(0, 1.55, 0))
+	camera.FieldOfView = 39
+	camera.Parent = viewport
+	viewport.CurrentCamera = camera
 
-	local highlight = makeFrame(holder, "EggHighlight", UDim2.fromScale(0.36, 0.31), UDim2.fromOffset(26, 66), Color3.fromRGB(255, 255, 255), 46, UDim.new(1, 0))
-	highlight.BackgroundTransparency = 0.34
-	highlight.Rotation = -24
-
-	local cracks = {}
-	local crackData = {
-		{ UDim2.fromScale(0.5, 0.39), 5, 58, 26 },
-		{ UDim2.fromScale(0.57, 0.49), 5, 46, -34 },
-		{ UDim2.fromScale(0.43, 0.5), 5, 42, 38 },
-		{ UDim2.fromScale(0.51, 0.28), 4, 36, -12 },
-	}
-	for i, data in ipairs(crackData) do
-		local crack = makeFrame(holder, "Crack_" .. i, data[1], UDim2.fromOffset(data[2], data[3]), Color3.fromRGB(116, 86, 57), 50, UDim.new(1, 0))
-		crack.Rotation = data[4]
-		table.insert(cracks, crack)
-	end
+	local world = Instance.new("WorldModel")
+	world.Name = "NpcRollWorld"
+	world.Parent = viewport
 
 	return {
 		holder = holder,
-		scale = eggScale,
-		shadow = shadow,
-		cracks = cracks,
+		scale = holderScale,
+		viewport = viewport,
+		world = world,
+		camera = camera,
 	}
 end
 
 local function createRings(parent, color)
 	local rings = {}
-	for i = 1, 4 do
-		local ring = makeFrame(parent, "EnergyRing_" .. i, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(160 + i * 56, 160 + i * 56), color, 12 + i, UDim.new(1, 0))
+	for i = 1, 3 do
+		local ring = makeFrame(parent, "EnergyRing_" .. i, UDim2.fromScale(0.5, 0.48), UDim2.fromOffset(170 + i * 66, 170 + i * 66), color, 12 + i, UDim.new(1, 0))
 		local ringStroke = stroke(ring, i % 2 == 0 and Color3.fromRGB(255, 255, 255) or color, i == 1 and 3 or 2, 1)
 		table.insert(rings, { ring = ring, stroke = ringStroke })
 	end
@@ -259,120 +522,87 @@ end
 
 local function createParticles(parent, color)
 	local particles = {}
-	for i = 1, 28 do
-		local size = 6 + (i % 5) * 3
-		local part = makeFrame(parent, "BurstParticle_" .. i, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(size, size), i % 4 == 0 and Color3.fromRGB(255, 255, 255) or color, 80, UDim.new(1, 0))
+	for i = 1, 18 do
+		local size = 6 + (i % 4) * 3
+		local part = makeFrame(parent, "RollSpark_" .. i, UDim2.fromScale(0.5, 0.48), UDim2.fromOffset(size, size), i % 4 == 0 and Color3.fromRGB(255, 255, 255) or color, 82, UDim.new(1, 0))
 		table.insert(particles, part)
 	end
 	return particles
 end
 
-local function createReward(parent, data, color)
-	local holder = Instance.new("Frame")
-	holder.Name = "RewardStage"
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.BackgroundTransparency = 1
-	holder.Position = UDim2.fromScale(0.5, 0.46)
-	holder.Size = UDim2.fromOffset(330, 350)
-	holder.ZIndex = 90
-	holder.Parent = parent
-	local rewardScale = scale(holder, 0.18)
-
-	local aura = glow(holder, "RewardAura", color, UDim2.fromScale(0.5, 0.35), UDim2.fromOffset(280, 280), 90)
-	local plate = makeFrame(holder, "RewardPlate", UDim2.fromScale(0.5, 0.72), UDim2.fromOffset(260, 68), color:Lerp(Color3.fromRGB(26, 31, 48), 0.42), 93, UDim.new(0, 30))
-	stroke(plate, Color3.fromRGB(255, 255, 255), 2.5, 1)
-
-	local preview = Instance.new("Frame")
-	preview.Name = "RewardPreview"
-	preview.AnchorPoint = Vector2.new(0.5, 0.5)
-	preview.BackgroundTransparency = 1
-	preview.Position = UDim2.fromScale(0.5, 0.35)
-	preview.Size = UDim2.fromOffset(210, 210)
-	preview.ZIndex = 96
-	preview.Parent = holder
-
-	local npcImage
-	if data.npcImage then
-		npcImage = Instance.new("ImageLabel")
-		npcImage.Name = "NpcImage"
-		npcImage.AnchorPoint = Vector2.new(0.5, 0.5)
-		npcImage.BackgroundTransparency = 1
-		npcImage.Image = data.npcImage
-		npcImage.ImageTransparency = 1
-		npcImage.Position = UDim2.fromScale(0.5, 0.5)
-		npcImage.Size = UDim2.fromScale(1, 1)
-		npcImage.ZIndex = 98
-		npcImage.Parent = preview
-	else
-		local body = makeFrame(preview, "NpcBody", UDim2.fromScale(0.5, 0.61), UDim2.fromOffset(120, 118), color, 98, UDim.new(0, 34))
-		stroke(body, Color3.fromRGB(255, 255, 255), 4, 1)
-		local head = makeFrame(preview, "NpcHead", UDim2.fromScale(0.5, 0.3), UDim2.fromOffset(104, 104), color:Lerp(Color3.fromRGB(255, 255, 255), 0.22), 99, UDim.new(1, 0))
-		stroke(head, Color3.fromRGB(255, 255, 255), 4, 1)
-		local face = makeText(preview, "NpcFace", ":)", UDim2.fromScale(0.33, 0.18), UDim2.fromScale(0.34, 0.18), Color3.fromRGB(255, 255, 255), 32, 100, FONT_BLACK)
-		npcImage = { body = body, head = head, face = face }
+local function burstParticles(particles)
+	for i, part in ipairs(particles) do
+		local angle = math.rad((i / #particles) * 360)
+		local distance = 116 + (i % 5) * 22
+		local x = math.cos(angle) * distance
+		local y = math.sin(angle) * distance * 0.72
+		local partSize = part.AbsoluteSize
+		part.BackgroundTransparency = 0.08
+		tween(part, 0.4 + (i % 4) * 0.035, {
+			Position = UDim2.new(0.5, x, 0.48, y),
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(partSize.X + 12, partSize.Y + 12),
+		}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	end
-
-	local rewardName = data.mutation == "Normal" and data.npcName or (data.mutation .. " " .. data.npcName)
-	local title = makeText(holder, "UnlockedLabel", "UNLOCKED", UDim2.fromScale(0.2, 0.02), UDim2.fromScale(0.6, 0.08), Color3.fromRGB(255, 255, 255), 25, 102, FONT_BLACK)
-	local name = makeText(holder, "RewardName", rewardName, UDim2.fromScale(0.04, 0.76), UDim2.fromScale(0.92, 0.13), Color3.fromRGB(255, 255, 255), 36, 102, FONT_BLACK)
-	local pill = makeFrame(holder, "RarityPill", UDim2.fromScale(0.5, 0.91), UDim2.fromOffset(174, 36), color, 102, UDim.new(1, 0))
-	stroke(pill, Color3.fromRGB(255, 255, 255), 2, 1)
-	local rarity = makeText(pill, "Rarity", string.upper(data.rarity), UDim2.fromScale(0.08, 0.14), UDim2.fromScale(0.84, 0.68), Color3.fromRGB(255, 255, 255), 18, 103, FONT_BOLD)
-
-	local value = nil
-	if data.mps then
-		value = makeText(holder, "Value", "+" .. tostring(math.floor(data.mps)) .. "/s", UDim2.fromScale(0.62, 0.64), UDim2.fromScale(0.27, 0.08), Color3.fromRGB(255, 246, 182), 20, 102, FONT_BOLD)
-	end
-
-	return {
-		holder = holder,
-		scale = rewardScale,
-		aura = aura,
-		plate = plate,
-		image = npcImage,
-		title = title,
-		name = name,
-		pill = pill,
-		rarity = rarity,
-		value = value,
-	}
 end
 
-local function revealReward(reward)
-	tween(reward.aura, 0.2, { BackgroundTransparency = 0.24, Size = UDim2.fromOffset(350, 350) })
-	tween(reward.plate, 0.2, { BackgroundTransparency = 0.04 })
-	local plateStroke = reward.plate:FindFirstChildOfClass("UIStroke")
-	if plateStroke then
-		tween(plateStroke, 0.2, { Transparency = 0.18 })
+local function playCandidate(stage, candidate, index, holdTime, isFinal)
+	stage.world:ClearAllChildren()
+
+	local model = createPartNpc(stage.world, candidate, index, isFinal)
+	setModelTransparency(model, 1)
+	stage.scale.Scale = 0.08
+	stage.holder.Rotation = isFinal and 0 or ((index % 2 == 0) and -3 or 3)
+
+	tweenModelTransparency(model, 0.11, 0)
+	tween(stage.holder, 0.11, { Rotation = 0 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	tweenModelYaw(model, isFinal and 0.5 or 0.22, math.rad(-22), isFinal and math.rad(360) or math.rad(36))
+	waitTween(stage.scale, isFinal and 0.3 or 0.14, { Scale = isFinal and 1 or 0.92 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+	task.wait(holdTime or 0.05)
+
+	if isFinal then
+		waitTween(stage.scale, 0.18, { Scale = 0.96 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+		waitTween(stage.scale, 0.2, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		return model
 	end
 
-	if typeof(reward.image) == "Instance" then
-		tween(reward.image, 0.2, { ImageTransparency = 0 })
-	else
-		tween(reward.image.body, 0.18, { BackgroundTransparency = 0.04 })
-		tween(reward.image.head, 0.18, { BackgroundTransparency = 0.04 })
-		for _, part in ipairs({ reward.image.body, reward.image.head }) do
-			local partStroke = part:FindFirstChildOfClass("UIStroke")
-			if partStroke then
-				tween(partStroke, 0.18, { Transparency = 0.12 })
-			end
-		end
-		fadeText(reward.image.face, true, 0.16)
+	tweenModelTransparency(model, 0.1, 1)
+	waitTween(stage.scale, 0.1, { Scale = 0.08 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	model:Destroy()
+	return nil
+end
+
+local function chooseRollCandidate(data, index)
+	local pool = data.rollPool
+	local seed = hashText(data.revealId)
+	local candidate = pool[((seed + index - 1) % #pool) + 1]
+
+	if sameCandidate(candidate, data.selected) and #pool > 1 then
+		candidate = pool[((seed + index) % #pool) + 1]
 	end
 
-	waitTween(reward.scale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	fadeText(reward.title, true, 0.14)
-	fadeText(reward.name, true, 0.18)
-	tween(reward.pill, 0.18, { BackgroundTransparency = 0.05 })
-	local pillStroke = reward.pill:FindFirstChildOfClass("UIStroke")
-	if pillStroke then
-		tween(pillStroke, 0.18, { Transparency = 0.18 })
+	return candidate
+end
+
+local function rewardText(data)
+	if data.mutation == "Normal" then
+		return data.npcName
 	end
-	fadeText(reward.rarity, true, 0.14)
-	if reward.value then
-		fadeText(reward.value, true, 0.18)
+	return data.mutation .. " " .. data.npcName
+end
+
+local function playRollSequence(stage, data)
+	local rollCount = math.clamp(#data.rollPool + 2, 6, 9)
+
+	for index = 1, rollCount do
+		local candidate = chooseRollCandidate(data, index)
+		local hold = math.max(0.035, 0.11 - index * 0.008)
+		playCandidate(stage, candidate, index, hold, false)
+		task.wait(math.max(0.015, 0.055 - index * 0.004))
 	end
-	tween(reward.aura, 1.6, { Rotation = 180 }, Enum.EasingStyle.Linear)
+
+	return playCandidate(stage, data.selected, rollCount + 1, 0.12, true)
 end
 
 local function playReveal(rawPayload)
@@ -417,10 +647,10 @@ local function playReveal(rawPayload)
 	local overlayGradient = Instance.new("UIGradient")
 	overlayGradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 11, 20)),
-		ColorSequenceKeypoint.new(0.48, color:Lerp(Color3.fromRGB(20, 25, 40), 0.62)),
+		ColorSequenceKeypoint.new(0.48, color:Lerp(Color3.fromRGB(20, 25, 40), 0.58)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 11, 20)),
 	})
-	overlayGradient.Rotation = 22
+	overlayGradient.Rotation = 24
 	overlayGradient.Parent = overlay
 
 	local stage = Instance.new("Frame")
@@ -434,20 +664,24 @@ local function playReveal(rawPayload)
 	local stageScale = scale(stage, 0.92)
 
 	local stageConstraint = Instance.new("UISizeConstraint")
-	stageConstraint.MinSize = Vector2.new(320, 440)
-	stageConstraint.MaxSize = Vector2.new(520, 620)
+	stageConstraint.MinSize = Vector2.new(320, 420)
+	stageConstraint.MaxSize = Vector2.new(560, 660)
 	stageConstraint.Parent = stage
 
-	local floorGlow = glow(stage, "FloorGlow", color, UDim2.fromScale(0.5, 0.76), UDim2.fromOffset(360, 86), 11)
-	local coreGlow = glow(stage, "CoreGlow", color, UDim2.fromScale(0.5, 0.43), UDim2.fromOffset(260, 260), 11)
+	local floorGlow = glow(stage, "FloorGlow", color, UDim2.fromScale(0.5, 0.74), UDim2.fromOffset(380, 92), 11)
+	local coreGlow = glow(stage, "CoreGlow", color, UDim2.fromScale(0.5, 0.45), UDim2.fromOffset(300, 300), 11)
 	local rings = createRings(stage, color)
 	local particles = createParticles(stage, color)
-	local egg = createEgg(stage, color)
-	local reward = createReward(stage, data, color)
-	reward.holder.Visible = false
+	local rollStage = createRollViewport(stage, color)
 
-	local title = makeText(stage, "HatchTitle", "HATCHING", UDim2.fromScale(0.22, 0.08), UDim2.fromScale(0.56, 0.07), Color3.fromRGB(255, 255, 255), 26, 95, FONT_BLACK)
-	local subtitle = makeText(stage, "EggName", data.eggType, UDim2.fromScale(0.18, 0.15), UDim2.fromScale(0.64, 0.055), color:Lerp(Color3.fromRGB(255, 255, 255), 0.24), 18, 95, FONT_BOLD)
+	local eggName = makeText(stage, "EggName", data.eggType, UDim2.fromScale(0.2, 0.1), UDim2.fromScale(0.6, 0.055), color:Lerp(Color3.fromRGB(255, 255, 255), 0.18), 18, 95, FONT_BOLD)
+	local rewardName = makeText(stage, "RewardName", rewardText(data), UDim2.fromScale(0.06, 0.78), UDim2.fromScale(0.88, 0.1), Color3.fromRGB(255, 255, 255), 34, 102, FONT_BLACK)
+	local rarityLabel = makeText(stage, "RewardRarity", string.upper(data.rarity), UDim2.fromScale(0.28, 0.875), UDim2.fromScale(0.44, 0.052), color, 18, 102, FONT_BLACK)
+	local valueLabel = nil
+	if data.mps then
+		valueLabel = makeText(stage, "RewardValue", "+" .. tostring(math.floor(data.mps)) .. "/s", UDim2.fromScale(0.34, 0.925), UDim2.fromScale(0.32, 0.04), Color3.fromRGB(255, 246, 182), 16, 102, FONT_BOLD)
+	end
+	local continueLabel = makeText(stage, "ContinueHint", "Tap to continue", UDim2.fromScale(0.32, 0.955), UDim2.fromScale(0.36, 0.035), Color3.fromRGB(255, 255, 255), 14, 102, FONT_BOLD)
 
 	local flash = Instance.new("Frame")
 	flash.Name = "WhiteFlash"
@@ -458,10 +692,6 @@ local function playReveal(rawPayload)
 	flash.ZIndex = 200
 	flash.Parent = gui
 
-	local continue = makeFrame(stage, "ContinueButton", UDim2.fromScale(0.5, 0.94), UDim2.fromOffset(230, 48), Color3.fromRGB(15, 18, 30), 110, UDim.new(1, 0))
-	stroke(continue, color, 2, 1)
-	local continueText = makeText(continue, "Text", "Tap to continue", UDim2.fromScale(0.08, 0.2), UDim2.fromScale(0.84, 0.58), Color3.fromRGB(255, 255, 255), 18, 111, FONT_BOLD)
-
 	local closeButton = Instance.new("TextButton")
 	closeButton.Name = "CloseHitbox"
 	closeButton.BackgroundTransparency = 1
@@ -471,79 +701,37 @@ local function playReveal(rawPayload)
 	closeButton.ZIndex = 250
 	closeButton.Parent = gui
 
-	tween(overlay, 0.28, { BackgroundTransparency = 0.1 })
-	tween(blur, 0.28, { Size = 16 })
-	tween(colorFx, 0.28, { Contrast = 0.12, Saturation = 0.1, TintColor = color:Lerp(Color3.fromRGB(255, 255, 255), 0.72) })
-	tween(stageScale, 0.32, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-	tween(floorGlow, 0.28, { BackgroundTransparency = 0.48 })
-	tween(coreGlow, 0.28, { BackgroundTransparency = 0.36, Size = UDim2.fromOffset(330, 330) })
-	fadeText(title, true, 0.18)
-	fadeText(subtitle, true, 0.18)
-	waitTween(egg.scale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	tween(egg.shadow, 0.22, { BackgroundTransparency = 0.42 })
+	tween(overlay, 0.22, { BackgroundTransparency = 0.1 })
+	tween(blur, 0.22, { Size = 13 })
+	tween(colorFx, 0.22, { Contrast = 0.11, Saturation = 0.08, TintColor = color:Lerp(Color3.fromRGB(255, 255, 255), 0.74) })
+	tween(stageScale, 0.26, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	tween(floorGlow, 0.22, { BackgroundTransparency = 0.48 })
+	tween(coreGlow, 0.22, { BackgroundTransparency = 0.34, Size = UDim2.fromOffset(360, 360) })
+	fadeText(eggName, true, 0.16)
 
 	for _, item in ipairs(rings) do
-		tween(item.stroke, 0.18, { Transparency = 0.2 })
-		local ringSize = item.ring.AbsoluteSize
-		tween(item.ring, 0.72, {
-			Rotation = item.ring.Rotation + 160,
-			Size = UDim2.fromOffset(ringSize.X + 44, ringSize.Y + 44),
-		}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+		tween(item.stroke, 0.16, { Transparency = 0.28 })
+		tween(item.ring, 1.4, { Rotation = item.ring.Rotation + 180 }, Enum.EasingStyle.Linear)
 	end
 
-	for i = 1, 4 do
-		tween(egg.scale, 0.09, { Scale = 1.05 + i * 0.025 }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-		tween(egg.holder, 0.09, { Rotation = i % 2 == 0 and -8 or 8 })
-		task.wait(0.09)
-		tween(egg.scale, 0.1, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-		task.wait(0.08)
-	end
+	playRollSequence(rollStage, data)
 
-	for _, crack in ipairs(egg.cracks) do
-		tween(crack, 0.08, { BackgroundTransparency = 0.02 })
-		task.wait(0.035)
-	end
+	waitTween(flash, 0.06, { BackgroundTransparency = 0.12 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	tween(flash, 0.2, { BackgroundTransparency = 1 })
+	burstParticles(particles)
+	tween(coreGlow, 0.28, { BackgroundTransparency = 0.2, Size = UDim2.fromOffset(420, 420) })
+	tween(floorGlow, 0.28, { BackgroundTransparency = 0.34, Size = UDim2.fromOffset(430, 112) })
+	fadeText(eggName, false, 0.12)
+	fadeText(rewardName, true, 0.16)
+	fadeText(rarityLabel, true, 0.16)
+	fadeText(valueLabel, true, 0.16)
 
-	waitTween(flash, 0.08, { BackgroundTransparency = 0.05 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	tween(flash, 0.24, { BackgroundTransparency = 1 })
-	tween(coreGlow, 0.16, { BackgroundTransparency = 0.08, Size = UDim2.fromOffset(470, 470) })
-	tween(egg.scale, 0.16, { Scale = 1.28 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	task.wait(0.07)
-	tween(egg.scale, 0.13, { Scale = 0.02 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-
-	for i, part in ipairs(particles) do
-		local angle = math.rad((i / #particles) * 360)
-		local distance = 112 + (i % 6) * 22
-		local x = math.cos(angle) * distance
-		local y = math.sin(angle) * distance * 0.72
-		local partSize = part.AbsoluteSize
-		part.BackgroundTransparency = 0
-		tween(part, 0.38 + (i % 4) * 0.035, {
-			Position = UDim2.new(0.5, x, 0.43, y),
-			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(partSize.X + 12, partSize.Y + 12),
-		}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-	end
-
-	fadeText(title, false, 0.12)
-	fadeText(subtitle, false, 0.12)
-	task.wait(0.14)
-	egg.holder.Visible = false
-
-	reward.holder.Visible = true
-	revealReward(reward)
-	tween(coreGlow, 0.42, { BackgroundTransparency = 0.28, Size = UDim2.fromOffset(360, 360) })
 	for _, item in ipairs(rings) do
-		tween(item.ring, 1.2, { Rotation = item.ring.Rotation + 220 }, Enum.EasingStyle.Linear)
+		tween(item.ring, 1.35, { Rotation = item.ring.Rotation + 220 }, Enum.EasingStyle.Linear)
 	end
 
-	task.wait(0.3)
-	tween(continue, 0.2, { BackgroundTransparency = 0.08 })
-	local continueStroke = continue:FindFirstChildOfClass("UIStroke")
-	if continueStroke then
-		tween(continueStroke, 0.2, { Transparency = 0.22 })
-	end
-	fadeText(continueText, true, 0.16)
+	task.wait(0.35)
+	fadeText(continueLabel, true, 0.16)
 	closeButton.Visible = true
 
 	local closeRequested = false
@@ -568,22 +756,23 @@ local function playReveal(rawPayload)
 	clickConn:Disconnect()
 	inputConn:Disconnect()
 
-	tween(overlay, 0.2, { BackgroundTransparency = 1 })
-	tween(blur, 0.2, { Size = 0 })
-	tween(colorFx, 0.2, { Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255) })
-	tween(stageScale, 0.18, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	tween(overlay, 0.18, { BackgroundTransparency = 1 })
+	tween(blur, 0.18, { Size = 0 })
+	tween(colorFx, 0.18, { Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255) })
+	tween(stageScale, 0.16, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	tween(rollStage.scale, 0.14, { Scale = 0.05 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	for _, inst in ipairs(stage:GetDescendants()) do
 		if inst:IsA("Frame") then
-			tween(inst, 0.16, { BackgroundTransparency = 1 })
+			tween(inst, 0.14, { BackgroundTransparency = 1 })
 		elseif inst:IsA("TextLabel") then
-			fadeText(inst, false, 0.14)
-		elseif inst:IsA("ImageLabel") then
-			tween(inst, 0.16, { ImageTransparency = 1 })
+			fadeText(inst, false, 0.12)
 		elseif inst:IsA("UIStroke") then
-			tween(inst, 0.16, { Transparency = 1 })
+			tween(inst, 0.12, { Transparency = 1 })
+		elseif inst:IsA("BasePart") then
+			tween(inst, 0.12, { Transparency = 1 })
 		end
 	end
-	task.wait(0.22)
+	task.wait(0.2)
 	destroyActive()
 end
 

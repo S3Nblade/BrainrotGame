@@ -8,6 +8,8 @@ local Workspace = game:GetService("Workspace")
 local RevealNPC = require(script.Parent:WaitForChild("NPCRevealGui"))
 
 local seenRevealIds = {}
+local seenRevealOrder = {}
+local MAX_SEEN_REVEALS = 80
 local hatchRequestRemote = nil
 local lastHatchRequest = 0
 
@@ -25,6 +27,13 @@ local function enqueueReveal(payload)
 		return
 	end
 	seenRevealIds[revealId] = true
+	table.insert(seenRevealOrder, revealId)
+	while #seenRevealOrder > MAX_SEEN_REVEALS do
+		local oldRevealId = table.remove(seenRevealOrder, 1)
+		if oldRevealId then
+			seenRevealIds[oldRevealId] = nil
+		end
+	end
 
 	RevealNPC.show(payload)
 end
