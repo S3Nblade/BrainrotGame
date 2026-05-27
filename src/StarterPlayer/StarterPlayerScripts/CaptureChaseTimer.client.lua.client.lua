@@ -271,9 +271,9 @@ local function createHPBar(parent)
 		"HPText",
 		UDim2.fromScale(0, 0),
 		UDim2.fromScale(1, 1),
-		"NPC 0/0",
+		"0/0 (0%)",
 		Color3.fromRGB(255, 255, 255),
-		13,
+		15,
 		30
 	)
 	text.TextStrokeTransparency = 0.05
@@ -567,8 +567,11 @@ local function updateHPBar(data, npc)
 	hp = hp or 0
 	maxHP = maxHP or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
+	local shownHP = math.max(0, math.floor(hp + 0.5))
+	local shownMaxHP = math.max(1, math.floor(maxHP + 0.5))
+	local shownPercent = math.floor((ratio * 100) + 0.5)
 
-	data.hpBar.text.Text = tostring(math.floor((ratio * 100) + 0.5)) .. "%"
+	data.hpBar.text.Text = tostring(shownHP) .. "/" .. tostring(shownMaxHP) .. " (" .. tostring(shownPercent) .. "%)"
 	data.hpBar.text.Visible = true
 	styleHPBarShell(data, isEgg)
 
