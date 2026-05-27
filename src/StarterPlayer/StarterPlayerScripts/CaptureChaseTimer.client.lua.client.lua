@@ -12,8 +12,8 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local npcFolder = Workspace:WaitForChild("BrainrotNPCs")
-local guiFolder = ReplicatedStorage:FindFirstChild("GUI")
-local clockFolder = guiFolder and guiFolder:FindFirstChild("Clock")
+local guiFolder = ReplicatedStorage:WaitForChild("GUI", 5)
+local clockFolder = guiFolder and guiFolder:WaitForChild("Clock", 5)
 
 local FONT = Enum.Font.FredokaOne
 local tracked = {}

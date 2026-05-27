@@ -873,8 +873,27 @@ local function damageNpc(player, npc)
 	if isEggNpc(npc) then
 		local eggApi = _G.CleanEggDamageApi
 		if eggApi and eggApi.DamageEgg then
-			local handled = eggApi.DamageEgg(player, npc, getPlayerCatchPower(player), getPlayerCatchRange(player))
+			local damage = getPlayerCatchPower(player)
+			local beforeHP = tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP"))
+			local handled = eggApi.DamageEgg(player, npc, damage, getPlayerCatchRange(player))
 			if handled ~= false then
+				local maxHP = tonumber(npc:GetAttribute("EggMaxHP")) or tonumber(npc:GetAttribute("CaptureMaxHP")) or getCaptureMaxHP(npc)
+				local hp = tonumber(npc:GetAttribute("EggHP")) or tonumber(npc:GetAttribute("CaptureHP")) or maxHP
+				if beforeHP ~= hp or npc:GetAttribute("CaptureChaseActive") == true or npc:GetAttribute("CaptureStunned") == true then
+					local color = getRarityColor(npc)
+					feedbackRemote:FireClient(player, {
+						npc = npc,
+						npcName = npc.Name,
+						damage = damage,
+						hp = hp,
+						maxHP = maxHP,
+						rarity = getRarity(npc),
+						color = color,
+						stunned = hp <= 0 or npc:GetAttribute("CaptureStunned") == true,
+						chaseActive = npc:GetAttribute("CaptureChaseActive") == true,
+						timeLeft = math.max(0, (tonumber(npc:GetAttribute("CaptureChaseEndTime")) or 0) - getServerTime()),
+					})
+				end
 				return
 			end
 		end
