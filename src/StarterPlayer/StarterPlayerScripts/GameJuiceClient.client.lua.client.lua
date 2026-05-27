@@ -17,6 +17,7 @@ local dailyRewardRemote = remotesFolder:WaitForChild("DailyRewardResult")
 local worldEventRemote = remotesFolder:WaitForChild("WorldEventUpdate")
 local zoneGateRemote = remotesFolder:WaitForChild("ZoneGateFeedback")
 local offlineRewardRemote = remotesFolder:WaitForChild("OfflineRewardResult")
+local collectionMilestoneRemote = remotesFolder:WaitForChild("CollectionMilestoneReward")
 local playtimeUpdateRemote = remotesFolder:WaitForChild("PlaytimeRewardUpdate")
 local playtimeClaimRemote = remotesFolder:WaitForChild("ClaimPlaytimeReward")
 local playtimeResultRemote = remotesFolder:WaitForChild("PlaytimeRewardResult")
@@ -456,6 +457,122 @@ local function showOfflineReward(data)
 	end)
 end
 
+local function showCollectionMilestone(data)
+	if type(data) ~= "table" then
+		return
+	end
+
+	local frame = Instance.new("Frame")
+	frame.Name = "CollectionMilestone"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.5)
+	frame.Size = UDim2.fromOffset(430, 190)
+	frame.BackgroundColor3 = Color3.fromRGB(255, 204, 64)
+	frame.BorderSizePixel = 0
+	frame.Parent = gui
+	addCorner(frame, 24)
+	addStroke(frame, Color3.fromRGB(25, 28, 54), 4, 0)
+
+	local frameGradient = Instance.new("UIGradient")
+	frameGradient.Rotation = 90
+	frameGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 235, 90)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 113, 78)),
+	})
+	frameGradient.Parent = frame
+
+	local frameScale = Instance.new("UIScale")
+	frameScale.Scale = 0.5
+	frameScale.Parent = frame
+
+	makeText(
+		frame,
+		"Title",
+		UDim2.new(0.06, 0, 0.08, 0),
+		UDim2.new(0.88, 0, 0.26, 0),
+		string.upper(tostring(data.title or "MILESTONE!")),
+		Color3.fromRGB(255, 255, 255)
+	)
+
+	makeText(
+		frame,
+		"Subtitle",
+		UDim2.new(0.08, 0, 0.36, 0),
+		UDim2.new(0.84, 0, 0.18, 0),
+		tostring(data.goal or 0) .. " Brainrots Collected",
+		Color3.fromRGB(255, 252, 218)
+	)
+
+	makeText(
+		frame,
+		"Reward",
+		UDim2.new(0.08, 0, 0.58, 0),
+		UDim2.new(0.84, 0, 0.26, 0),
+		"+" .. formatMoney(data.rewardAmount) .. " " .. tostring(data.rewardType or "Coins"),
+		tostring(data.rewardType) == "Gems" and Color3.fromRGB(124, 242, 255) or Color3.fromRGB(255, 246, 116)
+	)
+
+	TweenService:Create(
+		frameScale,
+		TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	):Play()
+
+	for i = 1, 18 do
+		local spark = makeText(
+			frame,
+			"MilestoneSpark" .. tostring(i),
+			UDim2.fromScale(0.5, 0.52),
+			UDim2.fromOffset(28, 28),
+			i % 3 == 0 and "★" or "+",
+			Color3.fromRGB(255, 255, 255)
+		)
+		spark.AnchorPoint = Vector2.new(0.5, 0.5)
+
+		local angle = (math.pi * 2 * i) / 18
+		local distance = 78 + ((i % 6) * 12)
+		TweenService:Create(
+			spark,
+			TweenInfo.new(0.58, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{
+				Position = UDim2.new(0.5, math.cos(angle) * distance, 0.52, math.sin(angle) * distance),
+				Rotation = i * 18,
+			}
+		):Play()
+	end
+
+	task.delay(2.6, function()
+		if not frame.Parent then
+			return
+		end
+
+		TweenService:Create(
+			frameScale,
+			TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Scale = 0.75 }
+		):Play()
+
+		for _, obj in ipairs(frame:GetDescendants()) do
+			if obj:IsA("TextLabel") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1,
+				}):Play()
+			elseif obj:IsA("Frame") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					BackgroundTransparency = 1,
+				}):Play()
+			elseif obj:IsA("UIStroke") then
+				TweenService:Create(obj, TweenInfo.new(0.18), {
+					Transparency = 1,
+				}):Play()
+			end
+		end
+
+		Debris:AddItem(frame, 0.25)
+	end)
+end
+
 local function popGift()
 	giftScale.Scale = 1.08
 	TweenService:Create(
@@ -517,6 +634,7 @@ end
 rarityRevealRemote.OnClientEvent:Connect(showRarityReveal)
 announcementRemote.OnClientEvent:Connect(showAnnouncement)
 offlineRewardRemote.OnClientEvent:Connect(showOfflineReward)
+collectionMilestoneRemote.OnClientEvent:Connect(showCollectionMilestone)
 
 dailyRewardRemote.OnClientEvent:Connect(function(data)
 	showAnnouncement({

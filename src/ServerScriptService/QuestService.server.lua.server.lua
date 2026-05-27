@@ -6,8 +6,17 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
 
 local npcFolder = workspace:WaitForChild("BrainrotNPCs")
+local milestoneStore = DataStoreService:GetDataStore("BrainrotCollectionMilestones_v1")
+
+local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+if not remotesFolder then
+	remotesFolder = Instance.new("Folder")
+	remotesFolder.Name = "Remotes"
+	remotesFolder.Parent = ReplicatedStorage
+end
 
 local function getOrCreateRemote(name)
 	local remote = ReplicatedStorage:FindFirstChild(name)
@@ -21,12 +30,85 @@ local function getOrCreateRemote(name)
 	return remote
 end
 
+local function getOrCreateRemotesFolderRemote(name)
+	local remote = remotesFolder:FindFirstChild(name) or ReplicatedStorage:FindFirstChild(name)
+
+	if remote then
+		if remote:IsA("RemoteEvent") then
+			remote.Parent = remotesFolder
+			return remote
+		end
+
+		remote:Destroy()
+	end
+
+	remote = Instance.new("RemoteEvent")
+	remote.Name = name
+	remote.Parent = remotesFolder
+	return remote
+end
+
 local updateQuestRemote = getOrCreateRemote("UpdateQuestProgress")
 local claimQuestRemote = getOrCreateRemote("ClaimQuestReward")
 local notifyRemote = getOrCreateRemote("NotifyUser")
+local collectionMilestoneRemote = getOrCreateRemotesFolderRemote("CollectionMilestoneReward")
 
 local updateCoinsRemote = ReplicatedStorage:FindFirstChild("UpdateCoins")
 local updateGemsRemote = ReplicatedStorage:FindFirstChild("UpdateGems")
+
+local COLLECTION_MILESTONES = {
+	{
+		Id = "first_brainrot",
+		Goal = 1,
+		Title = "First Brainrot!",
+		RewardType = "Coins",
+		RewardAmount = 250,
+	},
+	{
+		Id = "small_squad",
+		Goal = 3,
+		Title = "Small Squad",
+		RewardType = "Coins",
+		RewardAmount = 750,
+	},
+	{
+		Id = "base_builder",
+		Goal = 5,
+		Title = "Base Builder",
+		RewardType = "Coins",
+		RewardAmount = 2000,
+	},
+	{
+		Id = "collector",
+		Goal = 10,
+		Title = "Collector",
+		RewardType = "Gems",
+		RewardAmount = 150,
+	},
+	{
+		Id = "brainrot_tycoon",
+		Goal = 20,
+		Title = "Brainrot Tycoon",
+		RewardType = "Gems",
+		RewardAmount = 500,
+	},
+	{
+		Id = "simulator_star",
+		Goal = 35,
+		Title = "Simulator Star",
+		RewardType = "Coins",
+		RewardAmount = 25000,
+	},
+	{
+		Id = "collection_legend",
+		Goal = 50,
+		Title = "Collection Legend",
+		RewardType = "Gems",
+		RewardAmount = 1500,
+	},
+}
+
+local claimedMilestones = {}
 
 local QUESTS = {
 	{
@@ -131,6 +213,73 @@ local function addCurrency(player, currencyName, amount)
 	return value.Value
 end
 
+local function getMilestoneKey(player)
+	return "milestones_" .. tostring(player.UserId)
+end
+
+local function loadMilestones(player)
+	local claimed = {}
+
+	local ok, result = pcall(function()
+		return milestoneStore:GetAsync(getMilestoneKey(player))
+	end)
+
+	if ok and type(result) == "table" then
+		for key, value in pairs(result) do
+			if value == true then
+				claimed[tostring(key)] = true
+			end
+		end
+	end
+
+	claimedMilestones[player.UserId] = claimed
+	return claimed
+end
+
+local function saveMilestones(player)
+	local claimed = claimedMilestones[player.UserId]
+	if not claimed then
+		return
+	end
+
+	pcall(function()
+		milestoneStore:SetAsync(getMilestoneKey(player), claimed)
+	end)
+end
+
+local function getClaimedMilestones(player)
+	return claimedMilestones[player.UserId] or loadMilestones(player)
+end
+
+local function awardCollectionMilestones(player, owned)
+	local claimed = getClaimedMilestones(player)
+	local changed = false
+
+	for _, milestone in ipairs(COLLECTION_MILESTONES) do
+		if owned >= milestone.Goal and claimed[milestone.Id] ~= true then
+			claimed[milestone.Id] = true
+			changed = true
+
+			addCurrency(player, milestone.RewardType, milestone.RewardAmount)
+			collectionMilestoneRemote:FireClient(player, {
+				title = milestone.Title,
+				goal = milestone.Goal,
+				owned = owned,
+				rewardType = milestone.RewardType,
+				rewardAmount = milestone.RewardAmount,
+			})
+			notifyRemote:FireClient(player, {
+				message = milestone.Title .. " milestone! +" .. tostring(milestone.RewardAmount) .. " " .. tostring(milestone.RewardType),
+				variant = "success",
+			})
+		end
+	end
+
+	if changed then
+		saveMilestones(player)
+	end
+end
+
 local function isOwnedByPlayer(npc, player)
 	if not npc:IsA("Model") then
 		return false
@@ -190,6 +339,7 @@ local function sendQuestUpdate(player)
 	local quest = getQuestForLevel(level)
 
 	local owned = countOwnedBrainrots(player)
+	awardCollectionMilestones(player, owned)
 	local progress = math.clamp(owned, 0, quest.Goal)
 	local complete = progress >= quest.Goal
 
@@ -238,6 +388,7 @@ end)
 
 Players.PlayerAdded:Connect(function(player)
 	task.defer(function()
+		loadMilestones(player)
 		getQuestLevel(player)
 
 		local leaderstats = getOrCreateLeaderstats(player)
@@ -256,6 +407,11 @@ Players.PlayerAdded:Connect(function(player)
 
 		sendQuestUpdate(player)
 	end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	saveMilestones(player)
+	claimedMilestones[player.UserId] = nil
 end)
 
 npcFolder.DescendantAdded:Connect(function()
