@@ -18,6 +18,7 @@ local worldEventRemote = remotesFolder:WaitForChild("WorldEventUpdate")
 local zoneGateRemote = remotesFolder:WaitForChild("ZoneGateFeedback")
 local offlineRewardRemote = remotesFolder:WaitForChild("OfflineRewardResult")
 local collectionMilestoneRemote = remotesFolder:WaitForChild("CollectionMilestoneReward")
+local rebirthCompleteRemote = remotesFolder:WaitForChild("RebirthComplete")
 local playtimeUpdateRemote = remotesFolder:WaitForChild("PlaytimeRewardUpdate")
 local playtimeClaimRemote = remotesFolder:WaitForChild("ClaimPlaytimeReward")
 local playtimeResultRemote = remotesFolder:WaitForChild("PlaytimeRewardResult")
@@ -573,6 +574,134 @@ local function showCollectionMilestone(data)
 	end)
 end
 
+local function showRebirthComplete(data)
+	data = type(data) == "table" and data or {}
+
+	local frame = Instance.new("Frame")
+	frame.Name = "RebirthCompleteBurst"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.48)
+	frame.Size = UDim2.fromOffset(520, 320)
+	frame.BackgroundTransparency = 1
+	frame.Parent = gui
+
+	local frameScale = Instance.new("UIScale")
+	frameScale.Scale = 0.28
+	frameScale.Parent = frame
+
+	local glow = Instance.new("Frame")
+	glow.Name = "Glow"
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.Position = UDim2.fromScale(0.5, 0.5)
+	glow.Size = UDim2.fromOffset(260, 260)
+	glow.BackgroundColor3 = Color3.fromRGB(255, 87, 178)
+	glow.BackgroundTransparency = 0.2
+	glow.BorderSizePixel = 0
+	glow.ZIndex = 1
+	glow.Parent = frame
+	addCorner(glow, 130)
+	addStroke(glow, Color3.fromRGB(255, 242, 96), 7, 0)
+
+	local title = makeText(
+		frame,
+		"Title",
+		UDim2.new(0.05, 0, 0.04, 0),
+		UDim2.new(0.9, 0, 0.24, 0),
+		"REBIRTH!",
+		Color3.fromRGB(255, 244, 105)
+	)
+	title.ZIndex = 3
+
+	local count = makeText(
+		frame,
+		"Count",
+		UDim2.new(0.08, 0, 0.3, 0),
+		UDim2.new(0.84, 0, 0.24, 0),
+		"#" .. tostring(data.rebirths or 1),
+		Color3.fromRGB(255, 255, 255)
+	)
+	count.ZIndex = 3
+
+	local reward = makeText(
+		frame,
+		"Reward",
+		UDim2.new(0.08, 0, 0.56, 0),
+		UDim2.new(0.84, 0, 0.18, 0),
+		tostring(data.rewardText or "Permanent Money Boost"),
+		Color3.fromRGB(134, 255, 124)
+	)
+	reward.ZIndex = 3
+
+	local footer = makeText(
+		frame,
+		"Footer",
+		UDim2.new(0.08, 0, 0.75, 0),
+		UDim2.new(0.84, 0, 0.12, 0),
+		"Strength reset. Train up for the next one.",
+		Color3.fromRGB(255, 236, 250)
+	)
+	footer.ZIndex = 3
+
+	for i = 1, 12 do
+		local spark = makeText(
+			frame,
+			"RebirthSpark" .. tostring(i),
+			UDim2.fromScale(0.5, 0.5),
+			UDim2.fromOffset(44, 44),
+			i % 2 == 0 and "+" or "*",
+			i % 2 == 0 and Color3.fromRGB(103, 246, 255) or Color3.fromRGB(255, 242, 96)
+		)
+		spark.AnchorPoint = Vector2.new(0.5, 0.5)
+		spark.ZIndex = 2
+
+		local angle = (math.pi * 2) * (i / 12)
+		local radius = 160 + (i % 3) * 22
+		TweenService:Create(spark, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Position = UDim2.new(0.5, math.cos(angle) * radius, 0.5, math.sin(angle) * radius),
+			Rotation = 180 + i * 18,
+		}):Play()
+	end
+
+	TweenService:Create(frameScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Scale = 1,
+	}):Play()
+
+	TweenService:Create(glow, TweenInfo.new(1.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = UDim2.fromOffset(420, 420),
+		BackgroundTransparency = 0.78,
+		Rotation = 70,
+	}):Play()
+
+	task.delay(2.7, function()
+		if not frame.Parent then
+			return
+		end
+
+		TweenService:Create(frameScale, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Scale = 0.72,
+		}):Play()
+
+		for _, obj in ipairs(frame:GetDescendants()) do
+			if obj:IsA("TextLabel") then
+				TweenService:Create(obj, TweenInfo.new(0.25), {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1,
+				}):Play()
+			elseif obj:IsA("Frame") then
+				TweenService:Create(obj, TweenInfo.new(0.25), {
+					BackgroundTransparency = 1,
+				}):Play()
+			elseif obj:IsA("UIStroke") then
+				TweenService:Create(obj, TweenInfo.new(0.25), {
+					Transparency = 1,
+				}):Play()
+			end
+		end
+
+		Debris:AddItem(frame, 0.35)
+	end)
+end
+
 local function popGift()
 	giftScale.Scale = 1.08
 	TweenService:Create(
@@ -635,6 +764,7 @@ rarityRevealRemote.OnClientEvent:Connect(showRarityReveal)
 announcementRemote.OnClientEvent:Connect(showAnnouncement)
 offlineRewardRemote.OnClientEvent:Connect(showOfflineReward)
 collectionMilestoneRemote.OnClientEvent:Connect(showCollectionMilestone)
+rebirthCompleteRemote.OnClientEvent:Connect(showRebirthComplete)
 
 dailyRewardRemote.OnClientEvent:Connect(function(data)
 	showAnnouncement({

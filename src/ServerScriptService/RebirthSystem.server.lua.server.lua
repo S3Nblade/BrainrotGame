@@ -4,6 +4,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local REBIRTH_STORE = DataStoreService:GetDataStore("PlayerRebirths_v1")
 
@@ -52,6 +53,7 @@ end
 
 local rebirthRequest = getOrCreateRemoteEvent("RebirthRequest")
 local rebirthUpdate = getOrCreateRemoteEvent("RebirthUpdate")
+local rebirthComplete = getOrCreateRemoteEvent("RebirthComplete")
 local rebirthGetState = getOrCreateRemoteFunction("RebirthGetState")
 
 local notifyRemote = ReplicatedStorage:FindFirstChild("NotifyUser")
@@ -62,6 +64,13 @@ if not notifyRemote then
 end
 
 local playerRebirths = {}
+
+local updateSpeedStats = ReplicatedStorage:FindFirstChild("UpdateSpeedStats")
+if not updateSpeedStats then
+	updateSpeedStats = Instance.new("RemoteEvent")
+	updateSpeedStats.Name = "UpdateSpeedStats"
+	updateSpeedStats.Parent = ReplicatedStorage
+end
 
 local function notify(player, message, variant)
 	notifyRemote:FireClient(player, {
@@ -109,6 +118,45 @@ local function getStrength(player)
 		or tonumber(player:GetAttribute("SpeedPower"))
 		or tonumber(player:GetAttribute("Speed"))
 		or 0
+end
+
+local function resetStrength(player)
+	player:SetAttribute("Strength", 0)
+	player:SetAttribute("Power", 0)
+	player:SetAttribute("SpeedPower", 0)
+	player:SetAttribute("Speed", 0)
+	player:SetAttribute("WalkSpeed", 16)
+
+	local leaderstats = getLeaderstats(player)
+	for _, name in ipairs({ "Strength", "Power", "SpeedPower", "Speed" }) do
+		local value = leaderstats:FindFirstChild(name)
+		if value and value:IsA("ValueBase") then
+			value.Value = 0
+		end
+	end
+
+	if updateSpeedStats and updateSpeedStats:IsA("RemoteEvent") then
+		local perTrain = tonumber(player:GetAttribute("StrengthPerTrain"))
+			or tonumber(player:GetAttribute("SpeedPerTrain"))
+			or 1
+
+		updateSpeedStats:FireClient(player, {
+			strength = 0,
+			speedPower = 0,
+			walkSpeed = 16,
+			speedPerTrain = perTrain,
+			strengthPerTrain = perTrain,
+		})
+	end
+
+	task.spawn(function()
+		local saveSpeedFunction = ServerStorage:FindFirstChild("SaveSpeedFunction")
+		if saveSpeedFunction and saveSpeedFunction:IsA("BindableFunction") then
+			pcall(function()
+				saveSpeedFunction:Invoke(player)
+			end)
+		end
+	end)
 end
 
 local function getRequirement(rebirths)
@@ -239,9 +287,15 @@ rebirthRequest.OnServerEvent:Connect(function(player)
 	rebirths += 1
 	playerRebirths[player.UserId] = rebirths
 
+	resetStrength(player)
 	syncPlayer(player)
 	savePlayer(player)
 	sendUpdate(player)
+
+	local payload = buildPayload(player)
+	payload.rewardText = "x" .. tostring(getMoneyMultiplier(rebirths)) .. " Money"
+	payload.rebirths = rebirths
+	rebirthComplete:FireClient(player, payload)
 
 	notify(player, "Rebirth complete! Brainrot money is now x" .. tostring(getMoneyMultiplier(rebirths)) .. "!", "success")
 end)

@@ -78,6 +78,7 @@ local requestUpgradeRemote = ReplicatedStorage:FindFirstChild("RequestUpgrade")
 local updateUpgradesRemote = ReplicatedStorage:FindFirstChild("UpdateUpgrades")
 local rebirthRequestRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthRequest")
 local rebirthUpdateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthUpdate")
+local rebirthCompleteRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthComplete")
 local rebirthGetStateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthGetState")
 
 local function formatNumber(value)
@@ -846,87 +847,130 @@ local function renderRebirth()
 	local requirement = tonumber(state.requirement) or 1000
 	local progressRatio = math.clamp(tonumber(state.progress) or (strength / math.max(requirement, 1)), 0, 1)
 	local canRebirth = state.canRebirth == true
+	local remaining = math.max(0, requirement - strength)
+	local progressPercent = math.floor(progressRatio * 100 + 0.5)
 
 	title.Text = "REBIRTH"
-	subtitle.Text = "Reset strength for a permanent money multiplier."
+	subtitle.Text = "Reset strength for a permanent money boost."
 
-	local hero = makePanel(body, "RebirthHero", THEME.Pink, Color3.fromRGB(190, 42, 119), 22, 30)
-	hero.Size = UDim2.new(1, 0, 0, 152)
+	local hero = makePanel(body, "RebirthHero", Color3.fromRGB(255, 92, 174), Color3.fromRGB(126, 64, 236), 24, 30)
+	hero.Size = UDim2.new(1, 0, 0, 156)
 
-	local count = makeLabel(
+	local countBadge = makePanel(hero, "CountBadge", Color3.fromRGB(255, 222, 74), Color3.fromRGB(241, 126, 35), 22, 34)
+	countBadge.Position = UDim2.new(0, 18, 0, 22)
+	countBadge.Size = UDim2.fromOffset(132, 112)
+
+	makeLabel(countBadge, "Count", tostring(state.rebirths or 0), UDim2.new(1, -14, 0, 68), UDim2.new(0, 7, 0, 12), 54, Color3.fromRGB(255, 255, 255), 38)
+	makeLabel(countBadge, "CountLabel", "REBIRTHS", UDim2.new(1, -14, 0, 24), UDim2.new(0, 7, 0, 78), 16, Color3.fromRGB(60, 33, 89), 38)
+
+	local rewardTitle = makeLabel(
 		hero,
-		"Count",
-		tostring(state.rebirths or 0),
-		UDim2.fromOffset(120, 94),
-		UDim2.new(0, 18, 0, 30),
-		64,
-		THEME.Cream,
+		"RewardTitle",
+		"PERMANENT BOOST",
+		UDim2.new(1, -190, 0, 28),
+		UDim2.new(0, 172, 0, 26),
+		18,
+		Color3.fromRGB(255, 243, 173),
 		34
 	)
-
-	local countLabel = makeLabel(hero, "CountLabel", "REBIRTHS", UDim2.fromOffset(120, 28), UDim2.new(0, 18, 0, 102), 18, Color3.fromRGB(255, 232, 245), 34)
+	rewardTitle.TextXAlignment = Enum.TextXAlignment.Left
 
 	local benefit = makeLabel(
 		hero,
 		"Benefit",
 		"x" .. tostring(state.moneyMultiplier or 1) .. " -> x" .. tostring(state.nextMoneyMultiplier or 2) .. " MONEY",
-		UDim2.new(1, -170, 0, 50),
-		UDim2.new(0, 152, 0, 38),
+		UDim2.new(1, -190, 0, 48),
+		UDim2.new(0, 172, 0, 54),
 		34,
 		Color3.fromRGB(255, 255, 255),
 		34
 	)
 	benefit.TextXAlignment = Enum.TextXAlignment.Left
 
-	local desc = makeLabel(
+	local resetInfo = makeLabel(
 		hero,
-		"Desc",
-		"Every rebirth doubles Brainrot plot income.",
-		UDim2.new(1, -170, 0, 34),
-		UDim2.new(0, 154, 0, 92),
-		20,
-		Color3.fromRGB(255, 236, 245),
+		"ResetInfo",
+		"Your strength goes back to 0, but the money multiplier stays forever.",
+		UDim2.new(1, -190, 0, 44),
+		UDim2.new(0, 172, 0, 98),
+		18,
+		Color3.fromRGB(255, 238, 252),
 		34
 	)
-	desc.TextXAlignment = Enum.TextXAlignment.Left
+	resetInfo.TextXAlignment = Enum.TextXAlignment.Left
 
-	local progressPanel = makePanel(body, "ProgressPanel", Color3.fromRGB(91, 175, 255), Color3.fromRGB(37, 93, 210), 22, 30)
-	progressPanel.Position = UDim2.new(0, 0, 0, 168)
-	progressPanel.Size = UDim2.new(1, 0, 0, 120)
+	local progressPanel = makePanel(body, "ProgressPanel", Color3.fromRGB(82, 194, 255), Color3.fromRGB(38, 100, 222), 22, 30)
+	progressPanel.Position = UDim2.new(0, 0, 0, 172)
+	progressPanel.Size = UDim2.new(1, 0, 0, 132)
 
 	local progressText = makeLabel(
 		progressPanel,
 		"ProgressText",
 		formatNumber(strength) .. " / " .. formatNumber(requirement) .. " STRENGTH",
-		UDim2.new(1, -28, 0, 34),
-		UDim2.new(0, 14, 0, 16),
-		24,
+		UDim2.new(1, -28, 0, 32),
+		UDim2.new(0, 14, 0, 14),
+		22,
 		Color3.fromRGB(255, 255, 255),
 		34
 	)
 	progressText.TextXAlignment = Enum.TextXAlignment.Left
 
+	local needText = makeLabel(
+		progressPanel,
+		"NeedText",
+		canRebirth and "READY TO REBIRTH" or ("Need " .. formatNumber(remaining) .. " more strength"),
+		UDim2.new(0.45, -20, 0, 28),
+		UDim2.new(0.55, 4, 0, 16),
+		18,
+		canRebirth and Color3.fromRGB(152, 255, 124) or Color3.fromRGB(255, 244, 155),
+		34
+	)
+	needText.TextXAlignment = Enum.TextXAlignment.Right
+
 	local barHolder = Instance.new("Frame")
 	barHolder.Name = "BarHolder"
 	barHolder.BackgroundTransparency = 1
-	barHolder.Position = UDim2.new(0, 14, 0, 66)
-	barHolder.Size = UDim2.new(1, -28, 0, 36)
+	barHolder.Position = UDim2.new(0, 14, 0, 58)
+	barHolder.Size = UDim2.new(1, -28, 0, 42)
 	barHolder.ZIndex = 34
 	barHolder.Parent = progressPanel
-	makeProgressBar(barHolder, progressRatio)
+
+	local _, fill = makeProgressBar(barHolder, progressRatio)
+	fill.BackgroundColor3 = canRebirth and THEME.Green or THEME.Gold
+	addGradient(
+		fill,
+		canRebirth and Color3.fromRGB(139, 255, 104) or Color3.fromRGB(255, 232, 93),
+		canRebirth and Color3.fromRGB(43, 196, 92) or Color3.fromRGB(255, 142, 45)
+	)
+
+	local percent = makeLabel(
+		progressPanel,
+		"Percent",
+		tostring(progressPercent) .. "%",
+		UDim2.new(1, -28, 0, 28),
+		UDim2.new(0, 14, 0, 96),
+		18,
+		Color3.fromRGB(255, 255, 255),
+		35
+	)
 
 	local action = makeButton(
 		body,
 		"RebirthAction",
-		canRebirth and "REBIRTH NOW" or "LOCKED",
-		canRebirth and THEME.Green or THEME.Locked,
-		canRebirth and THEME.GreenDeep or Color3.fromRGB(71, 82, 105),
+		canRebirth and "REBIRTH NOW" or "TRAIN MORE",
+		canRebirth and THEME.Green or THEME.Gold,
+		canRebirth and THEME.GreenDeep or THEME.GoldDeep,
 		34
 	)
 	action.AnchorPoint = Vector2.new(0.5, 1)
-	action.Position = UDim2.new(0.5, 0, 1, 0)
-	action.Size = UDim2.new(0, 270, 0, 58)
+	action.Position = UDim2.new(0.5, 0, 1, -2)
+	action.Size = UDim2.new(0, 300, 0, 62)
 	action.Activated:Connect(function()
+		if not canRebirth then
+			_G.BrainrotProUI.Notify("Train " .. formatNumber(remaining) .. " more strength to rebirth.", "warning")
+			return
+		end
+
 		if rebirthRequestRemote and rebirthRequestRemote:IsA("RemoteEvent") then
 			rebirthRequestRemote:FireServer()
 			task.delay(0.25, function()
@@ -1271,6 +1315,20 @@ if rebirthUpdateRemote and rebirthUpdateRemote:IsA("RemoteEvent") then
 			if isOpen and currentMode == "Rebirth" then
 				renderRebirth()
 			end
+		end
+	end)
+end
+
+if rebirthCompleteRemote and rebirthCompleteRemote:IsA("RemoteEvent") then
+	rebirthCompleteRemote.OnClientEvent:Connect(function(payload)
+		if type(payload) == "table" then
+			latestRebirthPayload = payload
+		end
+
+		pushToast("Rebirth complete! Permanent money boost upgraded.", "success")
+
+		if isOpen and currentMode == "Rebirth" then
+			renderRebirth()
 		end
 	end)
 end
