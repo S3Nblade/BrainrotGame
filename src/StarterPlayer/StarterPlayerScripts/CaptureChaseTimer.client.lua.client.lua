@@ -254,6 +254,16 @@ local function createHPBar(parent)
 
 	addCorner(fill, 12)
 
+	local fillGradient = Instance.new("UIGradient")
+	fillGradient.Name = "GreenGradient"
+	fillGradient.Rotation = 90
+	fillGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(126, 255, 124)),
+		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(72, 232, 86)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 186, 64)),
+	})
+	fillGradient.Parent = fill
+
 	local shine = Instance.new("Frame")
 	shine.Name = "Shine"
 	shine.Position = UDim2.fromScale(0, 0)
@@ -271,12 +281,12 @@ local function createHPBar(parent)
 		"HPText",
 		UDim2.fromScale(0, 0),
 		UDim2.fromScale(1, 1),
-		"0/0 (0%)",
+		"100%",
 		Color3.fromRGB(255, 255, 255),
-		15,
+		16,
 		30
 	)
-	text.TextStrokeTransparency = 0.05
+	text.TextStrokeTransparency = 1
 
 	return {
 		outer = outer,
@@ -567,11 +577,9 @@ local function updateHPBar(data, npc)
 	hp = hp or 0
 	maxHP = maxHP or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
-	local shownHP = math.max(0, math.floor(hp + 0.5))
-	local shownMaxHP = math.max(1, math.floor(maxHP + 0.5))
 	local shownPercent = math.floor((ratio * 100) + 0.5)
 
-	data.hpBar.text.Text = tostring(shownHP) .. "/" .. tostring(shownMaxHP) .. " (" .. tostring(shownPercent) .. "%)"
+	data.hpBar.text.Text = tostring(shownPercent) .. "%"
 	data.hpBar.text.Visible = true
 	styleHPBarShell(data, isEgg)
 
