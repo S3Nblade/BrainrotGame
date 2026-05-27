@@ -16,6 +16,9 @@ local announcementRemote = remotesFolder:WaitForChild("ServerAnnouncement")
 local dailyRewardRemote = remotesFolder:WaitForChild("DailyRewardResult")
 local worldEventRemote = remotesFolder:WaitForChild("WorldEventUpdate")
 local zoneGateRemote = remotesFolder:WaitForChild("ZoneGateFeedback")
+local playtimeUpdateRemote = remotesFolder:WaitForChild("PlaytimeRewardUpdate")
+local playtimeClaimRemote = remotesFolder:WaitForChild("ClaimPlaytimeReward")
+local playtimeResultRemote = remotesFolder:WaitForChild("PlaytimeRewardResult")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "GameJuiceClientGui"
@@ -65,6 +68,29 @@ local function makeText(parent, name, position, size, text, color)
 	label.Text = text or ""
 	label.Parent = parent
 	return label
+end
+
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
+end
+
+local function addStroke(parent, color, thickness, transparency)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = thickness or 2
+	stroke.Transparency = transparency or 0
+	stroke.Parent = parent
+	return stroke
+end
+
+local function formatTimer(seconds)
+	seconds = math.max(0, math.floor(tonumber(seconds) or 0))
+	local minutes = math.floor(seconds / 60)
+	local secs = seconds % 60
+	return string.format("%d:%02d", minutes, secs)
 end
 
 local function showAnnouncement(data)
@@ -232,6 +258,125 @@ local eventLabel = makeText(
 	Color3.fromRGB(255, 255, 255)
 )
 
+local giftFrame = Instance.new("Frame")
+giftFrame.Name = "PlaytimeGift"
+giftFrame.AnchorPoint = Vector2.new(1, 0)
+giftFrame.Position = UDim2.new(1, -18, 0, 226)
+giftFrame.Size = UDim2.fromOffset(218, 74)
+giftFrame.BackgroundColor3 = Color3.fromRGB(72, 192, 255)
+giftFrame.BorderSizePixel = 0
+giftFrame.Visible = false
+giftFrame.Parent = gui
+addCorner(giftFrame, 16)
+addStroke(giftFrame, Color3.fromRGB(25, 35, 66), 3, 0)
+
+local giftGradient = Instance.new("UIGradient")
+giftGradient.Rotation = 90
+giftGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(111, 225, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(41, 105, 236)),
+})
+giftGradient.Parent = giftFrame
+
+local giftScale = Instance.new("UIScale")
+giftScale.Scale = 1
+giftScale.Parent = giftFrame
+
+local giftTitle = makeText(
+	giftFrame,
+	"Title",
+	UDim2.fromOffset(12, 5),
+	UDim2.fromOffset(120, 24),
+	"FREE GIFT",
+	Color3.fromRGB(255, 255, 255)
+)
+giftTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local giftReward = makeText(
+	giftFrame,
+	"Reward",
+	UDim2.fromOffset(12, 31),
+	UDim2.fromOffset(102, 28),
+	"$750",
+	Color3.fromRGB(255, 246, 122)
+)
+giftReward.TextXAlignment = Enum.TextXAlignment.Left
+
+local giftButton = Instance.new("TextButton")
+giftButton.Name = "GiftButton"
+giftButton.Position = UDim2.fromOffset(127, 18)
+giftButton.Size = UDim2.fromOffset(78, 38)
+giftButton.BackgroundColor3 = Color3.fromRGB(86, 239, 92)
+giftButton.BorderSizePixel = 0
+giftButton.AutoButtonColor = false
+giftButton.Text = "CLAIM"
+giftButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+giftButton.TextScaled = true
+giftButton.Font = Enum.Font.FredokaOne
+giftButton.Parent = giftFrame
+addCorner(giftButton, 12)
+addStroke(giftButton, Color3.fromRGB(24, 98, 36), 2, 0)
+
+local giftButtonConstraint = Instance.new("UITextSizeConstraint")
+giftButtonConstraint.MaxTextSize = 16
+giftButtonConstraint.MinTextSize = 8
+giftButtonConstraint.Parent = giftButton
+
+local giftReady = false
+
+local function setGiftReady(ready)
+	giftReady = ready
+	giftButton.Text = ready and "CLAIM" or "WAIT"
+	giftButton.BackgroundColor3 = ready and Color3.fromRGB(86, 239, 92) or Color3.fromRGB(120, 142, 179)
+end
+
+local function popGift()
+	giftScale.Scale = 1.08
+	TweenService:Create(
+		giftScale,
+		TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	):Play()
+end
+
+local function updatePlaytimeGift(data)
+	if type(data) ~= "table" then
+		return
+	end
+
+	if data.done == true then
+		giftFrame.Visible = false
+		return
+	end
+
+	giftFrame.Visible = true
+	giftTitle.Text = "FREE GIFT " .. tostring(data.index or 1) .. "/" .. tostring(data.total or 1)
+	giftReward.Text = tostring(data.moneyText or "$0")
+
+	if data.ready == true then
+		setGiftReady(true)
+	else
+		setGiftReady(false)
+		giftButton.Text = formatTimer(data.remaining)
+	end
+end
+
+giftButton.MouseEnter:Connect(function()
+	TweenService:Create(giftButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), { Size = UDim2.fromOffset(82, 40) }):Play()
+end)
+
+giftButton.MouseLeave:Connect(function()
+	TweenService:Create(giftButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), { Size = UDim2.fromOffset(78, 38) }):Play()
+end)
+
+giftButton.MouseButton1Click:Connect(function()
+	if giftReady then
+		playtimeClaimRemote:FireServer()
+		setGiftReady(false)
+		popGift()
+	end
+end)
+
 local function updateWorldEvent(data)
 	if not data.active then
 		eventFrame.Visible = false
@@ -254,6 +399,15 @@ dailyRewardRemote.OnClientEvent:Connect(function(data)
 end)
 
 worldEventRemote.OnClientEvent:Connect(updateWorldEvent)
+playtimeUpdateRemote.OnClientEvent:Connect(updatePlaytimeGift)
+
+playtimeResultRemote.OnClientEvent:Connect(function(data)
+	showAnnouncement({
+		text = tostring(data.message or "Free gift claimed!"),
+		color = { R = 90, G = 255, B = 130 },
+	})
+	popGift()
+end)
 
 zoneGateRemote.OnClientEvent:Connect(function(data)
 	showAnnouncement({
