@@ -224,14 +224,14 @@ local function createHPBar(parent)
 	outer.Name = "HPBar"
 	outer.AnchorPoint = Vector2.new(0.5, 0)
 	outer.Position = UDim2.new(0.5, 0, 0, 56)
-	outer.Size = UDim2.fromOffset(194, 25)
-	outer.BackgroundColor3 = Color3.fromRGB(18, 25, 44)
+	outer.Size = UDim2.fromOffset(204, 30)
+	outer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	outer.BackgroundTransparency = 1
 	outer.BorderSizePixel = 0
 	outer.ZIndex = 10
 	outer.Parent = parent
 
-	addCorner(outer, 14)
+	addCorner(outer, 16)
 
 	local innerClip = Instance.new("Frame")
 	innerClip.Name = "InnerClip"
@@ -247,34 +247,41 @@ local function createHPBar(parent)
 	fill.AnchorPoint = Vector2.new(0, 0.5)
 	fill.Position = UDim2.new(0, 0, 0.5, 0)
 	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
+	fill.BackgroundColor3 = Color3.fromRGB(73, 235, 91)
 	fill.BorderSizePixel = 0
 	fill.ZIndex = 12
 	fill.Parent = innerClip
 
-	addCorner(fill, 12)
+	addCorner(fill, 16)
+
+	local fillStroke = Instance.new("UIStroke")
+	fillStroke.Name = "CleanGreenStroke"
+	fillStroke.Color = Color3.fromRGB(226, 255, 218)
+	fillStroke.Thickness = 2.4
+	fillStroke.Transparency = 0
+	fillStroke.Parent = fill
 
 	local fillGradient = Instance.new("UIGradient")
 	fillGradient.Name = "GreenGradient"
 	fillGradient.Rotation = 90
 	fillGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(126, 255, 124)),
-		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(72, 232, 86)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 186, 64)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(162, 255, 139)),
+		ColorSequenceKeypoint.new(0.45, Color3.fromRGB(67, 238, 90)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 191, 70)),
 	})
 	fillGradient.Parent = fill
 
 	local shine = Instance.new("Frame")
 	shine.Name = "Shine"
-	shine.Position = UDim2.fromScale(0, 0)
-	shine.Size = UDim2.new(1, 0, 0.34, 0)
-	shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
-	shine.BackgroundTransparency = 0.22
+	shine.Position = UDim2.new(0.04, 0, 0.12, 0)
+	shine.Size = UDim2.new(0.92, 0, 0.26, 0)
+	shine.BackgroundColor3 = Color3.fromRGB(235, 255, 225)
+	shine.BackgroundTransparency = 0.28
 	shine.BorderSizePixel = 0
 	shine.ZIndex = 13
 	shine.Parent = fill
 
-	addCorner(shine, 10)
+	addCorner(shine, 12)
 
 	local text = createText(
 		outer,
@@ -287,6 +294,7 @@ local function createHPBar(parent)
 		30
 	)
 	text.TextStrokeTransparency = 1
+	text.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 	return {
 		outer = outer,
@@ -638,10 +646,10 @@ local function setCaptureMode(data, npc)
 	data.clock.row.Position = isEgg and UDim2.new(0.5, 0, 0, 22) or UDim2.new(0.5, 0, 0, 2)
 	data.clock.timerBack.Visible = false
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 62) or UDim2.new(0.5, 0, 0, 56)
-	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 20) or UDim2.fromOffset(194, 25)
+	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(186, 26) or UDim2.fromOffset(204, 30)
 	styleHPBarShell(data, isEgg)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(73, 235, 91)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(235, 255, 225)
 	data.hpBar.text.TextColor3 = Color3.fromRGB(255, 255, 255)
 	data.hpBar.text.Visible = true
 
@@ -675,10 +683,10 @@ local function setStunnedMode(data, npc)
 	end
 
 	data.hpBar.outer.Position = isEgg and UDim2.new(0.5, 0, 0, 34) or UDim2.new(0.5, 0, 0, 28)
-	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(150, 22) or UDim2.fromOffset(165, 23)
+	data.hpBar.outer.Size = isEgg and UDim2.fromOffset(170, 26) or UDim2.fromOffset(186, 28)
 	styleHPBarShell(data, isEgg)
-	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
-	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
+	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(73, 235, 91)
+	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(235, 255, 225)
 	updateHPBar(data, npc)
 	data.hpBar.text.Visible = true
 end
