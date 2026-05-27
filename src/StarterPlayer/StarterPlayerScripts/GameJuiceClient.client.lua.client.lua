@@ -16,6 +16,7 @@ local announcementRemote = remotesFolder:WaitForChild("ServerAnnouncement")
 local dailyRewardRemote = remotesFolder:WaitForChild("DailyRewardResult")
 local worldEventRemote = remotesFolder:WaitForChild("WorldEventUpdate")
 local zoneGateRemote = remotesFolder:WaitForChild("ZoneGateFeedback")
+local offlineRewardRemote = remotesFolder:WaitForChild("OfflineRewardResult")
 local playtimeUpdateRemote = remotesFolder:WaitForChild("PlaytimeRewardUpdate")
 local playtimeClaimRemote = remotesFolder:WaitForChild("ClaimPlaytimeReward")
 local playtimeResultRemote = remotesFolder:WaitForChild("PlaytimeRewardResult")
@@ -330,6 +331,131 @@ local function setGiftReady(ready)
 	giftButton.BackgroundColor3 = ready and Color3.fromRGB(86, 239, 92) or Color3.fromRGB(120, 142, 179)
 end
 
+local function showOfflineReward(data)
+	if type(data) ~= "table" or data.success ~= true then
+		return
+	end
+
+	local frame = Instance.new("Frame")
+	frame.Name = "OfflineReward"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.46)
+	frame.Size = UDim2.fromOffset(440, 230)
+	frame.BackgroundColor3 = Color3.fromRGB(94, 214, 255)
+	frame.BorderSizePixel = 0
+	frame.Parent = gui
+	addCorner(frame, 24)
+	addStroke(frame, Color3.fromRGB(25, 35, 66), 4, 0)
+
+	local frameGradient = Instance.new("UIGradient")
+	frameGradient.Rotation = 90
+	frameGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(125, 236, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(63, 120, 255)),
+	})
+	frameGradient.Parent = frame
+
+	local frameScale = Instance.new("UIScale")
+	frameScale.Scale = 0.58
+	frameScale.Parent = frame
+
+	local title = makeText(
+		frame,
+		"Title",
+		UDim2.new(0.07, 0, 0.08, 0),
+		UDim2.new(0.86, 0, 0.22, 0),
+		"WELCOME BACK!",
+		Color3.fromRGB(255, 255, 255)
+	)
+
+	local away = makeText(
+		frame,
+		"Away",
+		UDim2.new(0.08, 0, 0.31, 0),
+		UDim2.new(0.84, 0, 0.14, 0),
+		"Away for " .. tostring(data.awayText or "a while"),
+		Color3.fromRGB(225, 255, 255)
+	)
+
+	local earned = makeText(
+		frame,
+		"Earned",
+		UDim2.new(0.05, 0, 0.48, 0),
+		UDim2.new(0.9, 0, 0.28, 0),
+		"+" .. tostring(data.moneyText or "$0"),
+		Color3.fromRGB(255, 244, 95)
+	)
+
+	local note = makeText(
+		frame,
+		"Note",
+		UDim2.new(0.1, 0, 0.78, 0),
+		UDim2.new(0.8, 0, 0.12, 0),
+		"Your Brainrots kept earning offline",
+		Color3.fromRGB(255, 255, 255)
+	)
+
+	TweenService:Create(
+		frameScale,
+		TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	):Play()
+
+	for i = 1, 16 do
+		local coin = makeText(
+			frame,
+			"OfflineCoin" .. tostring(i),
+			UDim2.fromScale(0.5, 0.56),
+			UDim2.fromOffset(32, 32),
+			"$",
+			Color3.fromRGB(255, 233, 80)
+		)
+		coin.AnchorPoint = Vector2.new(0.5, 0.5)
+
+		local angle = (math.pi * 2 * i) / 16
+		local distance = 88 + ((i % 5) * 10)
+		TweenService:Create(
+			coin,
+			TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{
+				Position = UDim2.new(0.5, math.cos(angle) * distance, 0.56, math.sin(angle) * distance),
+				Rotation = (i % 2 == 0 and 35 or -35),
+			}
+		):Play()
+	end
+
+	task.delay(3.2, function()
+		if not frame.Parent then
+			return
+		end
+
+		TweenService:Create(
+			frameScale,
+			TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Scale = 0.72 }
+		):Play()
+
+		for _, obj in ipairs(frame:GetDescendants()) do
+			if obj:IsA("TextLabel") then
+				TweenService:Create(obj, TweenInfo.new(0.2), {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1,
+				}):Play()
+			elseif obj:IsA("Frame") then
+				TweenService:Create(obj, TweenInfo.new(0.2), {
+					BackgroundTransparency = 1,
+				}):Play()
+			elseif obj:IsA("UIStroke") then
+				TweenService:Create(obj, TweenInfo.new(0.2), {
+					Transparency = 1,
+				}):Play()
+			end
+		end
+
+		Debris:AddItem(frame, 0.3)
+	end)
+end
+
 local function popGift()
 	giftScale.Scale = 1.08
 	TweenService:Create(
@@ -390,6 +516,7 @@ end
 
 rarityRevealRemote.OnClientEvent:Connect(showRarityReveal)
 announcementRemote.OnClientEvent:Connect(showAnnouncement)
+offlineRewardRemote.OnClientEvent:Connect(showOfflineReward)
 
 dailyRewardRemote.OnClientEvent:Connect(function(data)
 	showAnnouncement({

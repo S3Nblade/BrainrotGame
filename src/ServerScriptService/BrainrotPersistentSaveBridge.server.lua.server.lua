@@ -21,12 +21,39 @@ local NPC_FOLDER_NAME = "BrainrotNPCs"
 
 local SAVE_EVERY = 10
 local RESTORE_AFTER_SECONDS = 6
+local OFFLINE_EARNING_CAP_SECONDS = 8 * 60 * 60
+local OFFLINE_EARNING_RATE = 0.25
 
 local store = DataStoreService:GetDataStore(STORE_NAME)
 
 local dirtyPlayers = {}
 local savingPlayers = {}
 local connectedNpcs = {}
+
+local function getOrCreateRemoteEvent(name)
+	local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not remotesFolder then
+		remotesFolder = Instance.new("Folder")
+		remotesFolder.Name = "Remotes"
+		remotesFolder.Parent = ReplicatedStorage
+	end
+
+	local remote = remotesFolder:FindFirstChild(name) or ReplicatedStorage:FindFirstChild(name)
+	if remote and remote:IsA("RemoteEvent") then
+		remote.Parent = remotesFolder
+		return remote
+	end
+	if remote then
+		remote:Destroy()
+	end
+
+	remote = Instance.new("RemoteEvent")
+	remote.Name = name
+	remote.Parent = remotesFolder
+	return remote
+end
+
+local offlineRewardRemote = getOrCreateRemoteEvent("OfflineRewardResult")
 
 local function getOrCreateBindableFunction(name)
 	local bindable = ServerStorage:FindFirstChild(name)
@@ -225,6 +252,72 @@ local function setMoneyAmount(player, amount)
 	if updateCoinsEvent and updateCoinsEvent:IsA("RemoteEvent") then
 		updateCoinsEvent:FireClient(player, amount)
 	end
+end
+
+local function formatCompactMoney(value)
+	value = tonumber(value) or 0
+
+	if value >= 1000000000000 then
+		return string.format("%.1fT", value / 1000000000000)
+	elseif value >= 1000000000 then
+		return string.format("%.1fB", value / 1000000000)
+	elseif value >= 1000000 then
+		return string.format("%.1fM", value / 1000000)
+	elseif value >= 1000 then
+		return string.format("%.1fK", value / 1000)
+	end
+
+	return tostring(math.floor(value))
+end
+
+local function formatDuration(seconds)
+	seconds = math.max(0, math.floor(tonumber(seconds) or 0))
+	local hours = math.floor(seconds / 3600)
+	local minutes = math.floor((seconds % 3600) / 60)
+
+	if hours > 0 then
+		return tostring(hours) .. "h " .. tostring(minutes) .. "m"
+	end
+
+	return tostring(minutes) .. "m"
+end
+
+local function getEntryMps(entry)
+	if not entry or type(entry) ~= "table" then
+		return 0
+	end
+
+	local attrs = entry.attrs or {}
+	return tonumber(attrs.CashPerSecond)
+		or tonumber(attrs.MPS)
+		or tonumber(attrs.MoneyPerSecond)
+		or tonumber(attrs.BaseMPS)
+		or tonumber(attrs.BaseCashPerSecond)
+		or 0
+end
+
+local function calculateOfflineReward(decoded)
+	if type(decoded) ~= "table" then
+		return 0, 0, 0
+	end
+
+	local savedAt = tonumber(decoded.savedAt)
+	if not savedAt then
+		return 0, 0, 0
+	end
+
+	local elapsed = math.max(0, os.time() - savedAt)
+	local countedSeconds = math.min(elapsed, OFFLINE_EARNING_CAP_SECONDS)
+	local totalMps = 0
+
+	for _, entry in ipairs(decoded.npcs or {}) do
+		if entry and entry.placed == true then
+			totalMps += getEntryMps(entry)
+		end
+	end
+
+	local amount = math.floor(totalMps * countedSeconds * OFFLINE_EARNING_RATE)
+	return math.max(0, amount), countedSeconds, totalMps
 end
 
 local function getStrengthValue(player)
@@ -602,6 +695,21 @@ local function restorePlayer(player)
 		if npc then
 			restored += 1
 		end
+	end
+
+	local offlineAmount, offlineSeconds, offlineMps = calculateOfflineReward(decoded)
+	if offlineAmount > 0 then
+		setMoneyAmount(player, getMoneyAmount(player) + offlineAmount)
+		offlineRewardRemote:FireClient(player, {
+			success = true,
+			money = offlineAmount,
+			moneyText = "$" .. formatCompactMoney(offlineAmount),
+			awayText = formatDuration(offlineSeconds),
+			seconds = offlineSeconds,
+			mps = offlineMps,
+			rate = OFFLINE_EARNING_RATE,
+		})
+		markDirty(player, "offline earnings")
 	end
 
 	log("Restored:", player.Name, "Money:", decoded.money or 0, "Strength:", decoded.strength or 0, "NPCs:", restored)
