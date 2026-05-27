@@ -1326,31 +1326,17 @@ local function findAssignedNpcForCollect(player, collectPart)
 		end
 	end
 
-	local plot = findPlotFromObject(collectPart)
-	local bestNpc = nil
-	local bestDistance = math.huge
 	for _, npc in ipairs(npcFolder:GetChildren()) do
 		if isPlacedNpc(npc) and ownsNpc(player, npc) then
 			local assignedPath = tostring(npc:GetAttribute("AssignedSlotPath") or "")
 			local assignedSlot = tostring(npc:GetAttribute("AssignedSlotId") or "")
-			local root = getNpcRoot(npc)
 
 			if assignedSlot ~= "" and assignedSlot == slotId then
 				return npc
 			elseif assignedPath ~= "" and string.find(assignedPath, slotId, 1, true) then
 				return npc
-			elseif plot and root then
-				local distance = (root.Position - collectPart.Position).Magnitude
-				if distance < bestDistance then
-					bestDistance = distance
-					bestNpc = npc
-				end
 			end
 		end
-	end
-
-	if bestNpc and bestDistance <= 80 then
-		return bestNpc
 	end
 
 	return nil

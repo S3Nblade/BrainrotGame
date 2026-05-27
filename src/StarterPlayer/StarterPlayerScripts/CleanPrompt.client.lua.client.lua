@@ -19,21 +19,11 @@ local TARGET_PROMPT_NAMES = {
 local activePrompts = {}
 
 local function shouldStylePrompt(prompt)
-	if prompt.Name == "EggHatchPrompt" then
-		return false
-	end
-
-	if TARGET_PROMPT_NAMES[prompt.Name] then
+	if prompt.KeyboardKeyCode == Enum.KeyCode.E then
 		return true
 	end
 
-	local action = string.lower(tostring(prompt.ActionText or ""))
-	local object = string.lower(tostring(prompt.ObjectText or ""))
-
-	return string.find(action, "pickup")
-		or string.find(action, "place")
-		or string.find(action, "return")
-		or string.find(object, "brainrot")
+	return TARGET_PROMPT_NAMES[prompt.Name] == true
 end
 
 local function makePromptCustom(prompt)
@@ -98,6 +88,19 @@ local function createGui(prompt)
 	holder.Size = UDim2.fromScale(1, 1)
 	holder.Parent = billboard
 
+	local keyShadow = Instance.new("TextLabel")
+	keyShadow.Name = "KeyShadow"
+	keyShadow.BackgroundTransparency = 1
+	keyShadow.Position = UDim2.fromOffset(12, 6)
+	keyShadow.Size = UDim2.fromOffset(58, 58)
+	keyShadow.Font = Enum.Font.FredokaOne
+	keyShadow.Text = prompt.KeyboardKeyCode.Name
+	keyShadow.TextScaled = true
+	keyShadow.TextColor3 = Color3.fromRGB(42, 24, 72)
+	keyShadow.TextTransparency = 0.18
+	keyShadow.Rotation = -7
+	keyShadow.Parent = holder
+
 	local key = Instance.new("TextLabel")
 	key.Name = "Key"
 	key.BackgroundTransparency = 1
@@ -109,12 +112,26 @@ local function createGui(prompt)
 	key.TextColor3 = Color3.fromRGB(255, 239, 105)
 	key.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	key.TextStrokeTransparency = 0
+	key.Rotation = -7
 	key.Parent = holder
 
 	local keyScale = Instance.new("UIScale")
 	keyScale.Name = "KeyScale"
 	keyScale.Scale = 1
 	keyScale.Parent = key
+
+	local actionShadow = Instance.new("TextLabel")
+	actionShadow.Name = "ActionShadow"
+	actionShadow.BackgroundTransparency = 1
+	actionShadow.Position = UDim2.fromOffset(72, 13)
+	actionShadow.Size = UDim2.fromOffset(122, 42)
+	actionShadow.Font = Enum.Font.FredokaOne
+	actionShadow.Text = makeActionText(prompt)
+	actionShadow.TextScaled = true
+	actionShadow.TextXAlignment = Enum.TextXAlignment.Left
+	actionShadow.TextColor3 = Color3.fromRGB(42, 24, 72)
+	actionShadow.TextTransparency = 0.22
+	actionShadow.Parent = holder
 
 	local action = Instance.new("TextLabel")
 	action.Name = "Action"
@@ -160,7 +177,9 @@ local function createGui(prompt)
 		rootScale = rootScale,
 		keyScale = keyScale,
 		key = key,
+		keyShadow = keyShadow,
 		action = action,
+		actionShadow = actionShadow,
 		progress = progress,
 		holdTween = nil,
 	}

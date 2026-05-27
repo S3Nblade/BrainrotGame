@@ -14,7 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local GUI_PREFIX = "PrivateCollectMoneyText_"
 local UPDATE_EVERY = 0.1
-local MAX_DISTANCE = 40
+local MAX_DISTANCE = 95
 
 local guisByPart = {}
 
@@ -76,8 +76,8 @@ local function ensureGui(part)
 	gui = Instance.new("BillboardGui")
 	gui.Name = GUI_PREFIX .. tostring(math.random(100000, 999999))
 	gui.Adornee = part
-	gui.Size = UDim2.fromOffset(145, 38)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, part.Size.Y / 2 + 1.2, 0)
+	gui.Size = UDim2.fromOffset(210, 58)
+	gui.StudsOffsetWorldSpace = Vector3.new(0, part.Size.Y / 2 + 1.55, 0)
 	gui.AlwaysOnTop = true
 	gui.MaxDistance = MAX_DISTANCE
 	gui.Enabled = false
@@ -89,11 +89,16 @@ local function ensureGui(part)
 	label.Size = UDim2.fromScale(1, 1)
 	label.Font = Enum.Font.FredokaOne
 	label.TextScaled = true
-	label.TextColor3 = Color3.fromRGB(80, 255, 90)
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	label.TextStrokeTransparency = 0
 	label.Text = ""
 	label.Parent = gui
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = 44
+	constraint.MinTextSize = 18
+	constraint.Parent = label
 
 	guisByPart[part] = gui
 

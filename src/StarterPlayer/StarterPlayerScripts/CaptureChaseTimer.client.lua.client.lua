@@ -276,7 +276,7 @@ local function createHPBar(parent)
 		13,
 		30
 	)
-	text.Visible = false
+	text.TextStrokeTransparency = 0.05
 
 	return {
 		outer = outer,
@@ -297,7 +297,6 @@ local function styleHPBarShell(data, isEgg)
 	data.hpBar.outer.BackgroundTransparency = 1
 	data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
 	data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
-	data.hpBar.text.Visible = false
 end
 
 local function showStunnedPopup(npc)
@@ -569,8 +568,8 @@ local function updateHPBar(data, npc)
 	maxHP = maxHP or 1
 	local ratio = math.clamp(hp / math.max(maxHP, 1), 0, 1)
 
-	local targetLabel = npc:GetAttribute("EggBrainrot") == true and "EGG" or npc.Name
-	data.hpBar.text.Text = targetLabel .. " " .. tostring(math.floor(hp)) .. "/" .. tostring(math.floor(maxHP))
+	data.hpBar.text.Text = tostring(math.floor((ratio * 100) + 0.5)) .. "%"
+	data.hpBar.text.Visible = true
 	styleHPBarShell(data, isEgg)
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
@@ -632,6 +631,8 @@ local function setCaptureMode(data, npc)
 	styleHPBarShell(data, isEgg)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
+	data.hpBar.text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	data.hpBar.text.Visible = true
 
 	updateClock(data, timeLeft)
 	updateHPBar(data, npc)
@@ -668,7 +669,7 @@ local function setStunnedMode(data, npc)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(86, 235, 106)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(190, 255, 185)
 	updateHPBar(data, npc)
-	data.hpBar.text.Visible = false
+	data.hpBar.text.Visible = true
 end
 
 local function setPanicMode(data)
@@ -690,7 +691,9 @@ local function setPanicMode(data)
 	styleHPBarShell(data, false)
 	data.hpBar.fill.BackgroundColor3 = Color3.fromRGB(255, 146, 42)
 	data.hpBar.shine.BackgroundColor3 = Color3.fromRGB(255, 212, 112)
-	data.hpBar.text.Visible = false
+	data.hpBar.text.Text = "EVADING"
+	data.hpBar.text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	data.hpBar.text.Visible = true
 end
 
 local function updateNpc(npc)
