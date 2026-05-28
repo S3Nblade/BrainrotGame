@@ -25,6 +25,20 @@ local PROMPT_DISTANCE = 12
 local PLACE_Y_OFFSET = 0.28
 local REFRESH_EVERY = 0.5
 local DUPLICATE_CLEANUP_EVERY = 2
+local DEFAULT_INVENTORY_CAPACITY = 20
+local MAX_INVENTORY_CAPACITY = 75
+
+local BalanceConfig = nil
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local balanceModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if balanceModule and balanceModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, balanceModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
+		end
+	end
+end
 
 local npcFolder = Workspace:FindFirstChild(NPC_FOLDER_NAME)
 if not npcFolder then
@@ -327,6 +341,92 @@ local function getStrongId(instance)
 	return nil
 end
 
+local function isBrainrotTool(tool)
+	if not tool or not tool:IsA("Tool") then
+		return false
+	end
+
+	if tool:GetAttribute("BrainrotTool") == true
+		or tool:GetAttribute("InventoryOnly") == true
+		or tool:GetAttribute("BrainrotConfigId") ~= nil
+		or tool:GetAttribute("BrainrotUID") ~= nil
+		or tool:GetAttribute("DirectInventoryUid") ~= nil
+		or tool:GetAttribute("InventoryUid") ~= nil then
+		return true
+	end
+
+	return false
+end
+
+local function playerOwnsTool(player, tool)
+	if not player or not tool or not tool:IsA("Tool") then
+		return false
+	end
+
+	if tool:IsDescendantOf(player.Character) or tool:IsDescendantOf(player:FindFirstChildOfClass("Backpack") or player) or tool:IsDescendantOf(player:FindFirstChild("StarterGear") or player) then
+		local ownerUserId = tool:GetAttribute("OwnerUserId")
+			or tool:GetAttribute("HeldOwnerUserId")
+			or tool:GetAttribute("CapturedByUserId")
+			or tool:GetAttribute("UserId")
+
+		if ownerUserId ~= nil and tostring(ownerUserId) ~= tostring(player.UserId) then
+			return false
+		end
+
+		return isBrainrotTool(tool)
+	end
+
+	return false
+end
+
+local function getInventoryCapacity(player)
+	local baseCapacity = DEFAULT_INVENTORY_CAPACITY
+	local maxCapacity = MAX_INVENTORY_CAPACITY
+
+	if type(BalanceConfig) == "table" and type(BalanceConfig.Inventory) == "table" then
+		baseCapacity = tonumber(BalanceConfig.Inventory.BaseCapacity) or baseCapacity
+		maxCapacity = tonumber(BalanceConfig.Inventory.MaxCapacity) or maxCapacity
+	end
+
+	local bonus = math.max(0, math.floor(tonumber(player:GetAttribute("InventoryCapacityBonus")) or 0))
+	return math.clamp(math.floor(baseCapacity + bonus), 1, math.max(1, math.floor(maxCapacity)))
+end
+
+local function countInventoryBrainrotTools(player)
+	local total = 0
+	local seen = {}
+
+	local function scan(container)
+		if not container then
+			return
+		end
+
+		for _, item in ipairs(container:GetChildren()) do
+			if isBrainrotTool(item) then
+				local uid = getStrongId(item)
+				if uid then
+					if not seen[uid] then
+						seen[uid] = true
+						total += 1
+					end
+				else
+					total += 1
+				end
+			end
+		end
+	end
+
+	scan(player:FindFirstChildOfClass("Backpack"))
+	scan(player.Character)
+	scan(player:FindFirstChild("StarterGear"))
+
+	return total
+end
+
+local function hasInventorySpace(player)
+	return countInventoryBrainrotTools(player) < getInventoryCapacity(player)
+end
+
 local function copyIdentityAttributes(fromInstance, toInstance)
 	local keys = {
 		"UID",
@@ -334,11 +434,16 @@ local function copyIdentityAttributes(fromInstance, toInstance)
 		"UUID",
 		"BrainrotId",
 		"BrainrotUID",
+		"BrainrotConfigId",
+		"DirectInventoryUid",
+		"InventoryUid",
 		"NpcId",
 		"NPCId",
 		"UniqueId",
 		"UniqueID",
 		"InventoryId",
+		"ModelName",
+		"BrainrotModelName",
 		"Rarity",
 		"Mutation",
 		"BrainrotName",
@@ -915,6 +1020,11 @@ local function placeNpc(player, standPart)
 		return
 	end
 
+	if not playerOwnsTool(player, tool) then
+		notify(player, "Hold one of your captured Brainrots to place it.", "warning")
+		return
+	end
+
 	local npc = findInventoryNpcForTool(player, tool)
 
 	if not npc then
@@ -992,6 +1102,11 @@ local function returnNpc(player, standPart)
 	local npc = findOccupiedNpc(player, standPart)
 
 	if not npc then
+		return
+	end
+
+	if not hasInventorySpace(player) then
+		notify(player, "Inventory full! Upgrade Inventory Capacity before returning this Brainrot.", "warning")
 		return
 	end
 
