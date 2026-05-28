@@ -365,6 +365,20 @@ local function restoreAnchoredState(npc)
 	end
 end
 
+local function setNpcAIState(npc, state)
+	if npc and npc.Parent then
+		npc:SetAttribute("BrainrotAIState", state)
+		npc:SetAttribute("AIState", state)
+	end
+end
+
+local function getConfiguredWalkSpeed(npc)
+	return tonumber(npc:GetAttribute("ConfigSpeed"))
+		or tonumber(npc:GetAttribute("BaseWalkSpeed"))
+		or tonumber(npc:GetAttribute("WalkSpeed"))
+		or 16
+end
+
 local function lockNpcWhileStunned(npc)
 	local root = getNpcRoot(npc)
 	local humanoid = npc:FindFirstChildOfClass("Humanoid")
@@ -426,9 +440,10 @@ local function releaseNpcFromStun(npc)
 	clearChaseAttributes(npc)
 	removePanicVisuals(npc)
 	restoreAnchoredState(npc)
+	setNpcAIState(npc, "Idle")
 
 	if humanoid then
-		humanoid.WalkSpeed = 16
+		humanoid.WalkSpeed = getConfiguredWalkSpeed(npc)
 		humanoid.AutoRotate = true
 		humanoid.Jump = false
 
@@ -458,6 +473,7 @@ local function stunNpc(npc, player)
 	npc:SetAttribute("CapturePanic", false)
 	npc:SetAttribute("CaptureShielded", false)
 	npc:SetAttribute("CaptureShieldEndTime", 0)
+	setNpcAIState(npc, "Stunned")
 
 	clearChaseAttributes(npc)
 	removePanicVisuals(npc)
