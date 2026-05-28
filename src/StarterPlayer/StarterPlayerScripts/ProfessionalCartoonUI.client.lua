@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local BrainrotConfig = nil
+local BalanceConfig = nil
 local SoundManager = nil
 
 do
@@ -20,6 +21,14 @@ do
 		local ok, result = pcall(require, configModule)
 		if ok and type(result) == "table" then
 			BrainrotConfig = result
+		end
+	end
+
+	local balanceModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if balanceModule and balanceModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, balanceModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
 		end
 	end
 
@@ -182,6 +191,24 @@ local function getStat(names)
 	end
 
 	return 0
+end
+
+local function getInventoryCapacity()
+	local baseCapacity = 20
+	local maxCapacity = 75
+
+	if type(BalanceConfig) == "table" and type(BalanceConfig.Inventory) == "table" then
+		baseCapacity = tonumber(BalanceConfig.Inventory.BaseCapacity) or baseCapacity
+		maxCapacity = tonumber(BalanceConfig.Inventory.MaxCapacity) or maxCapacity
+	end
+
+	local bonus = tonumber(player:GetAttribute("InventoryCapacityBonus"))
+	if bonus == nil and latestUpgradePayload and type(latestUpgradePayload) == "table" then
+		bonus = tonumber(latestUpgradePayload.inventoryCapacityBonus)
+	end
+
+	bonus = math.max(0, math.floor(tonumber(bonus) or 0))
+	return math.clamp(math.floor(baseCapacity + bonus), 1, math.max(1, math.floor(maxCapacity)))
 end
 
 local function tween(instance, duration, props, style, direction)
@@ -1101,27 +1128,70 @@ local function renderInventory()
 		totalMps += (tonumber(group.cashPerSecond) or 0) * group.count
 	end
 
-	local summary = makePanel(body, "InventorySummary", THEME.Green, THEME.GreenDeep, 18, 28)
-	summary.Size = UDim2.new(1, 0, 0, 70)
+	local capacity = getInventoryCapacity()
+	local capacityRatio = math.clamp(totalOwned / math.max(capacity, 1), 0, 1)
+	local capacityColor = capacityRatio >= 1 and THEME.Red or (capacityRatio >= 0.85 and THEME.Gold or THEME.Green)
+	local capacityDeep = capacityRatio >= 1 and Color3.fromRGB(176, 35, 54) or (capacityRatio >= 0.85 and THEME.GoldDeep or THEME.GreenDeep)
+
+	local summary = makePanel(body, "InventorySummary", capacityColor, capacityDeep, 18, 28)
+	summary.Size = UDim2.new(1, 0, 0, 86)
 
 	local summaryText = makeLabel(
 		summary,
 		"Text",
 		tostring(totalOwned) .. " OWNED   +" .. formatNumber(totalMps) .. "/s",
-		UDim2.new(1, -24, 1, 0),
-		UDim2.new(0, 12, 0, 0),
-		26,
+		UDim2.new(1, -220, 0, 42),
+		UDim2.new(0, 14, 0, 8),
+		25,
 		Color3.fromRGB(255, 255, 255),
 		32
 	)
 	summaryText.TextXAlignment = Enum.TextXAlignment.Left
 
+	local capacityText = makeLabel(
+		summary,
+		"CapacityText",
+		"INVENTORY " .. tostring(totalOwned) .. " / " .. tostring(capacity),
+		UDim2.new(0, 188, 0, 28),
+		UDim2.new(1, -204, 0, 15),
+		18,
+		Color3.fromRGB(255, 250, 215),
+		32
+	)
+	capacityText.TextXAlignment = Enum.TextXAlignment.Right
+
+	local track = Instance.new("Frame")
+	track.Name = "CapacityTrack"
+	track.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	track.BackgroundTransparency = 0.28
+	track.BorderSizePixel = 0
+	track.Position = UDim2.new(0, 14, 1, -27)
+	track.Size = UDim2.new(1, -28, 0, 12)
+	track.ZIndex = 32
+	track.Parent = summary
+	addCorner(track, 10)
+
+	local fill = Instance.new("Frame")
+	fill.Name = "CapacityFill"
+	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	fill.BorderSizePixel = 0
+	fill.Size = UDim2.fromScale(capacityRatio, 1)
+	fill.ZIndex = 33
+	fill.Parent = track
+	addCorner(fill, 10)
+
+	local fillGradient = addGradient(fill, Color3.fromRGB(255, 255, 255), Color3.fromRGB(207, 255, 213), 0)
+	fillGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 0.16),
+	})
+
 	local scroll = Instance.new("ScrollingFrame")
 	scroll.Name = "InventoryGrid"
 	scroll.BackgroundTransparency = 1
 	scroll.BorderSizePixel = 0
-	scroll.Position = UDim2.new(0, 0, 0, 84)
-	scroll.Size = UDim2.new(1, 0, 1, -84)
+	scroll.Position = UDim2.new(0, 0, 0, 100)
+	scroll.Size = UDim2.new(1, 0, 1, -100)
 	scroll.CanvasSize = UDim2.fromOffset(0, 0)
 	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	scroll.ScrollBarThickness = 6
@@ -1697,6 +1767,8 @@ if updateUpgradesRemote and updateUpgradesRemote:IsA("RemoteEvent") then
 			latestUpgradePayload = payload
 			if isOpen and currentMode == "Shop" then
 				renderShop()
+			elseif isOpen and currentMode == "Inventory" then
+				renderInventory()
 			end
 		end
 	end)
@@ -1746,6 +1818,12 @@ end)
 Workspace.ChildAdded:Connect(function(child)
 	if child.Name == "BrainrotNPCs" then
 		task.defer(bindNpcIndexTracking)
+	end
+end)
+
+player:GetAttributeChangedSignal("InventoryCapacityBonus"):Connect(function()
+	if isOpen and currentMode == "Inventory" then
+		renderInventory()
 	end
 end)
 
