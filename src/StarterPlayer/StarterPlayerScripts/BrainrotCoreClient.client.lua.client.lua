@@ -15,8 +15,10 @@ local player = Players.LocalPlayer
 local pickupRemote = ReplicatedStorage:WaitForChild("BrainrotCorePickup")
 
 local STAND_PROMPT_NAME = "BrainrotCoreStandPrompt"
+local FALLBACK_REFRESH_SECONDS = 1
 
 local pickupCooldown = false
+local characterConnections = {}
 
 local BLOCKED_TOOL_NAMES = {
 	["Training Weight"] = true,
@@ -159,6 +161,40 @@ Workspace.DescendantAdded:Connect(function(obj)
 	end
 end)
 
+local function clearCharacterConnections()
+	for _, connection in ipairs(characterConnections) do
+		connection:Disconnect()
+	end
+
+	table.clear(characterConnections)
+end
+
+local function hookCharacter(character)
+	clearCharacterConnections()
+
+	if not character then
+		refreshPrompts()
+		return
+	end
+
+	table.insert(characterConnections, character.ChildAdded:Connect(function(child)
+		if child:IsA("Tool") then
+			task.defer(refreshPrompts)
+		end
+	end))
+
+	table.insert(characterConnections, character.ChildRemoved:Connect(function(child)
+		if child:IsA("Tool") then
+			task.defer(refreshPrompts)
+		end
+	end))
+
+	task.defer(refreshPrompts)
+end
+
+player.CharacterAdded:Connect(hookCharacter)
+hookCharacter(player.Character)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then
 		return
@@ -181,7 +217,7 @@ end)
 task.spawn(function()
 	while true do
 		refreshPrompts()
-		task.wait(0.1)
+		task.wait(FALLBACK_REFRESH_SECONDS)
 	end
 end)
 

@@ -15,7 +15,8 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local player = Players.LocalPlayer
 
 local PROMPT_NAME = "BrainrotStandPrompt"
-local CHECK_EVERY = 0.15
+local CHECK_EVERY = 1
+local characterConnections = {}
 
 local BLOCKED_TOOL_NAMES = {
 	["Training Weight"] = true,
@@ -194,6 +195,40 @@ end)
 ProximityPromptService.PromptShown:Connect(function(prompt)
 	updatePrompt(prompt)
 end)
+
+local function clearCharacterConnections()
+	for _, connection in ipairs(characterConnections) do
+		connection:Disconnect()
+	end
+
+	table.clear(characterConnections)
+end
+
+local function hookCharacter(character)
+	clearCharacterConnections()
+
+	if not character then
+		refreshAll()
+		return
+	end
+
+	table.insert(characterConnections, character.ChildAdded:Connect(function(child)
+		if child:IsA("Tool") then
+			task.defer(refreshAll)
+		end
+	end))
+
+	table.insert(characterConnections, character.ChildRemoved:Connect(function(child)
+		if child:IsA("Tool") then
+			task.defer(refreshAll)
+		end
+	end))
+
+	task.defer(refreshAll)
+end
+
+player.CharacterAdded:Connect(hookCharacter)
+hookCharacter(player.Character)
 
 task.spawn(function()
 	while true do
