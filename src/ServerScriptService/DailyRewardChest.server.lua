@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local CHEST_NAMES = {
 	chest = true,
@@ -75,6 +76,13 @@ end
 
 local boundChests = {}
 local dailyStateCache = {}
+
+local gameplayEvent = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+if not gameplayEvent then
+	gameplayEvent = Instance.new("BindableEvent")
+	gameplayEvent.Name = "BrainrotGameplayEvent"
+	gameplayEvent.Parent = ServerStorage
+end
 
 local function formatTime(seconds)
 	seconds = math.max(0, math.floor(seconds))
@@ -146,6 +154,12 @@ local function addMoney(player, amount)
 	local updateCoins = ReplicatedStorage:FindFirstChild("UpdateCoins")
 	if updateCoins and updateCoins:IsA("RemoteEvent") then
 		updateCoins:FireClient(player, money.Value)
+	end
+end
+
+local function emitGameplayEvent(eventName, player, payload)
+	if gameplayEvent and gameplayEvent:IsA("BindableEvent") then
+		gameplayEvent:Fire(eventName, player, payload or {})
 	end
 end
 
@@ -312,6 +326,12 @@ local function claim(player, chest)
 
 	addMoney(player, reward)
 	saveDailyState(player, state)
+	emitGameplayEvent("DailyRewardClaimed", player, {
+		reward = reward,
+		streak = state.streak,
+		bestStreak = state.bestStreak,
+		streakDay = getStreakDay(state.streak),
+	})
 
 	dailyRemote:FireClient(
 		player,

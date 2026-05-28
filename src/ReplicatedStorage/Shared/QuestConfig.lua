@@ -23,6 +23,15 @@ QuestConfig.Quests = {
 
 QuestConfig.DailyQuests = {
 	{
+		Id = "daily_chest",
+		Title = "Daily Streak",
+		Action = "Claim the daily chest",
+		Event = "DailyRewardClaimed",
+		Goal = 1,
+		RewardType = "Coins",
+		RewardAmount = 1500,
+	},
+	{
 		Id = "capture_10",
 		Title = "Daily Hunt",
 		Action = "Capture 10 Brainrots",
