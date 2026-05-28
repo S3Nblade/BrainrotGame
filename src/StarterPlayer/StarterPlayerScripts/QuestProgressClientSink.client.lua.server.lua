@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -262,6 +263,9 @@ dailyList.Parent = dailyPanel
 local latestPayload = nil
 local claimReady = false
 local burstRunning = false
+local dailyRowLimit = 3
+local renderDailyQuests = nil
+local viewportConnection = nil
 
 local function formatNumber(value)
 	value = tonumber(value) or 0
@@ -281,12 +285,46 @@ local function setClaimReady(ready)
 end
 
 local function pop()
-	scale.Scale = 1.04
+	local targetScale = scale:GetAttribute("TargetScale") or 1
+	scale.Scale = targetScale + 0.04
 	TweenService:Create(
 		scale,
 		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-		{ Scale = 1 }
+		{ Scale = targetScale }
 	):Play()
+end
+
+local function applyResponsiveLayout()
+	local camera = Workspace.CurrentCamera
+	local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	local compact = viewport.X < 760 or viewport.Y < 560
+	local tiny = viewport.X < 520 or viewport.Y < 460
+	local targetScale = 1
+
+	if tiny then
+		targetScale = 0.74
+		dailyRowLimit = 1
+		root.Position = UDim2.new(1, -8, 0, 64)
+	elseif compact then
+		targetScale = 0.86
+		dailyRowLimit = 2
+		root.Position = UDim2.new(1, -10, 0, 72)
+	else
+		targetScale = 1
+		dailyRowLimit = 3
+		root.Position = UDim2.new(1, -18, 0, 88)
+	end
+
+	scale:SetAttribute("TargetScale", targetScale)
+	TweenService:Create(
+		scale,
+		TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Scale = targetScale }
+	):Play()
+
+	if latestPayload then
+		renderDailyQuests(latestPayload.dailyQuests)
+	end
 end
 
 local function clearDailyRows()
@@ -318,7 +356,7 @@ local function makeDailyText(parent, name, text, position, size, color, maxSize,
 	return label
 end
 
-local function renderDailyQuests(dailyQuests)
+function renderDailyQuests(dailyQuests)
 	clearDailyRows()
 
 	if type(dailyQuests) ~= "table" or #dailyQuests <= 0 then
@@ -335,7 +373,7 @@ local function renderDailyQuests(dailyQuests)
 		return
 	end
 
-	for index = 1, math.min(3, #dailyQuests) do
+	for index = 1, math.min(dailyRowLimit, #dailyQuests) do
 		local data = dailyQuests[index]
 		local goal = math.max(tonumber(data.goal) or 1, 1)
 		local progress = math.clamp(tonumber(data.progress) or 0, 0, goal)
@@ -600,6 +638,20 @@ local function applyQuest(payload)
 	pop()
 end
 
+local function hookViewport()
+	if viewportConnection then
+		viewportConnection:Disconnect()
+		viewportConnection = nil
+	end
+
+	local camera = Workspace.CurrentCamera
+	if camera then
+		viewportConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(applyResponsiveLayout)
+	end
+
+	applyResponsiveLayout()
+end
+
 claimButton.MouseEnter:Connect(function()
 	TweenService:Create(claimButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), { Size = UDim2.fromOffset(90, 36) }):Play()
 end)
@@ -618,6 +670,8 @@ claimButton.MouseButton1Click:Connect(function()
 end)
 
 updateQuestRemote.OnClientEvent:Connect(applyQuest)
+Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(hookViewport)
+hookViewport()
 
 task.delay(1, function()
 	if not latestPayload then
