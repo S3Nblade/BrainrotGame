@@ -70,6 +70,8 @@ local AssetIds = {
 		RevealPlatform = "rbxassetid://PASTE_REVEAL_PLATFORM_MODEL_ID",
 		ZoneGate = "rbxassetid://PASTE_ZONE_GATE_MODEL_ID",
 		PlotStand = "rbxassetid://PASTE_PLOT_STAND_MODEL_ID",
+		HideBush = "rbxassetid://PASTE_HIDE_BUSH_MODEL_ID",
+		HideCrate = "rbxassetid://PASTE_HIDE_CRATE_MODEL_ID",
 	},
 }
 

@@ -16,3 +16,10 @@ Expected names:
 - `BR_BubbleLizard`
 - `BR_GoldenSpaghettiKing`
 - `BR_CosmicBrainFrog`
+
+Generated prop placeholders:
+
+- `PROP_PlotStand`
+- `PROP_ZoneGate`
+- `PROP_HideBush`
+- `PROP_HideCrate`

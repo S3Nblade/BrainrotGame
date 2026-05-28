@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Run scripts/create_starter_brainrots.py in Blender to generate asset_manifest.json with exact exports and AssetIds keys.",
+  "requiredModelNames": [
+    "BR_WobbleNugget",
+    "BR_GoofyCone",
+    "BR_TinyBloop",
+    "BR_SneakyPickle",
+    "BR_DizzyDonut",
+    "BR_BananaGoblin",
+    "BR_ShyToaster",
+    "BR_TurboMeatball",
+    "BR_GlitchyCapybara",
+    "BR_BubbleLizard",
+    "BR_GoldenSpaghettiKing",
+    "BR_CosmicBrainFrog"
+  ],
+  "requiredAnimationClips": [
+    "idle",
+    "run",
+    "stun",
+    "showcase"
+  ],
+  "requiredProps": [
+    "PROP_PlotStand",
+    "PROP_ZoneGate",
+    "PROP_HideBush",
+    "PROP_HideCrate",
+    "PROP_RevealPlatform"
+  ],
+  "assetRegistry": "src/ReplicatedStorage/Shared/AssetIds.lua"
+}

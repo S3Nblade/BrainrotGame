@@ -32,11 +32,13 @@ Model names must match `src/ReplicatedStorage/Shared/BrainrotConfig.lua`:
 
 1. Open Blender.
 2. Run `scripts/create_starter_brainrots.py`.
-3. Export generated GLB/FBX assets from `exports/models/` and `exports/animations/`.
-4. Import into Roblox Studio.
-5. Put final model assets in a Roblox folder that the game can use for NPC templates.
+3. Check `asset_manifest.json` for the generated export paths and matching `AssetIds` keys.
+4. Import generated GLB assets from `exports/models/`, `exports/animations/`, and `exports/vfx/`.
+5. Put final model assets in the Roblox Studio folder that the game uses for NPC templates.
 6. Paste all uploaded asset IDs into `src/ReplicatedStorage/Shared/AssetIds.lua`.
 
 The generator creates one placeholder model per Brainrot plus `idle`, `run`, `stun`, and `showcase` animation exports for each starter character. It also exports a small props pack with a reveal platform, plot stand, zone gate, and hiding prop placeholders.
 
 This pipeline uses placeholder geometry and animation timing. Replace or polish meshes later while preserving object/model names and asset registry keys.
+
+See `IMPORT_STEPS.md` for the Studio-side checklist.

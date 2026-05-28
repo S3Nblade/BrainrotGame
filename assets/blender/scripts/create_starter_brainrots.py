@@ -10,6 +10,7 @@ These are asset-ready placeholders, not final art.
 from __future__ import annotations
 
 import math
+import json
 from pathlib import Path
 
 import bpy
@@ -20,8 +21,10 @@ EXPORT_ROOT = ROOT / "exports"
 MODEL_EXPORTS = EXPORT_ROOT / "models"
 ANIMATION_EXPORTS = EXPORT_ROOT / "animations"
 VFX_EXPORTS = EXPORT_ROOT / "vfx"
+ICON_EXPORTS = EXPORT_ROOT / "icons"
+SOUND_EXPORTS = EXPORT_ROOT / "sounds"
 
-for folder in (MODEL_EXPORTS, ANIMATION_EXPORTS, VFX_EXPORTS):
+for folder in (MODEL_EXPORTS, ANIMATION_EXPORTS, VFX_EXPORTS, ICON_EXPORTS, SOUND_EXPORTS):
     folder.mkdir(parents=True, exist_ok=True)
 
 
@@ -39,6 +42,27 @@ BRAINROTS = [
     ("BR_GoldenSpaghettiKing", "Golden Spaghetti King", (1.0, 0.76, 0.12), "spaghetti"),
     ("BR_CosmicBrainFrog", "Cosmic Brain Frog", (0.46, 0.32, 1.0), "frog"),
 ]
+
+ANIMATION_CLIPS = ("idle", "run", "stun", "showcase")
+SOUND_KEYS = (
+    "ui_click",
+    "ui_hover",
+    "hit",
+    "stun",
+    "capture_success",
+    "reveal_tick",
+    "reveal_speedup",
+    "reveal_final_pop",
+    "reveal_rare",
+    "reveal_legendary",
+    "money_collect",
+    "purchase_success",
+    "purchase_fail",
+    "quest_complete",
+    "rebirth",
+    "zone_unlock",
+)
+RARITY_GLOWS = ("Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Secret")
 
 
 def clear_scene() -> None:
@@ -234,20 +258,121 @@ def export_model(model_name: str, objects: list[bpy.types.Object]) -> None:
     bpy.ops.export_scene.gltf(filepath=str(glb_path), use_selection=True, export_format="GLB")
 
 
+def export_objects(objects: list[bpy.types.Object], path: Path) -> None:
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objects:
+        obj.select_set(True)
+    if objects:
+        bpy.context.view_layer.objects.active = objects[0]
+    bpy.ops.export_scene.gltf(filepath=str(path), use_selection=True, export_format="GLB")
+
+
 def create_props() -> None:
     mat_stand = material("PlotStand_Green", (0.24, 0.92, 0.36))
     mat_gate = material("ZoneGate_Blue", (0.2, 0.55, 1.0))
     mat_hide = material("HideProp_Purple", (0.55, 0.32, 1.0))
 
-    add_cube("PROP_PlotStand", (0, 0, 0.2), (1.2, 1.2, 0.18), mat_stand)
-    add_cube("PROP_ZoneGate_Left", (-0.8, 0, 1.2), (0.18, 0.18, 1.2), mat_gate)
-    add_cube("PROP_ZoneGate_Right", (0.8, 0, 1.2), (0.18, 0.18, 1.2), mat_gate)
-    add_cube("PROP_ZoneGate_Top", (0, 0, 2.28), (0.98, 0.18, 0.18), mat_gate)
-    add_uv_sphere("PROP_HideBush", (2.4, 0, 0.55), (0.72, 0.52, 0.42), mat_hide)
-    add_torus("PROP_RevealPlatform", (-2.4, 0, 0.18), mat_gate)
+    plot_stand = [add_cube("PROP_PlotStand", (0, 0, 0.2), (1.2, 1.2, 0.18), mat_stand)]
+    zone_gate = [
+        add_cube("PROP_ZoneGate_Left", (-0.8, 0, 1.2), (0.18, 0.18, 1.2), mat_gate),
+        add_cube("PROP_ZoneGate_Right", (0.8, 0, 1.2), (0.18, 0.18, 1.2), mat_gate),
+        add_cube("PROP_ZoneGate_Top", (0, 0, 2.28), (0.98, 0.18, 0.18), mat_gate),
+    ]
+    hide_bush = [add_uv_sphere("PROP_HideBush", (2.4, 0, 0.55), (0.72, 0.52, 0.42), mat_hide)]
+    hide_crate = [add_cube("PROP_HideCrate", (4.0, 0, 0.55), (0.58, 0.58, 0.58), mat_hide)]
+    reveal_platform = [add_torus("PROP_RevealPlatform", (-2.4, 0, 0.18), mat_gate)]
 
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.export_scene.gltf(filepath=str(VFX_EXPORTS / "brainrot_props_placeholder.glb"), use_selection=True, export_format="GLB")
+    export_objects(plot_stand, MODEL_EXPORTS / "PROP_PlotStand.glb")
+    export_objects(zone_gate, MODEL_EXPORTS / "PROP_ZoneGate.glb")
+    export_objects(hide_bush, MODEL_EXPORTS / "PROP_HideBush.glb")
+    export_objects(hide_crate, MODEL_EXPORTS / "PROP_HideCrate.glb")
+    export_objects(reveal_platform, VFX_EXPORTS / "PROP_RevealPlatform.glb")
+
+
+def create_rarity_glows() -> None:
+    colors = {
+        "Common": (0.88, 0.93, 1.0),
+        "Uncommon": (0.32, 1.0, 0.42),
+        "Rare": (0.18, 0.62, 1.0),
+        "Epic": (0.72, 0.25, 1.0),
+        "Legendary": (1.0, 0.68, 0.08),
+        "Mythic": (1.0, 0.22, 0.62),
+        "Secret": (0.2, 1.0, 0.76),
+    }
+
+    for rarity, color in colors.items():
+        clear_scene()
+        mat = material(f"VFX_{rarity}Glow", color, 0.35)
+        mat.blend_method = "BLEND"
+        ring = add_torus(f"VFX_{rarity}GlowRing", (0, 0, 0.1), mat)
+        ring.scale = (1.45, 1.45, 0.08)
+        burst = add_uv_sphere(f"VFX_{rarity}GlowCore", (0, 0, 0.18), (0.34, 0.34, 0.08), mat)
+        export_objects([ring, burst], VFX_EXPORTS / f"VFX_{rarity}Glow.glb")
+
+
+def write_manifest() -> None:
+    brainrots = []
+    for model_name, display_name, _color, _style in BRAINROTS:
+        asset_key = model_name.replace("BR_", "", 1)
+        brainrots.append(
+            {
+                "id": asset_key,
+                "displayName": display_name,
+                "modelName": model_name,
+                "modelExport": f"exports/models/{model_name}.glb",
+                "iconTarget": f"exports/icons/{asset_key}.png",
+                "assetIdsModelKey": f"AssetIds.Models.{asset_key}",
+                "assetIdsIconKey": f"AssetIds.Icons.{asset_key}",
+                "animations": {
+                    clip: {
+                        "export": f"exports/animations/{model_name}_{clip}_placeholder.glb",
+                        "assetIdsKey": f"AssetIds.Animations.{clip.title() if clip != 'stun' else 'Stun'}",
+                    }
+                    for clip in ANIMATION_CLIPS
+                },
+            }
+        )
+
+    manifest = {
+        "schemaVersion": 1,
+        "purpose": "BrainrotGame Roblox upload checklist. Paste uploaded IDs into src/ReplicatedStorage/Shared/AssetIds.lua.",
+        "brainrots": brainrots,
+        "props": [
+            {"name": "PROP_PlotStand", "export": "exports/models/PROP_PlotStand.glb", "assetIdsKey": "AssetIds.VFX.PlotStand"},
+            {"name": "PROP_ZoneGate", "export": "exports/models/PROP_ZoneGate.glb", "assetIdsKey": "AssetIds.VFX.ZoneGate"},
+            {"name": "PROP_HideBush", "export": "exports/models/PROP_HideBush.glb", "assetIdsKey": "AssetIds.VFX.HideBush"},
+            {"name": "PROP_HideCrate", "export": "exports/models/PROP_HideCrate.glb", "assetIdsKey": "AssetIds.VFX.HideCrate"},
+            {"name": "PROP_RevealPlatform", "export": "exports/vfx/PROP_RevealPlatform.glb", "assetIdsKey": "AssetIds.VFX.RevealPlatform"},
+        ],
+        "rarityVfx": [
+            {
+                "rarity": rarity,
+                "export": f"exports/vfx/VFX_{rarity}Glow.glb",
+                "assetIdsKey": f"AssetIds.VFX.{rarity}Glow",
+            }
+            for rarity in RARITY_GLOWS
+        ],
+        "sounds": [
+            {
+                "key": key,
+                "sourcePlaceholder": f"exports/sounds/{key}.wav",
+                "assetIdsKey": f"AssetIds.Sounds.{key}",
+            }
+            for key in SOUND_KEYS
+        ],
+    }
+
+    (ROOT / "asset_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    lines = [
+        "# Sound Upload Checklist",
+        "",
+        "Create or source short Roblox-safe SFX for these keys, upload them to Roblox, then paste IDs into `src/ReplicatedStorage/Shared/AssetIds.lua`.",
+        "",
+    ]
+    lines.extend(f"- `{key}` -> `AssetIds.Sounds.{key}`" for key in SOUND_KEYS)
+    (SOUND_EXPORTS / "SOUND_KEYS.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -259,13 +384,15 @@ def main() -> None:
         keyframe_clip(objects[-1], "idle")
         export_model(model_name, objects)
 
-        for clip_name in ("idle", "run", "stun", "showcase"):
+        for clip_name in ANIMATION_CLIPS:
             keyframe_clip(objects[-1], clip_name)
             anim_path = ANIMATION_EXPORTS / f"{model_name}_{clip_name}_placeholder.glb"
             bpy.ops.export_scene.gltf(filepath=str(anim_path), use_selection=True, export_format="GLB", export_animations=True)
 
     clear_scene()
     create_props()
+    create_rarity_glows()
+    write_manifest()
 
 
 if __name__ == "__main__":
