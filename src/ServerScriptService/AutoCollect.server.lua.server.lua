@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local Debris = game:GetService("Debris")
+local ServerStorage = game:GetService("ServerStorage")
 
 local REMOTE_NAME = "AutoCollectMoney"
 
@@ -242,6 +243,20 @@ local function autoCollectPlayer(player)
 	end
 
 	requestCooldown[player.UserId] = now
+
+	local strictCollect = ServerStorage:FindFirstChild("BrainrotStrictCollectAllFunction")
+	if strictCollect and strictCollect:IsA("BindableFunction") then
+		local ok, result = pcall(function()
+			return strictCollect:Invoke(player)
+		end)
+
+		if ok and type(result) == "table" then
+			if result.success == true or (tonumber(result.total) or 0) > 0 then
+				print("[AutoCollect] strict collected", tostring(result.count or 0), "slots for", player.Name)
+			end
+			return
+		end
+	end
 
 	local plot = getOwnerPlot(player)
 

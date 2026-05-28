@@ -9,6 +9,7 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 
@@ -19,6 +20,17 @@ local MAX_PAIR_DISTANCE = 45
 
 local collectConnections = {}
 local collectDebounce = {}
+
+local collectAllFunction = ServerStorage:FindFirstChild("BrainrotStrictCollectAllFunction")
+if collectAllFunction and not collectAllFunction:IsA("BindableFunction") then
+	collectAllFunction:Destroy()
+	collectAllFunction = nil
+end
+if not collectAllFunction then
+	collectAllFunction = Instance.new("BindableFunction")
+	collectAllFunction.Name = "BrainrotStrictCollectAllFunction"
+	collectAllFunction.Parent = ServerStorage
+end
 
 local notifyRemote = ReplicatedStorage:FindFirstChild("NotifyUser")
 if not notifyRemote then
@@ -475,6 +487,26 @@ local function addMoney(player, amount)
 	updateCoinsEvent:FireClient(player, money.Value)
 end
 
+local function collectAssignedNpc(player, npc, mainPart)
+	if not player or not npc or not mainPart then
+		return 0
+	end
+
+	local amount = getEarned(npc)
+	if amount <= 0 then
+		mainPart:SetAttribute("PrivateCollectAmount", 0)
+		return 0
+	end
+
+	npc:SetAttribute("Earned", 0)
+	mainPart:SetAttribute("PrivateCollectGuiPart", true)
+	mainPart:SetAttribute("PrivateOwnerUserId", player.UserId)
+	mainPart:SetAttribute("PrivateCollectAmount", 0)
+	mainPart:SetAttribute("LinkedBrainrotUID", getNpcUid(npc))
+
+	return amount
+end
+
 local function collectFromPart(touchedPart, hit)
 	local character = hit and hit:FindFirstAncestorOfClass("Model")
 	if not character then
@@ -506,23 +538,60 @@ local function collectFromPart(touchedPart, hit)
 		return
 	end
 
-	local amount = getEarned(npc)
+	local amount = collectAssignedNpc(player, npc, mainPart)
 
 	if amount <= 0 then
-		mainPart:SetAttribute("PrivateCollectAmount", 0)
 		return
 	end
-
-	npc:SetAttribute("Earned", 0)
-
-	mainPart:SetAttribute("PrivateCollectGuiPart", true)
-	mainPart:SetAttribute("PrivateOwnerUserId", player.UserId)
-	mainPart:SetAttribute("PrivateCollectAmount", 0)
-	mainPart:SetAttribute("LinkedBrainrotUID", getNpcUid(npc))
 
 	addMoney(player, amount)
 	notify(player, "+$" .. formatMoney(amount), "success")
 end
+
+local function collectAllForPlayer(player)
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return {
+			success = false,
+			total = 0,
+			count = 0,
+		}
+	end
+
+	local plot = getPlayerPlot(player)
+	if not plot then
+		return {
+			success = false,
+			total = 0,
+			count = 0,
+		}
+	end
+
+	local collects, assigned = assignCollects(player, plot)
+	local total = 0
+	local count = 0
+
+	for _, collect in ipairs(collects) do
+		local npc = assigned[collect.mainPart]
+		local amount = collectAssignedNpc(player, npc, collect.mainPart)
+		if amount > 0 then
+			total += amount
+			count += 1
+		end
+	end
+
+	if total > 0 then
+		addMoney(player, total)
+		notify(player, "+$" .. formatMoney(total), "success")
+	end
+
+	return {
+		success = total > 0,
+		total = total,
+		count = count,
+	}
+end
+
+collectAllFunction.OnInvoke = collectAllForPlayer
 
 local function connectCollectContainer(collect)
 	for _, part in ipairs(getAllBaseParts(collect.container)) do
