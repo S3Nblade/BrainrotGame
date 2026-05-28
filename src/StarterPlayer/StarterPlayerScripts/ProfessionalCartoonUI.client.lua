@@ -800,7 +800,7 @@ local function scanSeenNpcs()
 
 	if npcFolder then
 		for _, npc in ipairs(npcFolder:GetChildren()) do
-			if npc:IsA("Model") and (npc:GetAttribute("InventoryOnly") == true or npc:GetAttribute("OwnerUserId") == player.UserId or npc:GetAttribute("CapturedByUserId") == player.UserId) then
+			if npc:IsA("Model") and (npc:GetAttribute("InventoryOnly") == true or tostring(npc:GetAttribute("OwnerUserId")) == tostring(player.UserId) or tostring(npc:GetAttribute("CapturedByUserId")) == tostring(player.UserId)) then
 				markSeenFromInstance(npc)
 			end
 		end
@@ -825,6 +825,154 @@ local function isIndexItemFound(item)
 	return seenNpcs[item.id] == true
 		or seenNpcs[item.modelName] == true
 		or seenNpcs[item.name] == true
+end
+
+local function isBrainrotInventoryInstance(instance)
+	if not instance then
+		return false
+	end
+
+	return instance:GetAttribute("BrainrotTool") == true
+		or instance:GetAttribute("InventoryOnly") == true
+		or instance:GetAttribute("BrainrotConfigId") ~= nil
+		or instance:GetAttribute("DirectInventoryUid") ~= nil
+		or instance:GetAttribute("InventoryUid") ~= nil
+		or instance:GetAttribute("CashPerSecond") ~= nil
+end
+
+local function getInventoryIdentity(instance)
+	local ids = {
+		instance:GetAttribute("BrainrotConfigId"),
+		instance:GetAttribute("BrainrotDiscoveryId"),
+		instance:GetAttribute("ModelName"),
+		instance:GetAttribute("BrainrotModelName"),
+		instance:GetAttribute("DisplayName"),
+		instance:GetAttribute("BrainrotName"),
+		instance.Name,
+	}
+
+	for _, id in ipairs(ids) do
+		if id ~= nil and tostring(id) ~= "" then
+			return tostring(id)
+		end
+	end
+
+	return "Unknown"
+end
+
+local function findIndexItemForInstance(instance)
+	local ids = {
+		instance:GetAttribute("BrainrotConfigId"),
+		instance:GetAttribute("BrainrotDiscoveryId"),
+		instance:GetAttribute("ModelName"),
+		instance:GetAttribute("BrainrotModelName"),
+		instance:GetAttribute("DisplayName"),
+		instance:GetAttribute("BrainrotName"),
+		instance.Name,
+	}
+
+	for _, item in ipairs(INDEX_NPCS) do
+		for _, id in ipairs(ids) do
+			if id ~= nil then
+				local value = tostring(id)
+				if value == item.id or value == item.modelName or value == item.name then
+					return item
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
+local function collectInventoryGroups()
+	local groups = {}
+	local seenUid = {}
+
+	local function addInstance(instance)
+		if not isBrainrotInventoryInstance(instance) then
+			return
+		end
+
+		local uid = instance:GetAttribute("BrainrotUID")
+			or instance:GetAttribute("UID")
+			or instance:GetAttribute("DirectInventoryUid")
+			or instance:GetAttribute("InventoryUid")
+			or instance:GetAttribute("BrainrotUid")
+
+		if uid ~= nil then
+			uid = tostring(uid)
+			if seenUid[uid] then
+				return
+			end
+			seenUid[uid] = true
+		end
+
+		local configItem = findIndexItemForInstance(instance)
+		local key = configItem and configItem.id or getInventoryIdentity(instance)
+		local group = groups[key]
+		if not group then
+			group = {
+				id = key,
+				name = configItem and configItem.name or tostring(instance:GetAttribute("DisplayName") or instance:GetAttribute("BrainrotName") or instance.Name or "Brainrot"),
+				rarity = configItem and configItem.rarity or tostring(instance:GetAttribute("Rarity") or "Common"),
+				zone = configItem and configItem.zone or tostring(instance:GetAttribute("ZoneDisplayName") or instance:GetAttribute("SpawnZone") or "Owned"),
+				cashPerSecond = configItem and configItem.cashPerSecond or tonumber(instance:GetAttribute("CashPerSecond") or instance:GetAttribute("MPS")) or 0,
+				count = 0,
+			}
+			groups[key] = group
+		end
+
+		group.count += 1
+		group.cashPerSecond = math.max(group.cashPerSecond or 0, tonumber(instance:GetAttribute("CashPerSecond") or instance:GetAttribute("MPS")) or 0)
+		if instance:GetAttribute("FirstDiscovery") == true then
+			group.hasFirstDiscovery = true
+		end
+	end
+
+	for _, container in ipairs({
+		player:FindFirstChild("Backpack"),
+		player.Character,
+		player:FindFirstChild("StarterGear"),
+	}) do
+		if container then
+			for _, child in ipairs(container:GetChildren()) do
+				if child:IsA("Tool") then
+					addInstance(child)
+				end
+			end
+		end
+	end
+
+	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
+	if npcFolder then
+		for _, npc in ipairs(npcFolder:GetChildren()) do
+			if npc:IsA("Model")
+				and npc:GetAttribute("InventoryOnly") == true
+				and (tostring(npc:GetAttribute("OwnerUserId")) == tostring(player.UserId) or tostring(npc:GetAttribute("CapturedByUserId")) == tostring(player.UserId) or tostring(npc:GetAttribute("HeldOwnerUserId")) == tostring(player.UserId)) then
+				addInstance(npc)
+			end
+		end
+	end
+
+	local list = {}
+	for _, group in pairs(groups) do
+		table.insert(list, group)
+	end
+
+	table.sort(list, function(a, b)
+		local rarityA = RARITY_ORDER[a.rarity] or 1
+		local rarityB = RARITY_ORDER[b.rarity] or 1
+		if rarityA ~= rarityB then
+			return rarityA > rarityB
+		end
+		if (a.cashPerSecond or 0) ~= (b.cashPerSecond or 0) then
+			return (a.cashPerSecond or 0) > (b.cashPerSecond or 0)
+		end
+		return tostring(a.name) < tostring(b.name)
+	end)
+
+	return list
 end
 
 local function renderIndex()
@@ -903,6 +1051,98 @@ local function renderIndex()
 
 		local rarity = makeLabel(card, "Rarity", found and item.rarity or "Locked", UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 98), 15, found and rarityColor or Color3.fromRGB(210, 218, 232), 34)
 		rarity.TextXAlignment = Enum.TextXAlignment.Left
+	end
+end
+
+local function renderInventory()
+	clearBody()
+	scanSeenNpcs()
+	title.Text = "INVENTORY"
+	subtitle.Text = "Your captured Brainrots, grouped by type."
+
+	local groups = collectInventoryGroups()
+	local totalOwned = 0
+	local totalMps = 0
+	for _, group in ipairs(groups) do
+		totalOwned += group.count
+		totalMps += (tonumber(group.cashPerSecond) or 0) * group.count
+	end
+
+	local summary = makePanel(body, "InventorySummary", THEME.Green, THEME.GreenDeep, 18, 28)
+	summary.Size = UDim2.new(1, 0, 0, 70)
+
+	local summaryText = makeLabel(
+		summary,
+		"Text",
+		tostring(totalOwned) .. " OWNED   +" .. formatNumber(totalMps) .. "/s",
+		UDim2.new(1, -24, 1, 0),
+		UDim2.new(0, 12, 0, 0),
+		26,
+		Color3.fromRGB(255, 255, 255),
+		32
+	)
+	summaryText.TextXAlignment = Enum.TextXAlignment.Left
+
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "InventoryGrid"
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.Position = UDim2.new(0, 0, 0, 84)
+	scroll.Size = UDim2.new(1, 0, 1, -84)
+	scroll.CanvasSize = UDim2.fromOffset(0, 0)
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.ScrollBarThickness = 6
+	scroll.ZIndex = 28
+	scroll.Parent = body
+
+	local grid = Instance.new("UIGridLayout")
+	grid.CellSize = UDim2.fromOffset(198, 150)
+	grid.CellPadding = UDim2.fromOffset(12, 12)
+	grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	grid.SortOrder = Enum.SortOrder.LayoutOrder
+	grid.Parent = scroll
+
+	if #groups == 0 then
+		local empty = makePanel(scroll, "EmptyInventory", THEME.Gold, THEME.GoldDeep, 18, 30)
+		empty.Size = UDim2.fromOffset(420, 140)
+		makeLabel(empty, "Text", "Capture a Brainrot to fill this up.", UDim2.new(1, -24, 1, 0), UDim2.new(0, 12, 0, 0), 24, Color3.fromRGB(255, 255, 255), 34)
+		return
+	end
+
+	for index, group in ipairs(groups) do
+		local rarityColor = RARITY_COLORS[group.rarity] or RARITY_COLORS.Common
+		local card = makePanel(
+			scroll,
+			tostring(group.id),
+			rarityColor:Lerp(Color3.fromRGB(255, 255, 255), 0.18),
+			rarityColor:Lerp(THEME.Ink, 0.35),
+			18,
+			30
+		)
+		card.LayoutOrder = index
+		card.Size = UDim2.fromOffset(198, 150)
+
+		local badge = makePanel(card, "CountBadge", THEME.Gold, THEME.GoldDeep, 14, 36)
+		badge.Position = UDim2.new(1, -58, 0, 12)
+		badge.Size = UDim2.fromOffset(46, 32)
+		makeLabel(badge, "Text", "x" .. tostring(group.count), UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 16, Color3.fromRGB(255, 255, 255), 38)
+
+		local icon = makePanel(card, "Icon", THEME.Cream, Color3.fromRGB(255, 226, 142), 16, 32)
+		icon.Position = UDim2.new(0, 12, 0, 12)
+		icon.Size = UDim2.fromOffset(56, 56)
+		makeLabel(icon, "Letter", string.sub(group.name, 1, 1), UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 28, rarityColor, 34)
+
+		local name = makeLabel(card, "Name", group.name, UDim2.new(1, -86, 0, 42), UDim2.new(0, 76, 0, 15), 18, Color3.fromRGB(255, 255, 255), 34)
+		name.TextXAlignment = Enum.TextXAlignment.Left
+
+		local rarity = makeLabel(card, "Rarity", string.upper(group.rarity), UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 78), 15, rarityColor, 34)
+		rarity.TextXAlignment = Enum.TextXAlignment.Left
+
+		local value = makeLabel(card, "Value", "+" .. formatNumber(group.cashPerSecond or 0) .. "/s each", UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 104), 15, Color3.fromRGB(255, 250, 210), 34)
+		value.TextXAlignment = Enum.TextXAlignment.Left
+
+		local hint = makeLabel(card, "Hint", "Hold E on a plot slot to place", UDim2.new(1, -24, 0, 20), UDim2.new(0, 12, 0, 126), 12, Color3.fromRGB(245, 255, 235), 34)
+		hint.TextXAlignment = Enum.TextXAlignment.Left
 	end
 end
 
@@ -1087,7 +1327,7 @@ local function renderTabs()
 
 	table.clear(tabButtons)
 
-	for order, mode in ipairs({ "Shop", "Index", "Rebirth" }) do
+	for order, mode in ipairs({ "Shop", "Inventory", "Index", "Rebirth" }) do
 		local active = currentMode == mode
 		local button = makeButton(
 			tabRail,
@@ -1104,6 +1344,8 @@ local function renderTabs()
 			if mode == "Shop" then
 				requestUpgradeRefresh()
 				renderShop()
+			elseif mode == "Inventory" then
+				renderInventory()
 			elseif mode == "Index" then
 				renderIndex()
 			else
@@ -1121,6 +1363,8 @@ local function renderCurrent()
 	if currentMode == "Shop" then
 		requestUpgradeRefresh()
 		renderShop()
+	elseif currentMode == "Inventory" then
+		renderInventory()
 	elseif currentMode == "Index" then
 		renderIndex()
 	else
@@ -1307,6 +1551,17 @@ local function bindNpcIndexTracking()
 		container.ChildAdded:Connect(function(child)
 			if child:IsA("Tool") and (child:GetAttribute("BrainrotTool") == true or child:GetAttribute("InventoryOnly") == true) then
 				markSeenFromInstance(child)
+				if isOpen and currentMode == "Inventory" then
+					renderInventory()
+				elseif isOpen and currentMode == "Index" then
+					renderIndex()
+				end
+			end
+		end)
+
+		container.ChildRemoved:Connect(function(child)
+			if child:IsA("Tool") and isOpen and currentMode == "Inventory" then
+				renderInventory()
 			end
 		end)
 	end
@@ -1317,8 +1572,13 @@ local function bindNpcIndexTracking()
 
 	if npcFolder then
 		npcFolder.ChildAdded:Connect(function(npc)
-			if npc:IsA("Model") then
+			if npc:IsA("Model") and (npc:GetAttribute("InventoryOnly") == true or tostring(npc:GetAttribute("OwnerUserId")) == tostring(player.UserId) or tostring(npc:GetAttribute("CapturedByUserId")) == tostring(player.UserId)) then
 				markSeenFromInstance(npc)
+				if isOpen and currentMode == "Inventory" then
+					renderInventory()
+				elseif isOpen and currentMode == "Index" then
+					renderIndex()
+				end
 			end
 		end)
 	end
@@ -1333,7 +1593,9 @@ local function bindNpcIndexTracking()
 
 	player:GetAttributeChangedSignal("BrainrotDiscoveredJson"):Connect(function()
 		scanServerDiscoveries()
-		if isOpen and currentMode == "Index" then
+		if isOpen and currentMode == "Inventory" then
+			renderInventory()
+		elseif isOpen and currentMode == "Index" then
 			renderIndex()
 		end
 	end)
@@ -1345,6 +1607,9 @@ _G.BrainrotProUI = {
 	end,
 	OpenIndex = function()
 		openModal("Index")
+	end,
+	OpenInventory = function()
+		openModal("Inventory")
 	end,
 	OpenRebirth = function()
 		openModal("Rebirth")
