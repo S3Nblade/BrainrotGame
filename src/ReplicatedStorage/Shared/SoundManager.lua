@@ -59,7 +59,7 @@ end
 function SoundManager.Play2D(name, options)
 	options = type(options) == "table" and options or {}
 
-	local soundId = cleanAssetId(options.soundId) or SoundManager.GetSoundId(name)
+	local soundId = SoundManager.GetSoundId(name) or cleanAssetId(options.soundId)
 	if not soundId then
 		return nil
 	end

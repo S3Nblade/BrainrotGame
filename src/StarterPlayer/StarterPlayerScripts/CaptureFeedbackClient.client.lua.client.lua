@@ -14,6 +14,18 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
+local SoundManager = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local soundModule = sharedFolder and sharedFolder:FindFirstChild("SoundManager")
+	if soundModule and soundModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, soundModule)
+		if ok and type(result) == "table" then
+			SoundManager = result
+		end
+	end
+end
 
 local GOLD = Color3.fromRGB(255, 220, 45)
 local GOLD_LIGHT = Color3.fromRGB(255, 255, 190)
@@ -329,6 +341,19 @@ end
 
 local function playSound(position)
 	local soundPart = createAnchor(position)
+
+	if SoundManager and SoundManager.PlayWorld then
+		local played = SoundManager.PlayWorld("capture_success", soundPart, {
+			soundId = "rbxassetid://9118828563",
+			volume = 0.25,
+			playbackSpeed = 1.45,
+			minInterval = 0.08,
+			lifetime = 2,
+		})
+		if played then
+			return
+		end
+	end
 
 	local sound = Instance.new("Sound")
 	sound.Name = "CapturePopSound"

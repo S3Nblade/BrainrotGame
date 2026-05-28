@@ -16,6 +16,18 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local npcFolder = workspace:WaitForChild("BrainrotNPCs")
+local SoundManager = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local soundModule = sharedFolder and sharedFolder:FindFirstChild("SoundManager")
+	if soundModule and soundModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, soundModule)
+		if ok and type(result) == "table" then
+			SoundManager = result
+		end
+	end
+end
 
 local requestRemote = ReplicatedStorage:WaitForChild("CaptureNPCRequest")
 local feedbackRemote = ReplicatedStorage:WaitForChild("CaptureHitFeedback")
@@ -122,6 +134,19 @@ local function getNearestNpc()
 end
 
 local function playSwingSound()
+	if SoundManager and SoundManager.Play2D then
+		local played = SoundManager.Play2D("hit", {
+			soundId = "rbxassetid://9118828563",
+			volume = 0.18,
+			playbackSpeed = 1.35,
+			minInterval = 0.06,
+			lifetime = 2,
+		})
+		if played then
+			return
+		end
+	end
+
 	local sound = Instance.new("Sound")
 	sound.Name = "CaptureNetSwing"
 	sound.SoundId = "rbxassetid://9118828563"

@@ -13,6 +13,18 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local npcFolder = workspace:WaitForChild("BrainrotNPCs")
 local remote = ReplicatedStorage:WaitForChild("BrainrotPlacedFeedback")
+local SoundManager = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local soundModule = sharedFolder and sharedFolder:FindFirstChild("SoundManager")
+	if soundModule and soundModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, soundModule)
+		if ok and type(result) == "table" then
+			SoundManager = result
+		end
+	end
+end
 
 local FONT = Enum.Font.FredokaOne
 
@@ -104,6 +116,19 @@ local function getRarityColor(rarity)
 end
 
 local function playSound()
+	if SoundManager and SoundManager.Play2D then
+		local played = SoundManager.Play2D("capture_success", {
+			soundId = "rbxassetid://9120386436",
+			volume = 0.36,
+			playbackSpeed = 1.22,
+			minInterval = 0.12,
+			lifetime = 3,
+		})
+		if played then
+			return
+		end
+	end
+
 	local sound = Instance.new("Sound")
 	sound.Name = "BrainrotPlacedSound"
 	sound.SoundId = "rbxassetid://9120386436"
