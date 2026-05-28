@@ -14,6 +14,20 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local EggConfig = require(ServerScriptService:WaitForChild("EggConfig"))
+local BalanceConfig = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local balanceModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if balanceModule and balanceModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, balanceModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
+		else
+			warn("[ZoneEggHatching] BalanceConfig failed to load:", result)
+		end
+	end
+end
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 local EGG_FOLDER_NAME = NPC_FOLDER_NAME
@@ -34,6 +48,9 @@ local COMMON_EGG_TEMPLATE_NAME = "CommonEgg"
 local COMMON_EGG_RUN_ANIMATION_ID = "126840157397198"
 local COMMON_EGG_STUNNED_ANIMATION_ID = "120071709602508"
 local rng = Random.new()
+local INVENTORY_BALANCE = type(BalanceConfig) == "table" and type(BalanceConfig.Inventory) == "table" and BalanceConfig.Inventory or {}
+local BASE_INVENTORY_CAPACITY = tonumber(INVENTORY_BALANCE.BaseCapacity) or 20
+local MAX_INVENTORY_CAPACITY = tonumber(INVENTORY_BALANCE.MaxCapacity) or 75
 
 local activeById = {}
 local lastDamageAt = {}
@@ -1196,9 +1213,57 @@ local function playerAlreadyHasTool(player, uid)
 	return false
 end
 
+local function isBrainrotTool(tool)
+	return tool
+		and tool:IsA("Tool")
+		and (
+			tool:GetAttribute("IsBrainrot") == true
+			or tool:GetAttribute("BrainrotTool") == true
+			or tool:GetAttribute("InventoryOnly") == true
+			or tool:GetAttribute("BrainrotUID") ~= nil
+			or tool:GetAttribute("UID") ~= nil
+			or tool:GetAttribute("InventoryUid") ~= nil
+		)
+end
+
+local function getInventoryCapacity(player)
+	local bonus = math.max(0, math.floor(tonumber(player:GetAttribute("InventoryCapacityBonus")) or 0))
+	return math.clamp(BASE_INVENTORY_CAPACITY + bonus, 1, MAX_INVENTORY_CAPACITY)
+end
+
+local function getInventoryCount(player)
+	local seen = {}
+	local count = 0
+
+	for _, container in ipairs({ player:FindFirstChild("Backpack"), player.Character, player:FindFirstChild("StarterGear") }) do
+		if container then
+			for _, item in ipairs(container:GetChildren()) do
+				if isBrainrotTool(item) then
+					local uid = tostring(item:GetAttribute("BrainrotUID") or item:GetAttribute("UID") or item:GetAttribute("InventoryUid") or item:GetDebugId())
+					if not seen[uid] then
+						seen[uid] = true
+						count += 1
+					end
+				end
+			end
+		end
+	end
+
+	return count
+end
+
+local function hasInventorySpace(player)
+	return getInventoryCount(player) < getInventoryCapacity(player)
+end
+
 local function createRewardTool(player, rewardNpc, mutationName, mutationInfo, baseMps)
 	local uid = tostring(rewardNpc:GetAttribute("BrainrotUID") or HttpService:GenerateGUID(false))
 	if playerAlreadyHasTool(player, uid) then
+		return nil
+	end
+
+	if not hasInventorySpace(player) then
+		notify(player, "Inventory full! Upgrade Inventory Capacity or place Brainrots on your plot.", "warning")
 		return nil
 	end
 
@@ -1458,6 +1523,11 @@ end
 
 local function finishEgg(player, egg, eggData)
 	if not egg or not egg.Parent or egg:GetAttribute("HatchInProgress") == true then
+		return
+	end
+
+	if not hasInventorySpace(player) then
+		notify(player, "Inventory full! Upgrade Inventory Capacity or place Brainrots on your plot.", "warning")
 		return
 	end
 

@@ -35,6 +35,14 @@ local connectedPrompts = {}
 local watchedNpcs = {}
 local discoveryStore = DataStoreService:GetDataStore(DISCOVERY_STORE_NAME)
 local BrainrotConfig = nil
+local BalanceConfig = nil
+local notifyRemote = ReplicatedStorage:FindFirstChild("NotifyUser")
+
+if not notifyRemote then
+	notifyRemote = Instance.new("RemoteEvent")
+	notifyRemote.Name = "NotifyUser"
+	notifyRemote.Parent = ReplicatedStorage
+end
 
 do
 	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
@@ -47,7 +55,21 @@ do
 			warn("[BrainrotCinematicPickup] BrainrotConfig failed to load:", result)
 		end
 	end
+
+	local balanceModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if balanceModule and balanceModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, balanceModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
+		else
+			warn("[BrainrotCinematicPickup] BalanceConfig failed to load:", result)
+		end
+	end
 end
+
+local INVENTORY_BALANCE = type(BalanceConfig) == "table" and type(BalanceConfig.Inventory) == "table" and BalanceConfig.Inventory or {}
+local BASE_INVENTORY_CAPACITY = tonumber(INVENTORY_BALANCE.BaseCapacity) or 20
+local MAX_INVENTORY_CAPACITY = tonumber(INVENTORY_BALANCE.MaxCapacity) or 75
 
 local function log(...)
 	print("[BrainrotCinematicPickup]", ...)
@@ -55,6 +77,15 @@ end
 
 local function warnLog(...)
 	warn("[BrainrotCinematicPickup]", ...)
+end
+
+local function notify(player, message, variant)
+	if notifyRemote and notifyRemote:IsA("RemoteEvent") then
+		notifyRemote:FireClient(player, {
+			message = message,
+			variant = variant or "warning",
+		})
+	end
 end
 
 local function getRoot(model)
@@ -449,11 +480,57 @@ local function playerAlreadyHasTool(player, uid)
 	return false
 end
 
+local function isBrainrotTool(tool)
+	return tool
+		and tool:IsA("Tool")
+		and (
+			tool:GetAttribute("IsBrainrot") == true
+			or tool:GetAttribute("BrainrotTool") == true
+			or tool:GetAttribute("InventoryOnly") == true
+			or getUid(tool) ~= nil
+		)
+end
+
+local function getInventoryCapacity(player)
+	local bonus = math.max(0, math.floor(tonumber(player:GetAttribute("InventoryCapacityBonus")) or 0))
+	return math.clamp(BASE_INVENTORY_CAPACITY + bonus, 1, MAX_INVENTORY_CAPACITY)
+end
+
+local function getInventoryCount(player)
+	local seen = {}
+	local count = 0
+
+	for _, container in ipairs({ player:FindFirstChild("Backpack"), player.Character, player:FindFirstChild("StarterGear") }) do
+		if container then
+			for _, item in ipairs(container:GetChildren()) do
+				if isBrainrotTool(item) then
+					local uid = tostring(getUid(item) or item:GetDebugId())
+					if not seen[uid] then
+						seen[uid] = true
+						count += 1
+					end
+				end
+			end
+		end
+	end
+
+	return count
+end
+
+local function hasInventorySpace(player)
+	return getInventoryCount(player) < getInventoryCapacity(player)
+end
+
 local function createBrainrotTool(player, npc)
 	local uid = ensureUid(npc)
 
 	if playerAlreadyHasTool(player, uid) then
 		warnLog("Player already has tool for UID:", uid)
+		return nil
+	end
+
+	if not hasInventorySpace(player) then
+		notify(player, "Inventory full! Upgrade Inventory Capacity or place Brainrots on your plot.", "warning")
 		return nil
 	end
 
@@ -659,6 +736,11 @@ local function captureNpc(player, npc, prompt)
 
 	if not isDefeated(npc) then
 		warnLog("Tried to capture but NPC is not defeated:", npc:GetFullName())
+		return
+	end
+
+	if not hasInventorySpace(player) then
+		notify(player, "Inventory full! Upgrade Inventory Capacity or place Brainrots on your plot.", "warning")
 		return
 	end
 

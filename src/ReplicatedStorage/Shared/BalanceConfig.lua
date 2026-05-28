@@ -40,6 +40,11 @@ local BalanceConfig = {
 		CashMultiplierPerRebirth = 2,
 	},
 
+	Inventory = {
+		BaseCapacity = 20,
+		MaxCapacity = 75,
+	},
+
 	Quests = {
 		UpdateInterval = 2.5,
 	},
