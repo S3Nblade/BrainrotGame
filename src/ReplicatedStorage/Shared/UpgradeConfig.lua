@@ -4,6 +4,7 @@ local UpgradeConfig = {}
 
 UpgradeConfig.Definitions = {
 	TrainingPower = {
+		order = 10,
 		title = "Training Power",
 		desc = "More strength every training hit.",
 		icon = "STR",
@@ -17,6 +18,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	AutoTrainRate = {
+		order = 20,
 		title = "Auto Train Rate",
 		desc = "Auto training ticks faster.",
 		icon = "SPD",
@@ -31,6 +33,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	CapturePower = {
+		order = 30,
 		title = "Capture Power",
 		desc = "Stun wild Brainrots faster.",
 		icon = "POW",
@@ -44,6 +47,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	Luck = {
+		order = 40,
 		title = "Luck",
 		desc = "Better odds for rare Brainrots.",
 		icon = "LUK",
@@ -57,6 +61,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	InventoryCapacity = {
+		order = 50,
 		title = "Inventory Capacity",
 		desc = "Carry more captured Brainrots.",
 		icon = "BAG",
@@ -70,6 +75,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	PlotSlotValue = {
+		order = 60,
 		title = "Plot Slot Value",
 		desc = "Discount future plot slot unlocks.",
 		icon = "PLOT",
@@ -84,6 +90,7 @@ UpgradeConfig.Definitions = {
 	},
 
 	CashBoost = {
+		order = 70,
 		title = "Cash Boost",
 		desc = "Placed Brainrots earn more money.",
 		icon = "CASH",

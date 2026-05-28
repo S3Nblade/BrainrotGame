@@ -622,10 +622,22 @@ local function makeUpgradeCard(parent, data, order)
 	status.Size = UDim2.fromOffset(70, 26)
 	makeLabel(status, "Text", statusText, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 13, Color3.fromRGB(255, 255, 255), 36)
 
-	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -100, 0, 36), UDim2.new(0, 12, 0, 20), 23, THEME.InkSoft, 34)
+	local iconBadge = makePanel(card, "IconBadge", accentTop, accentBottom, 16, 34)
+	iconBadge.Position = UDim2.new(0, 14, 0, 22)
+	iconBadge.Size = UDim2.fromOffset(54, 54)
+
+	local iconText = tostring(data.icon or "")
+	if iconText == "" then
+		iconText = string.sub(tostring(data.title or "?"), 1, 3)
+	end
+
+	local icon = makeLabel(iconBadge, "Icon", string.upper(iconText), UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 16, Color3.fromRGB(255, 255, 255), 36)
+	icon.TextStrokeTransparency = 0.12
+
+	local name = makeLabel(card, "Name", tostring(data.title or "Upgrade"), UDim2.new(1, -156, 0, 36), UDim2.new(0, 78, 0, 20), 21, THEME.InkSoft, 34)
 	name.TextXAlignment = Enum.TextXAlignment.Left
 
-	local desc = makeLabel(card, "Description", tostring(data.desc or ""), UDim2.new(1, -24, 0, 44), UDim2.new(0, 12, 0, 58), 16, Color3.fromRGB(82, 74, 70), 34)
+	local desc = makeLabel(card, "Description", tostring(data.desc or ""), UDim2.new(1, -94, 0, 48), UDim2.new(0, 78, 0, 58), 15, Color3.fromRGB(82, 74, 70), 34)
 	desc.TextXAlignment = Enum.TextXAlignment.Left
 
 	local levelText = makeLabel(

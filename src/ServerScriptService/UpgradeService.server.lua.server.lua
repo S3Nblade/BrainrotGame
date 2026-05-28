@@ -36,6 +36,7 @@ end
 
 local DEFAULT_DEFINITIONS = {
 	TrainingPower = {
+		order = 10,
 		title = "Training Power",
 		desc = "More strength every training hit.",
 		icon = "STR",
@@ -48,6 +49,7 @@ local DEFAULT_DEFINITIONS = {
 		},
 	},
 	AutoTrainRate = {
+		order = 20,
 		title = "Auto Train Rate",
 		desc = "Auto Train clicks faster.",
 		icon = "SPD",
@@ -188,6 +190,7 @@ local function buildPayload(player)
 
 		table.insert(upgrades, {
 			key = key,
+			order = tonumber(def.order) or 999,
 			title = tostring(def.title or key),
 			desc = tostring(def.desc or ""),
 			icon = tostring(def.icon or ""),
@@ -200,6 +203,10 @@ local function buildPayload(player)
 	end
 
 	table.sort(upgrades, function(a, b)
+		if (tonumber(a.order) or 999) ~= (tonumber(b.order) or 999) then
+			return (tonumber(a.order) or 999) < (tonumber(b.order) or 999)
+		end
+
 		return tostring(a.key) < tostring(b.key)
 	end)
 
