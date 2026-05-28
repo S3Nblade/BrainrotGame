@@ -226,6 +226,52 @@ local CLAIM_COOLDOWN = 0.75
 local claimCooldowns = {}
 local dailyQuestStateByUserId = {}
 
+local DEFAULT_DEBUG_CONFIG = {
+	DebugEnabled = false,
+	LogGameplayEvents = false,
+	LogDataEvents = false,
+	LogQuestEvents = false,
+	WarnOnInvalidRemotes = true,
+	RateLimitWarnings = true,
+}
+
+local function loadDebugConfig()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("DebugConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" then
+			local merged = table.clone(DEFAULT_DEBUG_CONFIG)
+			for key, value in pairs(config) do
+				merged[key] = value
+			end
+			return merged
+		end
+	end
+
+	return DEFAULT_DEBUG_CONFIG
+end
+
+local DEBUG_CONFIG = loadDebugConfig()
+
+local function logDebug(category, eventName, player, payload)
+	if not DEBUG_CONFIG.DebugEnabled then
+		return
+	end
+
+	if category == "gameplay" and not DEBUG_CONFIG.LogGameplayEvents then
+		return
+	elseif category == "data" and not DEBUG_CONFIG.LogDataEvents then
+		return
+	elseif category == "quest" and not DEBUG_CONFIG.LogQuestEvents then
+		return
+	end
+
+	local user = if typeof(player) == "Instance" and player:IsA("Player") then (player.Name .. ":" .. tostring(player.UserId)) else "server"
+	print("[BrainrotAnalytics]", category, eventName, user, payload or {})
+end
+
 local RARITY_ORDER = {
 	Common = 1,
 	Uncommon = 2,
@@ -372,6 +418,10 @@ local function loadQuestProgress(player)
 
 	player:SetAttribute("BrainrotQuestLevel", level)
 	player:SetAttribute("BrainrotQuestSchemaVersion", 1)
+	logDebug("data", "DataLoaded", player, {
+		store = "QuestProgress",
+		level = level,
+	})
 	return level
 end
 
@@ -388,6 +438,11 @@ local function saveQuestProgress(player)
 
 	if not ok then
 		warn("[QuestService] Failed to save quest progress for", player.Name, err)
+	else
+		logDebug("data", "DataSaved", player, {
+			store = "QuestProgress",
+			level = level,
+		})
 	end
 end
 
@@ -437,6 +492,10 @@ local function loadDailyQuestState(player)
 	local state = normalizeDailyQuestState(ok and result or nil)
 	dailyQuestStateByUserId[player.UserId] = state
 	player:SetAttribute("BrainrotDailyQuestDay", state.dayKey)
+	logDebug("data", "DataLoaded", player, {
+		store = "DailyQuests",
+		dayKey = state.dayKey,
+	})
 
 	return state
 end
@@ -470,6 +529,11 @@ local function saveDailyQuestState(player)
 
 	if not ok then
 		warn("[QuestService] Failed to save daily quest state for", player.Name, err)
+	else
+		logDebug("data", "DataSaved", player, {
+			store = "DailyQuests",
+			dayKey = state.dayKey,
+		})
 	end
 end
 
@@ -650,6 +714,12 @@ claimQuestRemote.OnServerEvent:Connect(function(player)
 	end
 
 	addCurrency(player, quest.RewardType, quest.RewardAmount)
+	logDebug("quest", "QuestCompleted", player, {
+		level = level,
+		title = quest.Title,
+		rewardType = quest.RewardType,
+		rewardAmount = quest.RewardAmount,
+	})
 	notifyRemote:FireClient(player, {
 		message = "Quest complete! +" .. tostring(quest.RewardAmount) .. " " .. tostring(quest.RewardType),
 		variant = "success",
@@ -675,6 +745,12 @@ local function claimReadyDailyQuests(player)
 			claimedAny = true
 
 			addCurrency(player, tostring(quest.RewardType or "Coins"), math.floor(tonumber(quest.RewardAmount) or 0))
+			logDebug("quest", "DailyQuestCompleted", player, {
+				id = id,
+				title = quest.Title,
+				rewardType = quest.RewardType,
+				rewardAmount = quest.RewardAmount,
+			})
 			notifyRemote:FireClient(player, {
 				message = "Daily complete: " .. tostring(quest.Title or "Quest") .. "!",
 				variant = "success",
@@ -690,8 +766,16 @@ end
 
 local function applyGameplayEvent(eventName, player, payload)
 	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		if DEBUG_CONFIG.DebugEnabled and DEBUG_CONFIG.WarnOnInvalidRemotes then
+			warn("[QuestService] Ignored gameplay event without valid player:", eventName)
+		end
 		return
 	end
+
+	logDebug("gameplay", "GameplayEvent", player, {
+		eventName = tostring(eventName or ""),
+		payload = payload,
+	})
 
 	local state = getDailyQuestState(player)
 	local changed = false
