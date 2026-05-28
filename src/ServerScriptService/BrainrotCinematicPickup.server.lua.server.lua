@@ -19,7 +19,7 @@ local NPC_FOLDER_NAME = "BrainrotNPCs"
 local PROMPT_NAME = "BrainrotCinematicCapturePrompt"
 local PROMPT_ACTION_TEXT = "Capture"
 local PROMPT_DISTANCE = 13
-local SCAN_EVERY = 0.15
+local SCAN_EVERY = 2
 local DISCOVERY_STORE_NAME = "BrainrotDiscoveries_v1"
 local START_NPC_REVEAL_REMOTE_NAME = "StartNPCReveal"
 
@@ -32,6 +32,7 @@ end
 
 local activePickups = {}
 local connectedPrompts = {}
+local watchedNpcs = {}
 local discoveryStore = DataStoreService:GetDataStore(DISCOVERY_STORE_NAME)
 local BrainrotConfig = nil
 
@@ -779,6 +780,11 @@ local function watchNpc(npc)
 	if not npc:IsA("Model") then
 		return
 	end
+	if watchedNpcs[npc] then
+		return
+	end
+
+	watchedNpcs[npc] = true
 
 	npc.AttributeChanged:Connect(function()
 		task.defer(function()
@@ -795,6 +801,11 @@ end
 
 npcFolder.ChildAdded:Connect(function(child)
 	watchNpc(child)
+end)
+
+npcFolder.ChildRemoved:Connect(function(child)
+	watchedNpcs[child] = nil
+	activePickups[child] = nil
 end)
 
 for _, child in ipairs(npcFolder:GetChildren()) do
