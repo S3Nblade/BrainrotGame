@@ -14,6 +14,9 @@ local BalanceConfig = {
 		FleeRadius = 45,
 		FleeUpdateInterval = 0.35,
 		RespawnDelay = 4,
+		WanderMinWait = 2.0,
+		WanderMaxWait = 4.5,
+		WanderMoveTimeout = 5,
 	},
 
 	Plot = {

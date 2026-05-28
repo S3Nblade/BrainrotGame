@@ -23,6 +23,27 @@ local rng = Random.new()
 local areaCache = {}
 local lastAreaRefresh = 0
 
+local BalanceConfig = nil
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local configModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if configModule and configModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, configModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
+		else
+			warn("[ZoneNPCSpawner] BalanceConfig failed to load:", result)
+		end
+	end
+end
+
+local NPC_BALANCE = (BalanceConfig and BalanceConfig.NPC) or {}
+local WANDER_MIN_WAIT = tonumber(NPC_BALANCE.WanderMinWait) or 2.0
+local WANDER_MAX_WAIT = tonumber(NPC_BALANCE.WanderMaxWait) or 4.5
+local WANDER_MOVE_TIMEOUT = tonumber(NPC_BALANCE.WanderMoveTimeout) or 5
+local FLEE_RADIUS = tonumber(NPC_BALANCE.FleeRadius) or 45
+local FLEE_UPDATE_INTERVAL = tonumber(NPC_BALANCE.FleeUpdateInterval) or 0.35
+
 local RARITY_CAPTURE_HP = {
 	Common = 45,
 	Uncommon = 60,
@@ -1363,6 +1384,10 @@ local function prepareNPC(npc, zoneName, rarity, mps)
 	npc:SetAttribute("CapturePanic", false)
 	npc:SetAttribute("CaptureShielded", false)
 	npc:SetAttribute("CaptureShieldEndTime", 0)
+	npc:SetAttribute("BrainrotAIState", "Idle")
+	npc:SetAttribute("AIState", "Idle")
+	npc:SetAttribute("ZoneLeashRadius", FLEE_RADIUS)
+	npc:SetAttribute("ZoneFleeUpdateInterval", FLEE_UPDATE_INTERVAL)
 	npc:SetAttribute("CanPickup", false)
 	npc:SetAttribute("PickupReady", false)
 	npc:SetAttribute("ReadyToPickup", false)
@@ -1397,23 +1422,37 @@ local function prepareNPC(npc, zoneName, rarity, mps)
 	end
 end
 
+local function setNpcState(npc, state)
+	if npc and npc.Parent then
+		npc:SetAttribute("BrainrotAIState", state)
+		npc:SetAttribute("AIState", state)
+	end
+end
+
 local function shouldWander(npc)
 	if not npc or not npc.Parent then
 		return false
 	end
 
 	if not isWildNpc(npc) then
+		setNpcState(npc, "Captured")
 		return false
 	end
 
-	if npc:GetAttribute("CaptureStunned") == true
-		or npc:GetAttribute("CapturePanic") == true
+	if npc:GetAttribute("CaptureStunned") == true then
+		setNpcState(npc, "Stunned")
+		return false
+	end
+
+	if npc:GetAttribute("CapturePanic") == true
 		or npc:GetAttribute("CaptureChaseActive") == true then
+		setNpcState(npc, "Fleeing")
 		return false
 	end
 
 	local hp = tonumber(npc:GetAttribute("CaptureHP"))
 	if hp ~= nil and hp <= 0 then
+		setNpcState(npc, "Stunned")
 		return false
 	end
 
@@ -1423,6 +1462,7 @@ end
 local function startWander(npc, zoneName)
 	local token = HttpService:GenerateGUID(false)
 	npc:SetAttribute("ZoneWanderToken", token)
+	setNpcState(npc, "Idle")
 
 	task.spawn(function()
 		task.wait(rng:NextNumber(0.5, 2.0))
@@ -1434,6 +1474,7 @@ local function startWander(npc, zoneName)
 				local target = chooseSpawnPosition(zoneName)
 
 				if target then
+					setNpcState(npc, "Hiding")
 					humanoid.WalkSpeed = ZONES[zoneName].WalkSpeed or humanoid.WalkSpeed
 					humanoid:MoveTo(target)
 
@@ -1443,7 +1484,7 @@ local function startWander(npc, zoneName)
 					end)
 
 					local started = os.clock()
-					while not done and os.clock() - started < 5 and shouldWander(npc) do
+					while not done and os.clock() - started < WANDER_MOVE_TIMEOUT and shouldWander(npc) do
 						task.wait(0.25)
 					end
 
@@ -1451,7 +1492,11 @@ local function startWander(npc, zoneName)
 				end
 			end
 
-			task.wait(rng:NextNumber(2.0, 4.5))
+			if shouldWander(npc) then
+				setNpcState(npc, "Idle")
+			end
+
+			task.wait(rng:NextNumber(WANDER_MIN_WAIT, WANDER_MAX_WAIT))
 		end
 	end)
 end
