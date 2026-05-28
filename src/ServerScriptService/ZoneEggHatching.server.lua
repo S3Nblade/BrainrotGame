@@ -6,6 +6,7 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local ServerStorage = game:GetService("ServerStorage")
+local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
@@ -21,6 +22,8 @@ local REVEAL_REMOTE_NAME = "EggRevealResult"
 local LEGACY_REVEAL_REMOTE_NAME = "ZoneEggHatchResult"
 local START_NPC_REVEAL_REMOTE_NAME = "StartNPCReveal"
 local HATCH_REQUEST_REMOTE_NAME = "HatchStunnedEggRequest"
+local DISCOVERY_STORE_NAME = "BrainrotDiscoveries_v1"
+local DISCOVERY_AUTOSAVE_INTERVAL = 60
 
 local INITIAL_DELAY = 3
 local DEFAULT_DAMAGE = 10
@@ -35,6 +38,8 @@ local rng = Random.new()
 local activeById = {}
 local lastDamageAt = {}
 local lastHatchRequestAt = {}
+local discoveredByUserId = {}
+local discoveryDirtyByUserId = {}
 local zoneRuntime = {}
 local eggAnimationState = setmetatable({}, { __mode = "k" })
 local hatchStunnedEgg = nil
@@ -78,6 +83,7 @@ local legacyRevealRemote = ensureRemote(ReplicatedStorage, LEGACY_REVEAL_REMOTE_
 local startNpcRevealRemote = ensureRemote(remotesFolder, START_NPC_REVEAL_REMOTE_NAME)
 local hatchRequestRemote = ensureRemote(remotesFolder, HATCH_REQUEST_REMOTE_NAME)
 local notifyRemote = ReplicatedStorage:FindFirstChild("NotifyUser")
+local discoveryStore = DataStoreService:GetDataStore(DISCOVERY_STORE_NAME)
 
 local function notify(player, message, variant)
 	if notifyRemote and notifyRemote:IsA("RemoteEvent") then
@@ -86,6 +92,155 @@ local function notify(player, message, variant)
 			variant = variant or "warning",
 		})
 	end
+end
+
+local function discoveryKey(player)
+	return "player_" .. tostring(player.UserId)
+end
+
+local function normalizeDiscoveryMap(raw)
+	local map = {}
+	if type(raw) == "string" and raw ~= "" then
+		local decoded = nil
+		local ok = pcall(function()
+			decoded = HttpService:JSONDecode(raw)
+		end)
+		if ok then
+			raw = decoded
+		end
+	end
+
+	if type(raw) ~= "table" then
+		return map
+	end
+
+	if type(raw.discovered) == "table" then
+		raw = raw.discovered
+	end
+
+	for key, value in pairs(raw) do
+		if value == true then
+			map[tostring(key)] = true
+		elseif type(value) == "string" and value ~= "" then
+			map[tostring(value)] = true
+		elseif type(value) == "table" then
+			local id = value.id or value.Id or value.configId or value.BrainrotConfigId
+			if id then
+				map[tostring(id)] = true
+			end
+		end
+	end
+
+	return map
+end
+
+local function countDiscoveries(map)
+	local count = 0
+	for _, value in pairs(map or {}) do
+		if value == true then
+			count += 1
+		end
+	end
+	return count
+end
+
+local function setDiscoveryAttributes(player)
+	local map = discoveredByUserId[player.UserId] or {}
+	local encoded = "{}"
+	pcall(function()
+		encoded = HttpService:JSONEncode(map)
+	end)
+
+	player:SetAttribute("BrainrotDiscoveredCount", countDiscoveries(map))
+	player:SetAttribute("BrainrotDiscoveredJson", encoded)
+end
+
+local function loadDiscoveries(player)
+	local map = {}
+	local ok, result = pcall(function()
+		return discoveryStore:GetAsync(discoveryKey(player))
+	end)
+
+	if ok then
+		map = normalizeDiscoveryMap(result)
+	elseif not RunService:IsStudio() then
+		warn("[ZoneEggHatching] Discovery load failed for", player.Name, result)
+	end
+
+	local hadLocalDirtyDiscoveries = discoveryDirtyByUserId[player.UserId] == true
+	local existing = discoveredByUserId[player.UserId]
+	if existing and hadLocalDirtyDiscoveries then
+		for id, value in pairs(existing) do
+			if value == true then
+				map[id] = true
+			end
+		end
+	end
+
+	discoveredByUserId[player.UserId] = map
+	discoveryDirtyByUserId[player.UserId] = hadLocalDirtyDiscoveries or nil
+	setDiscoveryAttributes(player)
+end
+
+local function saveDiscoveries(player)
+	local userId = player.UserId
+	local map = discoveredByUserId[userId]
+	if not map then
+		return
+	end
+
+	if not discoveryDirtyByUserId[userId] then
+		return
+	end
+
+	local payload = {
+		version = 1,
+		userId = userId,
+		savedAt = os.time(),
+		discovered = map,
+	}
+
+	local ok, err = pcall(function()
+		discoveryStore:SetAsync(discoveryKey(player), payload)
+	end)
+
+	if ok then
+		discoveryDirtyByUserId[userId] = nil
+	elseif not RunService:IsStudio() then
+		warn("[ZoneEggHatching] Discovery save failed for", player.Name, err)
+	end
+end
+
+local function getDiscoveryId(instance)
+	return tostring(
+		instance:GetAttribute("BrainrotConfigId")
+			or instance:GetAttribute("ModelName")
+			or instance:GetAttribute("BrainrotModelName")
+			or instance:GetAttribute("TemplateName")
+			or instance:GetAttribute("DisplayName")
+			or instance:GetAttribute("BrainrotName")
+			or instance.Name
+			or "Brainrot"
+	)
+end
+
+local function markDiscovery(player, instance)
+	local userId = player.UserId
+	local map = discoveredByUserId[userId]
+	if not map then
+		map = {}
+		discoveredByUserId[userId] = map
+	end
+
+	local id = getDiscoveryId(instance)
+	local isNew = map[id] ~= true
+	if isNew then
+		map[id] = true
+		discoveryDirtyByUserId[userId] = true
+	end
+
+	setDiscoveryAttributes(player)
+	return isNew, id, countDiscoveries(map)
 end
 
 local function getZoneApi()
@@ -1327,6 +1482,11 @@ local function finishEgg(player, egg, eggData)
 		return
 	end
 
+	local isNewDiscovery, discoveryId, discoveredCount = markDiscovery(player, tool)
+	tool:SetAttribute("BrainrotDiscoveryId", discoveryId)
+	tool:SetAttribute("FirstDiscovery", isNewDiscovery)
+	tool:SetAttribute("DiscoveredByUserId", player.UserId)
+
 	local revealId = HttpService:GenerateGUID(false)
 	local payload = {
 		RevealId = revealId,
@@ -1347,6 +1507,7 @@ local function finishEgg(player, egg, eggData)
 		ZoneDisplayName = tostring(zoneConfig.DisplayName or eggData.Zone),
 		ResultName = tostring(tool:GetAttribute("DisplayName") or tool.Name),
 		BrainrotConfigId = tool:GetAttribute("BrainrotConfigId"),
+		BrainrotDiscoveryId = discoveryId,
 		ModelName = tool:GetAttribute("ModelName") or tool:GetAttribute("BrainrotModelName"),
 		ShowcaseScale = tool:GetAttribute("ShowcaseScale"),
 		Rarity = rewardRarity,
@@ -1357,6 +1518,10 @@ local function finishEgg(player, egg, eggData)
 		MutationDisplayName = mutationName,
 		MutationColor = mutationInfo.Color,
 		MutationMultiplier = mutationInfo.Multiplier,
+		isNew = isNewDiscovery,
+		IsNew = isNewDiscovery,
+		FirstTime = isNewDiscovery,
+		DiscoveredCount = discoveredCount,
 		revealSource = "CleanEgg",
 		possibleNPCs = getRevealPool(api, templateZone),
 		selectedNPC = {
@@ -1842,12 +2007,37 @@ eggFolder.ChildRemoved:Connect(function(child)
 	end
 end)
 
+Players.PlayerAdded:Connect(function(player)
+	task.defer(loadDiscoveries, player)
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+	task.defer(loadDiscoveries, player)
+end
+
 Players.PlayerRemoving:Connect(function(player)
+	saveDiscoveries(player)
+	discoveredByUserId[player.UserId] = nil
+	discoveryDirtyByUserId[player.UserId] = nil
 	lastHatchRequestAt[player.UserId] = nil
 
 	for key, _ in pairs(lastDamageAt) do
 		if string.sub(key, 1, #tostring(player.UserId)) == tostring(player.UserId) then
 			lastDamageAt[key] = nil
+		end
+	end
+end)
+
+game:BindToClose(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		saveDiscoveries(player)
+	end
+end)
+
+task.spawn(function()
+	while task.wait(DISCOVERY_AUTOSAVE_INTERVAL) do
+		for _, player in ipairs(Players:GetPlayers()) do
+			saveDiscoveries(player)
 		end
 	end
 end)
