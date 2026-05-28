@@ -25,7 +25,11 @@ local DefaultData = {
 	Quests = {
 		Level = 1,
 		ClaimedMilestones = {},
-		Daily = {},
+		Daily = {
+			DayKey = "",
+			Progress = {},
+			Claimed = {},
+		},
 	},
 	Daily = {
 		LastClaimDay = 0,

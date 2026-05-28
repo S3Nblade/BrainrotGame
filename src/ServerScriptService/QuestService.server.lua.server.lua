@@ -7,10 +7,12 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local npcFolder = workspace:WaitForChild("BrainrotNPCs")
 local milestoneStore = DataStoreService:GetDataStore("BrainrotCollectionMilestones_v1")
 local questProgressStore = DataStoreService:GetDataStore("BrainrotQuestProgress_v1")
+local dailyQuestStore = DataStoreService:GetDataStore("BrainrotDailyQuestProgress_v1")
 
 local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
 if not remotesFolder then
@@ -56,6 +58,17 @@ local collectionMilestoneRemote = getOrCreateRemotesFolderRemote("CollectionMile
 
 local updateCoinsRemote = ReplicatedStorage:FindFirstChild("UpdateCoins")
 local updateGemsRemote = ReplicatedStorage:FindFirstChild("UpdateGems")
+
+local gameplayEvent = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+if gameplayEvent and not gameplayEvent:IsA("BindableEvent") then
+	gameplayEvent:Destroy()
+	gameplayEvent = nil
+end
+if not gameplayEvent then
+	gameplayEvent = Instance.new("BindableEvent")
+	gameplayEvent.Name = "BrainrotGameplayEvent"
+	gameplayEvent.Parent = ServerStorage
+end
 
 local DEFAULT_COLLECTION_MILESTONES = {
 	{
@@ -156,6 +169,13 @@ local DEFAULT_QUESTS = {
 	},
 }
 
+local DEFAULT_DAILY_QUESTS = {
+	{ Id = "capture_10", Title = "Daily Hunt", Action = "Capture 10 Brainrots", Event = "CaptureCompleted", Goal = 10, RewardType = "Coins", RewardAmount = 2500 },
+	{ Id = "collect_money_5", Title = "Cash Grab", Action = "Collect plot money 5 times", Event = "MoneyCollected", Goal = 5, RewardType = "Coins", RewardAmount = 3500 },
+	{ Id = "place_3", Title = "Base Builder", Action = "Place 3 Brainrots", Event = "BrainrotPlaced", Goal = 3, RewardType = "Gems", RewardAmount = 100 },
+	{ Id = "rare_capture", Title = "Rare Moment", Action = "Capture 1 Rare+ Brainrot", Event = "CaptureCompleted", Goal = 1, MinRarity = "Rare", RewardType = "Gems", RewardAmount = 150 },
+}
+
 local function loadQuestConfig()
 	local shared = ReplicatedStorage:FindFirstChild("Shared")
 	local module = shared and shared:FindFirstChild("QuestConfig")
@@ -168,6 +188,7 @@ local function loadQuestConfig()
 					and config.CollectionMilestones
 					or DEFAULT_COLLECTION_MILESTONES,
 				Quests = type(config.Quests) == "table" and config.Quests or DEFAULT_QUESTS,
+				DailyQuests = type(config.DailyQuests) == "table" and config.DailyQuests or DEFAULT_DAILY_QUESTS,
 			}
 		end
 
@@ -177,6 +198,7 @@ local function loadQuestConfig()
 	return {
 		CollectionMilestones = DEFAULT_COLLECTION_MILESTONES,
 		Quests = DEFAULT_QUESTS,
+		DailyQuests = DEFAULT_DAILY_QUESTS,
 	}
 end
 
@@ -197,10 +219,22 @@ end
 local QUEST_CONFIG = loadQuestConfig()
 local COLLECTION_MILESTONES = QUEST_CONFIG.CollectionMilestones
 local QUESTS = QUEST_CONFIG.Quests
+local DAILY_QUESTS = QUEST_CONFIG.DailyQuests
 local BALANCE_CONFIG = loadBalanceConfig()
 local QUEST_UPDATE_INTERVAL = tonumber(BALANCE_CONFIG and BALANCE_CONFIG.Quests and BALANCE_CONFIG.Quests.UpdateInterval) or 2.5
 local CLAIM_COOLDOWN = 0.75
 local claimCooldowns = {}
+local dailyQuestStateByUserId = {}
+
+local RARITY_ORDER = {
+	Common = 1,
+	Uncommon = 2,
+	Rare = 3,
+	Epic = 4,
+	Legendary = 5,
+	Mythic = 6,
+	Secret = 7,
+}
 
 local function getQuestForLevel(level)
 	return QUESTS[level] or QUESTS[#QUESTS]
@@ -266,6 +300,15 @@ end
 
 local function getQuestProgressKey(player)
 	return "quest_progress_" .. tostring(player.UserId)
+end
+
+local function getDailyQuestKey(player)
+	return "daily_quests_" .. tostring(player.UserId)
+end
+
+local function getDayKey(timestamp)
+	local t = os.date("!*t", timestamp or os.time())
+	return string.format("%04d-%03d", t.year, t.yday)
 end
 
 local function loadMilestones(player)
@@ -346,6 +389,133 @@ local function saveQuestProgress(player)
 	if not ok then
 		warn("[QuestService] Failed to save quest progress for", player.Name, err)
 	end
+end
+
+local function normalizeDailyQuestState(raw)
+	local today = getDayKey()
+	local state = {
+		dayKey = today,
+		progress = {},
+		claimed = {},
+	}
+
+	if type(raw) == "table" and raw.dayKey == today then
+		if type(raw.progress) == "table" then
+			for key, value in pairs(raw.progress) do
+				state.progress[tostring(key)] = math.max(0, math.floor(tonumber(value) or 0))
+			end
+		end
+
+		if type(raw.claimed) == "table" then
+			for key, value in pairs(raw.claimed) do
+				if value == true then
+					state.claimed[tostring(key)] = true
+				end
+			end
+		end
+	end
+
+	for _, quest in ipairs(DAILY_QUESTS) do
+		local id = tostring(quest.Id or quest.Title or "")
+		if id ~= "" and state.progress[id] == nil then
+			state.progress[id] = 0
+		end
+	end
+
+	return state
+end
+
+local function loadDailyQuestState(player)
+	local ok, result = pcall(function()
+		return dailyQuestStore:GetAsync(getDailyQuestKey(player))
+	end)
+
+	if not ok then
+		warn("[QuestService] Failed to load daily quest state for", player.Name, result)
+	end
+
+	local state = normalizeDailyQuestState(ok and result or nil)
+	dailyQuestStateByUserId[player.UserId] = state
+	player:SetAttribute("BrainrotDailyQuestDay", state.dayKey)
+
+	return state
+end
+
+local function getDailyQuestState(player)
+	local state = dailyQuestStateByUserId[player.UserId]
+	if not state or state.dayKey ~= getDayKey() then
+		state = normalizeDailyQuestState(nil)
+		dailyQuestStateByUserId[player.UserId] = state
+		player:SetAttribute("BrainrotDailyQuestDay", state.dayKey)
+	end
+
+	return state
+end
+
+local function saveDailyQuestState(player)
+	local state = dailyQuestStateByUserId[player.UserId]
+	if not state then
+		return
+	end
+
+	local ok, err = pcall(function()
+		dailyQuestStore:SetAsync(getDailyQuestKey(player), {
+			schemaVersion = 1,
+			dayKey = state.dayKey,
+			progress = state.progress,
+			claimed = state.claimed,
+			savedAt = os.time(),
+		})
+	end)
+
+	if not ok then
+		warn("[QuestService] Failed to save daily quest state for", player.Name, err)
+	end
+end
+
+local function rarityMeetsMinimum(rarity, minimum)
+	if not minimum then
+		return true
+	end
+
+	return (RARITY_ORDER[tostring(rarity or "Common")] or 1) >= (RARITY_ORDER[tostring(minimum)] or 1)
+end
+
+local function dailyQuestMatchesEvent(quest, eventName, payload)
+	if tostring(quest.Event or "") ~= tostring(eventName or "") then
+		return false
+	end
+
+	if quest.MinRarity and not rarityMeetsMinimum(payload and payload.rarity, quest.MinRarity) then
+		return false
+	end
+
+	return true
+end
+
+local function buildDailyQuestPayload(player)
+	local state = getDailyQuestState(player)
+	local payload = {}
+
+	for _, quest in ipairs(DAILY_QUESTS) do
+		local id = tostring(quest.Id or quest.Title or "")
+		local goal = math.max(1, math.floor(tonumber(quest.Goal) or 1))
+		local progress = math.clamp(tonumber(state.progress[id]) or 0, 0, goal)
+
+		table.insert(payload, {
+			id = id,
+			title = tostring(quest.Title or "Daily Quest"),
+			action = tostring(quest.Action or ""),
+			goal = goal,
+			progress = progress,
+			complete = progress >= goal,
+			claimed = state.claimed[id] == true,
+			rewardType = tostring(quest.RewardType or "Coins"),
+			rewardAmount = math.floor(tonumber(quest.RewardAmount) or 0),
+		})
+	end
+
+	return payload
 end
 
 local function awardCollectionMilestones(player, owned)
@@ -451,6 +621,7 @@ local function sendQuestUpdate(player)
 		complete = complete,
 		rewardType = quest.RewardType,
 		rewardAmount = quest.RewardAmount,
+		dailyQuests = buildDailyQuestPayload(player),
 	})
 end
 
@@ -490,10 +661,68 @@ claimQuestRemote.OnServerEvent:Connect(function(player)
 	sendQuestUpdate(player)
 end)
 
+local function claimReadyDailyQuests(player)
+	local state = getDailyQuestState(player)
+	local claimedAny = false
+
+	for _, quest in ipairs(DAILY_QUESTS) do
+		local id = tostring(quest.Id or quest.Title or "")
+		local goal = math.max(1, math.floor(tonumber(quest.Goal) or 1))
+		local progress = tonumber(state.progress[id]) or 0
+
+		if id ~= "" and progress >= goal and state.claimed[id] ~= true then
+			state.claimed[id] = true
+			claimedAny = true
+
+			addCurrency(player, tostring(quest.RewardType or "Coins"), math.floor(tonumber(quest.RewardAmount) or 0))
+			notifyRemote:FireClient(player, {
+				message = "Daily complete: " .. tostring(quest.Title or "Quest") .. "!",
+				variant = "success",
+			})
+		end
+	end
+
+	if claimedAny then
+		saveDailyQuestState(player)
+		sendQuestUpdate(player)
+	end
+end
+
+local function applyGameplayEvent(eventName, player, payload)
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return
+	end
+
+	local state = getDailyQuestState(player)
+	local changed = false
+
+	for _, quest in ipairs(DAILY_QUESTS) do
+		local id = tostring(quest.Id or quest.Title or "")
+		if id ~= "" and state.claimed[id] ~= true and dailyQuestMatchesEvent(quest, eventName, payload or {}) then
+			local goal = math.max(1, math.floor(tonumber(quest.Goal) or 1))
+			local current = tonumber(state.progress[id]) or 0
+
+			if current < goal then
+				state.progress[id] = math.min(goal, current + 1)
+				changed = true
+			end
+		end
+	end
+
+	if changed then
+		saveDailyQuestState(player)
+		claimReadyDailyQuests(player)
+		sendQuestUpdate(player)
+	end
+end
+
+gameplayEvent.Event:Connect(applyGameplayEvent)
+
 Players.PlayerAdded:Connect(function(player)
 	task.defer(function()
 		loadMilestones(player)
 		loadQuestProgress(player)
+		loadDailyQuestState(player)
 
 		local leaderstats = getOrCreateLeaderstats(player)
 
@@ -516,14 +745,17 @@ end)
 Players.PlayerRemoving:Connect(function(player)
 	saveMilestones(player)
 	saveQuestProgress(player)
+	saveDailyQuestState(player)
 	claimedMilestones[player.UserId] = nil
 	claimCooldowns[player.UserId] = nil
+	dailyQuestStateByUserId[player.UserId] = nil
 end)
 
 game:BindToClose(function()
 	for _, player in ipairs(Players:GetPlayers()) do
 		saveMilestones(player)
 		saveQuestProgress(player)
+		saveDailyQuestState(player)
 	end
 end)
 

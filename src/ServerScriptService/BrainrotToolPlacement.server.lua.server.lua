@@ -14,6 +14,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 
@@ -52,6 +53,13 @@ local function notify(player, message, variant)
 		message = message,
 		variant = variant or "success",
 	})
+end
+
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
 end
 
 local function saveSnapshot(player)
@@ -922,6 +930,14 @@ local function placeNpc(player, standPart)
 
 	cleanupDuplicatePlacedNpcs()
 	saveSnapshot(player)
+	emitGameplayEvent("BrainrotPlaced", player, {
+		source = "BrainrotToolPlacement",
+		brainrotId = npc:GetAttribute("BrainrotConfigId"),
+		displayName = npc:GetAttribute("DisplayName") or npc.Name,
+		rarity = npc:GetAttribute("Rarity"),
+		slotId = slotId,
+		floorIndex = floorIndex,
+	})
 
 	print("[BrainrotToolPlacement] Placed", npc.Name, "on", slotId, "floor", floorIndex, "for", player.Name)
 end

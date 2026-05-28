@@ -55,6 +55,13 @@ local function notify(player, message, variant)
 	end
 end
 
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
+end
+
 local function normalize(text)
 	return string.lower(tostring(text)):gsub("%s+", ""):gsub("_", ""):gsub("-", "")
 end
@@ -545,6 +552,11 @@ local function collectFromPart(touchedPart, hit)
 	end
 
 	addMoney(player, amount)
+	emitGameplayEvent("MoneyCollected", player, {
+		source = "BrainrotStrictCollect",
+		amount = amount,
+		count = 1,
+	})
 	notify(player, "+$" .. formatMoney(amount), "success")
 end
 
@@ -581,6 +593,11 @@ local function collectAllForPlayer(player)
 
 	if total > 0 then
 		addMoney(player, total)
+		emitGameplayEvent("MoneyCollected", player, {
+			source = "BrainrotStrictCollectAll",
+			amount = total,
+			count = count,
+		})
 		notify(player, "+$" .. formatMoney(total), "success")
 	end
 

@@ -251,6 +251,13 @@ local function getZoneApi()
 	return _G.BrainrotZoneEggApi
 end
 
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
+end
+
 local function getRoot(model)
 	return model
 		and (model.PrimaryPart or model:FindFirstChild("EggRoot", true) or model:FindFirstChild("HumanoidRootPart", true) or model:FindFirstChildWhichIsA("BasePart", true))
@@ -1556,6 +1563,16 @@ local function finishEgg(player, egg, eggData)
 	revealRemote:FireClient(player, payload)
 	legacyRevealRemote:FireClient(player, payload)
 	startNpcRevealRemote:FireClient(player, payload)
+	emitGameplayEvent("CaptureCompleted", player, {
+		source = "ZoneEggHatching",
+		brainrotId = tool:GetAttribute("BrainrotConfigId"),
+		displayName = tool:GetAttribute("DisplayName") or tool.Name,
+		rarity = rewardRarity,
+		mutation = mutationName,
+		cashPerSecond = finalMps,
+		isNew = isNewDiscovery,
+		zoneName = eggData.Zone,
+	})
 
 	playBreakEffect(egg)
 	local eggId = egg:GetAttribute("EggId")
