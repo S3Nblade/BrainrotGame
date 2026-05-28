@@ -193,15 +193,22 @@ local function saveDiscoveries(player)
 		return
 	end
 
-	local payload = {
-		version = 1,
-		userId = userId,
-		savedAt = os.time(),
-		discovered = map,
-	}
-
 	local ok, err = pcall(function()
-		discoveryStore:SetAsync(discoveryKey(player), payload)
+		discoveryStore:UpdateAsync(discoveryKey(player), function(old)
+			local merged = normalizeDiscoveryMap(old)
+			for id, value in pairs(map) do
+				if value == true then
+					merged[tostring(id)] = true
+				end
+			end
+
+			return {
+				version = 1,
+				userId = userId,
+				savedAt = os.time(),
+				discovered = merged,
+			}
+		end)
 	end)
 
 	if ok then
