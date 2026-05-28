@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "src" / "ReplicatedStorage" / "Shared" / "BrainrotConfig.lua"
 ASSET_IDS = ROOT / "src" / "ReplicatedStorage" / "Shared" / "AssetIds.lua"
 MANIFEST_TEMPLATE = ROOT / "assets" / "blender" / "asset_manifest.template.json"
+BLENDER_GENERATOR = ROOT / "assets" / "blender" / "scripts" / "create_starter_brainrots.py"
 
 
 def read(path: Path) -> str:
@@ -28,6 +29,7 @@ def pascal_from_model(model_name: str) -> str:
 def main() -> int:
     config_text = read(CONFIG)
     asset_text = read(ASSET_IDS)
+    generator_text = read(BLENDER_GENERATOR)
     manifest = json.loads(read(MANIFEST_TEMPLATE))
 
     model_names = re.findall(r'ModelName\s*=\s*"([^"]+)"', config_text)
@@ -49,20 +51,32 @@ def main() -> int:
     for model_name in required_models:
         if model_name not in model_names:
             failures.append(f"{model_name} is in asset_manifest.template.json but missing from BrainrotConfig")
+        if model_name not in generator_text:
+            failures.append(f"{model_name} is in asset_manifest.template.json but missing from create_starter_brainrots.py")
+
+    for clip in manifest.get("requiredAnimationClips") or []:
+        if not re.search(rf"[\"']{re.escape(clip)}[\"']", generator_text):
+            failures.append(f"Animation clip '{clip}' is required but missing from create_starter_brainrots.py")
 
     for key in manifest.get("requiredSoundKeys") or []:
         if not re.search(rf"\b{re.escape(key)}\s*=", asset_text):
             failures.append(f"Sound key AssetIds.Sounds.{key} is missing")
+        if not re.search(rf"[\"']{re.escape(key)}[\"']", generator_text):
+            failures.append(f"Sound key '{key}' is required but missing from create_starter_brainrots.py")
 
     for vfx_name in manifest.get("requiredRarityVfx") or []:
         asset_key = vfx_name.removeprefix("VFX_")
         if not re.search(rf"\b{re.escape(asset_key)}\s*=", asset_text):
             failures.append(f"VFX key AssetIds.VFX.{asset_key} is missing")
+        if asset_key.removesuffix("Glow") not in generator_text:
+            failures.append(f"{vfx_name} is required but missing from create_starter_brainrots.py")
 
     for prop_name in manifest.get("requiredProps") or []:
         asset_key = prop_name.removeprefix("PROP_")
         if not re.search(rf"\b{re.escape(asset_key)}\s*=", asset_text):
             failures.append(f"Prop key AssetIds.VFX.{asset_key} is missing")
+        if prop_name not in generator_text:
+            failures.append(f"{prop_name} is required but missing from create_starter_brainrots.py")
 
     if failures:
         print("Asset pipeline verification failed:")
