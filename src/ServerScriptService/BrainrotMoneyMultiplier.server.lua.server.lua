@@ -40,12 +40,17 @@ local function getMoneyMultiplier(player)
 		tonumber(player:GetAttribute("MoneyMultiplier"))
 		or tonumber(player:GetAttribute("MoneyRegenMultiplier"))
 		or 1
+	local shopMultiplier = tonumber(player:GetAttribute("ShopCashMultiplier")) or 1
 
 	if multiplier < 1 then
 		multiplier = 1
 	end
 
-	return multiplier
+	if shopMultiplier < 1 then
+		shopMultiplier = 1
+	end
+
+	return multiplier * shopMultiplier
 end
 
 local function isPlacedBrainrot(npc)

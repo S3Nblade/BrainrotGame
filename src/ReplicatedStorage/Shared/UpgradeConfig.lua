@@ -55,6 +55,46 @@ UpgradeConfig.Definitions = {
 			perLevel = 0.1,
 		},
 	},
+
+	InventoryCapacity = {
+		title = "Inventory Capacity",
+		desc = "Carry more captured Brainrots.",
+		icon = "BAG",
+		maxLevel = 5,
+		requirements = { 900, 2500, 6000, 13000, 28000 },
+		effect = {
+			attribute = "InventoryCapacityBonus",
+			base = 0,
+			perLevel = 5,
+		},
+	},
+
+	PlotSlotValue = {
+		title = "Plot Slot Value",
+		desc = "Discount future plot slot unlocks.",
+		icon = "PLOT",
+		maxLevel = 5,
+		requirements = { 1500, 4200, 9500, 20000, 45000 },
+		effect = {
+			attribute = "PlotSlotDiscount",
+			base = 0,
+			perLevel = 0.04,
+			max = 0.2,
+		},
+	},
+
+	CashBoost = {
+		title = "Cash Boost",
+		desc = "Placed Brainrots earn more money.",
+		icon = "CASH",
+		maxLevel = 5,
+		requirements = { 1800, 5000, 12000, 26000, 60000 },
+		effect = {
+			attribute = "ShopCashMultiplier",
+			base = 1,
+			perLevel = 0.08,
+		},
+	},
 }
 
 return UpgradeConfig

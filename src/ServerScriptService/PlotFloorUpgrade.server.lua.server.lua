@@ -148,6 +148,16 @@ local function getPlayerPlot(player)
 	return nil
 end
 
+local function getPlotOwnerPlayer(plot)
+	for _, player in ipairs(Players:GetPlayers()) do
+		if playerOwnsPlot(player, plot) then
+			return player
+		end
+	end
+
+	return nil
+end
+
 local function getMoneyValue(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 
@@ -371,6 +381,12 @@ local function getSlotPrice(plot, nextSlot)
 	local extraIndex = math.max(1, nextSlot - baseSlots)
 
 	local raw = SLOT_PRICE_START * (SLOT_PRICE_MULTIPLIER ^ (extraIndex - 1))
+	local owner = getPlotOwnerPlayer(plot)
+	if owner then
+		local discount = math.clamp(tonumber(owner:GetAttribute("PlotSlotDiscount")) or 0, 0, 0.5)
+		raw *= 1 - discount
+	end
+
 	local rounded = math.floor(raw / 100) * 100
 
 	return math.max(SLOT_PRICE_START, rounded)

@@ -155,6 +155,18 @@ local function applyUpgrades(player)
 	if player:GetAttribute("LuckMultiplier") == nil then
 		player:SetAttribute("LuckMultiplier", 1)
 	end
+
+	if player:GetAttribute("InventoryCapacityBonus") == nil then
+		player:SetAttribute("InventoryCapacityBonus", 0)
+	end
+
+	if player:GetAttribute("PlotSlotDiscount") == nil then
+		player:SetAttribute("PlotSlotDiscount", 0)
+	end
+
+	if player:GetAttribute("ShopCashMultiplier") == nil then
+		player:SetAttribute("ShopCashMultiplier", 1)
+	end
 end
 
 local function buildPayload(player)
@@ -197,6 +209,9 @@ local function buildPayload(player)
 		autoTrainDelay = tonumber(player:GetAttribute("AutoTrainDelay")) or 0.40,
 		capturePowerMultiplier = tonumber(player:GetAttribute("CapturePowerMultiplier")) or 1,
 		luckMultiplier = tonumber(player:GetAttribute("LuckMultiplier")) or 1,
+		inventoryCapacityBonus = tonumber(player:GetAttribute("InventoryCapacityBonus")) or 0,
+		plotSlotDiscount = tonumber(player:GetAttribute("PlotSlotDiscount")) or 0,
+		shopCashMultiplier = tonumber(player:GetAttribute("ShopCashMultiplier")) or 1,
 		upgrades = upgrades,
 	}
 end
