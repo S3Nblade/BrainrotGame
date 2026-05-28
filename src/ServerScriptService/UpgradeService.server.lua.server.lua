@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local upgradeStore = DataStoreService:GetDataStore("PlayerUpgrades_v1")
 
@@ -80,6 +81,13 @@ end
 local DEFINITIONS = loadUpgradeDefinitions()
 local playerUpgrades = {}
 local requestCooldown = {}
+
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
+end
 
 local function notify(player, message, variant)
 	notifyRemote:FireClient(player, {
@@ -285,6 +293,12 @@ local function upgrade(player, key)
 	applyUpgrades(player)
 	savePlayer(player)
 	fireUpdate(player)
+	emitGameplayEvent("ShopPurchase", player, {
+		upgradeKey = key,
+		title = tostring(def.title or key),
+		level = data[key],
+		requiredStrength = requiredSpeed,
+	})
 
 	notify(player, tostring(def.title or key) .. " upgraded to Level " .. tostring(data[key]) .. "!", "success")
 end

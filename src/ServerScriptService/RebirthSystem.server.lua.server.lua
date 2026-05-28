@@ -85,6 +85,7 @@ if not notifyRemote then
 end
 
 local playerRebirths = {}
+local rebirthCooldowns = {}
 
 local updateSpeedStats = ReplicatedStorage:FindFirstChild("UpdateSpeedStats")
 if not updateSpeedStats then
@@ -98,6 +99,13 @@ local function notify(player, message, variant)
 		message = message,
 		variant = variant or "success",
 	})
+end
+
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
 end
 
 local function getLeaderstats(player)
@@ -303,6 +311,12 @@ rebirthGetState.OnServerInvoke = function(player)
 end
 
 rebirthRequest.OnServerEvent:Connect(function(player)
+	local now = os.clock()
+	if rebirthCooldowns[player.UserId] and now - rebirthCooldowns[player.UserId] < 1 then
+		return
+	end
+	rebirthCooldowns[player.UserId] = now
+
 	local rebirths = playerRebirths[player.UserId] or 0
 	local strength = getStrength(player)
 	local requirement = getRequirement(rebirths)
@@ -325,6 +339,11 @@ rebirthRequest.OnServerEvent:Connect(function(player)
 	payload.rewardText = "x" .. tostring(getMoneyMultiplier(rebirths)) .. " Money"
 	payload.rebirths = rebirths
 	rebirthComplete:FireClient(player, payload)
+	emitGameplayEvent("RebirthCompleted", player, {
+		rebirths = rebirths,
+		requirement = requirement,
+		moneyMultiplier = getMoneyMultiplier(rebirths),
+	})
 
 	notify(player, "Rebirth complete! Brainrot money is now x" .. tostring(getMoneyMultiplier(rebirths)) .. "!", "success")
 end)
@@ -334,6 +353,7 @@ Players.PlayerAdded:Connect(loadPlayer)
 Players.PlayerRemoving:Connect(function(player)
 	savePlayer(player)
 	playerRebirths[player.UserId] = nil
+	rebirthCooldowns[player.UserId] = nil
 end)
 
 game:BindToClose(function()
