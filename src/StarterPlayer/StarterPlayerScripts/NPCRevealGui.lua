@@ -7,9 +7,22 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local RevealAssets = require(script.Parent:WaitForChild("NPCRevealAssets"))
+local BrainrotConfig = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local configModule = sharedFolder and sharedFolder:FindFirstChild("BrainrotConfig")
+	if configModule and configModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, configModule)
+		if ok and type(result) == "table" then
+			BrainrotConfig = result
+		end
+	end
+end
 
 local RevealNPC = {}
 
@@ -42,6 +55,7 @@ local RARITY_ORDER = {
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(234, 240, 248),
+	Uncommon = Color3.fromRGB(111, 236, 135),
 	Rare = Color3.fromRGB(69, 174, 255),
 	Epic = Color3.fromRGB(185, 91, 255),
 	Legendary = Color3.fromRGB(255, 190, 49),
@@ -64,8 +78,45 @@ local SYNTHETIC_ROLL_NAMES = {
 	"Zippy Brainrot",
 }
 
+local STARTER_STYLES = {
+	WobbleNugget = "nugget",
+	GoofyCone = "cone",
+	TinyBloop = "blob",
+	SneakyPickle = "pickle",
+	DizzyDonut = "donut",
+	BananaGoblin = "banana",
+	ShyToaster = "toaster",
+	TurboMeatball = "meatball",
+	GlitchyCapybara = "capybara",
+	BubbleLizard = "lizard",
+	GoldenSpaghettiKing = "spaghetti",
+	CosmicBrainFrog = "frog",
+}
+
 local function rarityColor(rarity)
 	return RARITY_COLORS[tostring(rarity or "Common")] or RARITY_COLORS.Common
+end
+
+local function getConfigEntry(configId, modelName)
+	if type(BrainrotConfig) ~= "table" then
+		return nil
+	end
+
+	if configId and BrainrotConfig.GetById then
+		local entry = BrainrotConfig.GetById(tostring(configId))
+		if entry then
+			return entry
+		end
+	end
+
+	if modelName and BrainrotConfig.GetByModelName then
+		local entry = BrainrotConfig.GetByModelName(tostring(modelName))
+		if entry then
+			return entry
+		end
+	end
+
+	return nil
 end
 
 local function cleanAssetId(id)
@@ -278,23 +329,40 @@ local function normalizeCandidate(entry, index, fallbackRarity)
 	local id = nil
 	local mps = nil
 	local mutation = nil
+	local configId = nil
+	local modelName = nil
+	local showcaseScale = nil
 
 	if type(entry) == "table" then
+		configId = entry.configId or entry.ConfigId or entry.BrainrotConfigId or entry.brainrotConfigId
+		modelName = entry.modelName or entry.ModelName or entry.BrainrotModelName or entry.brainrotModelName
 		name = entry.displayName
 			or entry.DisplayName
 			or entry.name
 			or entry.Name
 			or entry.ResultName
+			or configId
 			or entry.id
 			or entry.Id
 			or name
 		rarity = entry.rarity or entry.Rarity or entry.selectedRarity or fallbackRarity or rarity
-		id = entry.id or entry.Id or entry.TemplateName or entry.templateName or name
+		id = entry.id or entry.Id or configId or modelName or entry.TemplateName or entry.templateName or name
 		mps = tonumber(entry.mps or entry.MPS or entry.CashPerSecond)
 		mutation = entry.mutation or entry.Mutation or entry.mutationDisplayName or entry.MutationDisplayName
+		showcaseScale = tonumber(entry.showcaseScale or entry.ShowcaseScale)
 	elseif entry ~= nil then
 		name = tostring(entry)
 		id = name
+	end
+
+	local configEntry = getConfigEntry(configId or id, modelName)
+	if configEntry then
+		configId = configId or configEntry.Id
+		modelName = modelName or configEntry.ModelName
+		name = tostring(configEntry.DisplayName or name)
+		rarity = tostring(configEntry.Rarity or rarity)
+		mps = mps or tonumber(configEntry.CashPerSecond)
+		showcaseScale = showcaseScale or tonumber(configEntry.ShowcaseScale)
 	end
 
 	name = tostring(name or ("Mystery NPC " .. tostring(index or 1)))
@@ -302,11 +370,14 @@ local function normalizeCandidate(entry, index, fallbackRarity)
 
 	return {
 		id = tostring(id or name .. "_" .. tostring(index or 1)),
+		configId = configId and tostring(configId) or nil,
+		modelName = modelName and tostring(modelName) or nil,
 		name = name,
 		displayName = name,
 		rarity = rarity,
 		mps = mps,
 		mutation = mutation and tostring(mutation) or nil,
+		showcaseScale = showcaseScale or 1,
 	}
 end
 
@@ -403,11 +474,14 @@ local function normalizePayload(payload)
 		or "Normal"
 
 	local selected = normalizeCandidate({
-		id = selectedPayload.id or selectedPayload.Id or payload.ResultName or name,
+		id = selectedPayload.id or selectedPayload.Id or payload.BrainrotConfigId or selectedPayload.BrainrotConfigId or payload.ResultName or name,
+		configId = selectedPayload.configId or selectedPayload.ConfigId or selectedPayload.BrainrotConfigId or payload.BrainrotConfigId,
+		modelName = selectedPayload.modelName or selectedPayload.ModelName or payload.ModelName or payload.BrainrotModelName,
 		displayName = name,
 		rarity = rarity,
 		mps = payload.MPS or payload.CashPerSecond or selectedPayload.mps or selectedPayload.MPS,
 		mutation = mutation,
+		showcaseScale = payload.ShowcaseScale or selectedPayload.showcaseScale or selectedPayload.ShowcaseScale,
 	}, 0, rarity)
 
 	local data = {
@@ -473,6 +547,22 @@ local function sanitizeModelName(name)
 	return string.gsub(name, "[^%w_]", "_")
 end
 
+local function candidateStyle(candidate)
+	local configId = candidate and candidate.configId
+	if configId and STARTER_STYLES[tostring(configId)] then
+		return STARTER_STYLES[tostring(configId)]
+	end
+
+	local modelName = tostring(candidate and candidate.modelName or "")
+	for id, style in pairs(STARTER_STYLES) do
+		if string.find(modelName, id, 1, true) then
+			return style
+		end
+	end
+
+	return nil
+end
+
 local function createPartNpc(world, candidate, index, isFinal)
 	local model = Instance.new("Model")
 	model.Name = sanitizeModelName(candidate.displayName or candidate.name)
@@ -482,29 +572,39 @@ local function createPartNpc(world, candidate, index, isFinal)
 	local accent = rarityColor(candidate.rarity):Lerp(Color3.fromRGB(255, 255, 255), isFinal and 0.2 or 0.42)
 	local dark = base:Lerp(Color3.fromRGB(8, 10, 18), 0.42)
 	local hash = hashText(candidate.id .. ":" .. candidate.displayName)
+	local style = candidateStyle(candidate)
 	local heightBoost = ((hash % 4) - 1) * 0.08
 	local widthBoost = (((math.floor(hash / 7)) % 4) - 1) * 0.06
+	local rootScale = math.clamp(tonumber(candidate.showcaseScale) or 1, 0.75, 1.45)
+	local bodyShape = (style == "nugget" or style == "blob" or style == "meatball" or style == "frog" or style == "capybara" or style == "lizard") and Enum.PartType.Ball or Enum.PartType.Block
 
 	local body = addNpcPart(
 		model,
 		"Body",
-		Vector3.new(1.16 + widthBoost, 1.34 + heightBoost, 0.66),
+		Vector3.new(1.16 + widthBoost, 1.34 + heightBoost, style == "pickle" and 0.78 or 0.66),
 		CFrame.new(0, 1.45 + heightBoost * 0.4, 0),
 		base,
-		Enum.PartType.Block,
+		bodyShape,
 		Enum.Material.SmoothPlastic
 	)
 	model.PrimaryPart = body
 
-	addNpcPart(
-		model,
-		"Head",
-		Vector3.new(0.94, 0.94, 0.94),
-		CFrame.new(0, 2.47 + heightBoost, 0),
-		base:Lerp(Color3.fromRGB(255, 255, 255), 0.18),
-		Enum.PartType.Ball,
-		Enum.Material.SmoothPlastic
-	)
+	if style == "cone" or style == "banana" then
+		local top = addNpcPart(model, "PointTop", Vector3.new(0.62, 0.95, 0.62), CFrame.new(0, 2.42 + heightBoost, 0), base:Lerp(Color3.fromRGB(255, 255, 255), 0.2), Enum.PartType.Ball)
+		top.Size = Vector3.new(style == "banana" and 0.48 or 0.68, 0.96, style == "banana" and 0.48 or 0.68)
+	elseif style == "donut" then
+		addNpcPart(model, "DonutCore", Vector3.new(0.72, 0.72, 0.18), CFrame.new(0, 2.42 + heightBoost, -0.08), accent, Enum.PartType.Cylinder, Enum.Material.Neon)
+	else
+		addNpcPart(
+			model,
+			"Head",
+			Vector3.new(style == "toaster" and 1.1 or 0.94, style == "toaster" and 0.72 or 0.94, 0.94),
+			CFrame.new(0, 2.47 + heightBoost, 0),
+			base:Lerp(Color3.fromRGB(255, 255, 255), 0.18),
+			style == "toaster" and Enum.PartType.Block or Enum.PartType.Ball,
+			Enum.Material.SmoothPlastic
+		)
+	end
 	addNpcPart(model, "LeftArm", Vector3.new(0.34, 1.02, 0.34), CFrame.new(-0.84 - widthBoost, 1.48, 0), accent, Enum.PartType.Block)
 	addNpcPart(model, "RightArm", Vector3.new(0.34, 1.02, 0.34), CFrame.new(0.84 + widthBoost, 1.48, 0), accent, Enum.PartType.Block)
 	addNpcPart(model, "LeftLeg", Vector3.new(0.42, 0.92, 0.42), CFrame.new(-0.32, 0.38, 0), dark, Enum.PartType.Block)
@@ -512,18 +612,38 @@ local function createPartNpc(world, candidate, index, isFinal)
 	addNpcPart(model, "LeftEye", Vector3.new(0.12, 0.12, 0.04), CFrame.new(-0.18, 2.55 + heightBoost, -0.44), Color3.fromRGB(8, 10, 18), Enum.PartType.Ball)
 	addNpcPart(model, "RightEye", Vector3.new(0.12, 0.12, 0.04), CFrame.new(0.18, 2.55 + heightBoost, -0.44), Color3.fromRGB(8, 10, 18), Enum.PartType.Ball)
 
-	local variant = hash % 4
-	if variant == 0 then
+	if style == "spaghetti" then
+		for i = 1, 5 do
+			addNpcPart(model, "Noodle_" .. i, Vector3.new(0.12, 0.58, 0.12), CFrame.new((i - 3) * 0.16, 2.96 + heightBoost, -0.02), Color3.fromRGB(255, 222, 88), Enum.PartType.Cylinder, Enum.Material.Neon)
+		end
 		addNpcPart(model, "Crown", Vector3.new(0.86, 0.18, 0.76), CFrame.new(0, 3.05 + heightBoost, 0), accent, Enum.PartType.Block, Enum.Material.Neon)
-	elseif variant == 1 then
-		addNpcPart(model, "TopOrb", Vector3.new(0.42, 0.42, 0.42), CFrame.new(0, 3.08 + heightBoost, 0), accent, Enum.PartType.Ball, Enum.Material.Neon)
-	elseif variant == 2 then
-		addNpcPart(model, "BellyCore", Vector3.new(0.42, 0.42, 0.1), CFrame.new(0, 1.56, -0.36), accent, Enum.PartType.Ball, Enum.Material.Neon)
+	elseif style == "lizard" then
+		addNpcPart(model, "Tail", Vector3.new(0.28, 0.34, 0.96), CFrame.new(0, 1.0, 0.82), accent, Enum.PartType.Block)
+	elseif style == "capybara" then
+		addNpcPart(model, "Snout", Vector3.new(0.46, 0.28, 0.22), CFrame.new(0, 2.33 + heightBoost, -0.52), accent, Enum.PartType.Block)
+	elseif style == "frog" then
+		addNpcPart(model, "BrainDome", Vector3.new(0.72, 0.32, 0.62), CFrame.new(0, 2.96 + heightBoost, 0), accent, Enum.PartType.Ball, Enum.Material.Neon)
+	elseif style == "toaster" then
+		addNpcPart(model, "Toast", Vector3.new(0.76, 0.18, 0.42), CFrame.new(0, 3.02 + heightBoost, 0), accent, Enum.PartType.Block)
 	else
-		addNpcPart(model, "Backpack", Vector3.new(0.86, 0.98, 0.24), CFrame.new(0, 1.45, 0.48), accent:Lerp(Color3.fromRGB(8, 10, 18), 0.25), Enum.PartType.Block)
+		local variant = hash % 4
+		if variant == 0 then
+			addNpcPart(model, "Crown", Vector3.new(0.86, 0.18, 0.76), CFrame.new(0, 3.05 + heightBoost, 0), accent, Enum.PartType.Block, Enum.Material.Neon)
+		elseif variant == 1 then
+			addNpcPart(model, "TopOrb", Vector3.new(0.42, 0.42, 0.42), CFrame.new(0, 3.08 + heightBoost, 0), accent, Enum.PartType.Ball, Enum.Material.Neon)
+		elseif variant == 2 then
+			addNpcPart(model, "BellyCore", Vector3.new(0.42, 0.42, 0.1), CFrame.new(0, 1.56, -0.36), accent, Enum.PartType.Ball, Enum.Material.Neon)
+		else
+			addNpcPart(model, "Backpack", Vector3.new(0.86, 0.98, 0.24), CFrame.new(0, 1.45, 0.48), accent:Lerp(Color3.fromRGB(8, 10, 18), 0.25), Enum.PartType.Block)
+		end
 	end
 
-	model:PivotTo(CFrame.new(0, -0.55, 0))
+	if style == "banana" then
+		model:PivotTo(CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, math.rad(-8)))
+	else
+		model:PivotTo(CFrame.new(0, -0.55, 0))
+	end
+	model:ScaleTo(rootScale)
 	return model
 end
 

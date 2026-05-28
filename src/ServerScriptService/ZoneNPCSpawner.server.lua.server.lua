@@ -1284,6 +1284,10 @@ local function getTemplateSummaries(zoneName)
 				Name = tostring(obj:GetAttribute("DisplayName") or obj:GetAttribute("BrainrotName") or obj.Name),
 				Rarity = tostring(obj:GetAttribute("Rarity") or "Common"),
 				ZoneName = zoneName,
+				BrainrotConfigId = obj:GetAttribute("BrainrotConfigId"),
+				ModelName = obj:GetAttribute("ModelName") or obj:GetAttribute("BrainrotModelName"),
+				CashPerSecond = obj:GetAttribute("CashPerSecond") or obj:GetAttribute("MPS"),
+				ShowcaseScale = obj:GetAttribute("ShowcaseScale"),
 			})
 		end
 	end
