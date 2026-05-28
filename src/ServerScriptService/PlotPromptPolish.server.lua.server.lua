@@ -4,7 +4,7 @@
 
 local Workspace = game:GetService("Workspace")
 
-local UPDATE_EVERY = 0.2
+local FALLBACK_SCAN_SECONDS = 10
 
 local function polishPrompt(prompt)
 	if not prompt:IsA("ProximityPrompt") then
@@ -30,22 +30,26 @@ local function polishPrompt(prompt)
 	end
 end
 
-task.spawn(function()
-	while true do
-		for _, obj in ipairs(Workspace:GetDescendants()) do
-			if obj:IsA("ProximityPrompt") then
-				polishPrompt(obj)
-			end
+local function scanPrompts()
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj:IsA("ProximityPrompt") then
+			polishPrompt(obj)
 		end
-
-		task.wait(UPDATE_EVERY)
 	end
-end)
+end
 
 Workspace.DescendantAdded:Connect(function(obj)
 	if obj:IsA("ProximityPrompt") then
-		task.wait()
-		polishPrompt(obj)
+		task.defer(polishPrompt, obj)
+	end
+end)
+
+task.defer(scanPrompts)
+
+task.spawn(function()
+	while true do
+		task.wait(FALLBACK_SCAN_SECONDS)
+		scanPrompts()
 	end
 end)
 

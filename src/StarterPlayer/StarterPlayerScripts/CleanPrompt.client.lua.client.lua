@@ -17,6 +17,7 @@ local TARGET_PROMPT_NAMES = {
 }
 
 local activePrompts = {}
+local FALLBACK_SCAN_SECONDS = 10
 
 local function shouldStylePrompt(prompt)
 	if prompt.KeyboardKeyCode == Enum.KeyCode.E then
@@ -338,15 +339,26 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt)
 	end
 end)
 
+local function scanPrompts()
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("ProximityPrompt") then
+			makePromptCustom(obj)
+		end
+	end
+end
+
+workspace.DescendantAdded:Connect(function(obj)
+	if obj:IsA("ProximityPrompt") then
+		task.defer(makePromptCustom, obj)
+	end
+end)
+
+task.defer(scanPrompts)
+
 task.spawn(function()
 	while true do
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("ProximityPrompt") then
-				makePromptCustom(obj)
-			end
-		end
-
-		task.wait(0.5)
+		task.wait(FALLBACK_SCAN_SECONDS)
+		scanPrompts()
 	end
 end)
 
