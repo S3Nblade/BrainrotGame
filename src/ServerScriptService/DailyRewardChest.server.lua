@@ -12,19 +12,50 @@ local CHEST_NAMES = {
 	DailyRewardChest = true,
 }
 
-local PROMPT_NAME = "DailyRewardPrompt"
-local COOLDOWN_SECONDS = 24 * 60 * 60
-local CHECK_EVERY = 1
-local STREAK_RESET_SECONDS = COOLDOWN_SECONDS * 2
-local STREAK_REWARDS = {
-	{ Day = 1, Multiplier = 1.0, Label = "Day 1" },
-	{ Day = 2, Multiplier = 1.25, Label = "Day 2" },
-	{ Day = 3, Multiplier = 1.55, Label = "Day 3" },
-	{ Day = 4, Multiplier = 1.9, Label = "Day 4" },
-	{ Day = 5, Multiplier = 2.35, Label = "Day 5" },
-	{ Day = 6, Multiplier = 2.8, Label = "Day 6" },
-	{ Day = 7, Multiplier = 4.0, Label = "MEGA" },
+local DEFAULT_DAILY_CONFIG = {
+	CooldownSeconds = 24 * 60 * 60,
+	CheckEverySeconds = 1,
+	StreakResetSeconds = 2 * 24 * 60 * 60,
+	BaseRewardMoney = 5000,
+	RewardPerRebirth = 15000,
+	StreakRewards = {
+		{ Day = 1, Multiplier = 1.0, Label = "Day 1" },
+		{ Day = 2, Multiplier = 1.25, Label = "Day 2" },
+		{ Day = 3, Multiplier = 1.55, Label = "Day 3" },
+		{ Day = 4, Multiplier = 1.9, Label = "Day 4" },
+		{ Day = 5, Multiplier = 2.35, Label = "Day 5" },
+		{ Day = 6, Multiplier = 2.8, Label = "Day 6" },
+		{ Day = 7, Multiplier = 4.0, Label = "MEGA" },
+	},
 }
+
+local function loadDailyConfig()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("DailyRewardConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" then
+			return config
+		end
+
+		warn("[DailyRewardChest] Failed to load DailyRewardConfig, using defaults.")
+	end
+
+	return DEFAULT_DAILY_CONFIG
+end
+
+local DAILY_CONFIG = loadDailyConfig()
+local PROMPT_NAME = "DailyRewardPrompt"
+local COOLDOWN_SECONDS = tonumber(DAILY_CONFIG.CooldownSeconds) or DEFAULT_DAILY_CONFIG.CooldownSeconds
+local CHECK_EVERY = tonumber(DAILY_CONFIG.CheckEverySeconds) or DEFAULT_DAILY_CONFIG.CheckEverySeconds
+local STREAK_RESET_SECONDS = tonumber(DAILY_CONFIG.StreakResetSeconds) or (COOLDOWN_SECONDS * 2)
+local STREAK_REWARDS = type(DAILY_CONFIG.StreakRewards) == "table"
+	and DAILY_CONFIG.StreakRewards
+	or DEFAULT_DAILY_CONFIG.StreakRewards
+if #STREAK_REWARDS <= 0 then
+	STREAK_REWARDS = DEFAULT_DAILY_CONFIG.StreakRewards
+end
 
 local dailyStore = DataStoreService:GetDataStore("DailyRewardChest_v2")
 
@@ -137,7 +168,9 @@ local function getChestPart(chest)
 end
 
 local function getBaseReward(player, chest)
-	local baseReward = tonumber(chest:GetAttribute("RewardMoney")) or 5000
+	local baseReward = tonumber(chest:GetAttribute("RewardMoney"))
+		or tonumber(DAILY_CONFIG.BaseRewardMoney)
+		or DEFAULT_DAILY_CONFIG.BaseRewardMoney
 	local rebirths = tonumber(player:GetAttribute("Rebirths")) or 0
 
 	local leaderstats = player:FindFirstChild("leaderstats")
@@ -148,7 +181,9 @@ local function getBaseReward(player, chest)
 		end
 	end
 
-	return math.floor(baseReward + (rebirths * 15000))
+	local perRebirth = tonumber(DAILY_CONFIG.RewardPerRebirth) or DEFAULT_DAILY_CONFIG.RewardPerRebirth
+
+	return math.floor(baseReward + (rebirths * perRebirth))
 end
 
 local function getStreakDay(streak)
@@ -190,11 +225,17 @@ local function getDailyState(player)
 
 	local state = success and normalizeState(result) or normalizeState(nil)
 	dailyStateCache[player.UserId] = state
+	player:SetAttribute("DailyLastClaim", tonumber(state.lastClaim) or 0)
+	player:SetAttribute("DailyStreak", tonumber(state.streak) or 0)
+	player:SetAttribute("DailyBestStreak", tonumber(state.bestStreak) or 0)
 	return state
 end
 
 local function saveDailyState(player, state)
 	dailyStateCache[player.UserId] = state
+	player:SetAttribute("DailyLastClaim", tonumber(state.lastClaim) or 0)
+	player:SetAttribute("DailyStreak", tonumber(state.streak) or 0)
+	player:SetAttribute("DailyBestStreak", tonumber(state.bestStreak) or 0)
 
 	pcall(function()
 		dailyStore:SetAsync(tostring(player.UserId), state)

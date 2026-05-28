@@ -10,6 +10,7 @@ local DataStoreService = game:GetService("DataStoreService")
 
 local npcFolder = workspace:WaitForChild("BrainrotNPCs")
 local milestoneStore = DataStoreService:GetDataStore("BrainrotCollectionMilestones_v1")
+local questProgressStore = DataStoreService:GetDataStore("BrainrotQuestProgress_v1")
 
 local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
 if not remotesFolder then
@@ -198,6 +199,8 @@ local COLLECTION_MILESTONES = QUEST_CONFIG.CollectionMilestones
 local QUESTS = QUEST_CONFIG.Quests
 local BALANCE_CONFIG = loadBalanceConfig()
 local QUEST_UPDATE_INTERVAL = tonumber(BALANCE_CONFIG and BALANCE_CONFIG.Quests and BALANCE_CONFIG.Quests.UpdateInterval) or 2.5
+local CLAIM_COOLDOWN = 0.75
+local claimCooldowns = {}
 
 local function getQuestForLevel(level)
 	return QUESTS[level] or QUESTS[#QUESTS]
@@ -261,6 +264,10 @@ local function getMilestoneKey(player)
 	return "milestones_" .. tostring(player.UserId)
 end
 
+local function getQuestProgressKey(player)
+	return "quest_progress_" .. tostring(player.UserId)
+end
+
 local function loadMilestones(player)
 	local claimed = {}
 
@@ -293,6 +300,52 @@ end
 
 local function getClaimedMilestones(player)
 	return claimedMilestones[player.UserId] or loadMilestones(player)
+end
+
+local function sanitizeQuestLevel(level)
+	level = math.floor(tonumber(level) or 1)
+
+	if level < 1 then
+		level = 1
+	end
+
+	return level
+end
+
+local function loadQuestProgress(player)
+	local level = 1
+
+	local ok, result = pcall(function()
+		return questProgressStore:GetAsync(getQuestProgressKey(player))
+	end)
+
+	if ok and type(result) == "table" then
+		level = sanitizeQuestLevel(result.level or result.Level)
+	elseif ok and type(result) == "number" then
+		level = sanitizeQuestLevel(result)
+	elseif not ok then
+		warn("[QuestService] Failed to load quest progress for", player.Name, result)
+	end
+
+	player:SetAttribute("BrainrotQuestLevel", level)
+	player:SetAttribute("BrainrotQuestSchemaVersion", 1)
+	return level
+end
+
+local function saveQuestProgress(player)
+	local level = sanitizeQuestLevel(player:GetAttribute("BrainrotQuestLevel"))
+
+	local ok, err = pcall(function()
+		questProgressStore:SetAsync(getQuestProgressKey(player), {
+			schemaVersion = 1,
+			level = level,
+			savedAt = os.time(),
+		})
+	end)
+
+	if not ok then
+		warn("[QuestService] Failed to save quest progress for", player.Name, err)
+	end
 end
 
 local function awardCollectionMilestones(player, owned)
@@ -375,7 +428,8 @@ local function getQuestLevel(player)
 end
 
 local function setQuestLevel(player, level)
-	player:SetAttribute("BrainrotQuestLevel", level)
+	player:SetAttribute("BrainrotQuestLevel", sanitizeQuestLevel(level))
+	saveQuestProgress(player)
 end
 
 local function sendQuestUpdate(player)
@@ -407,6 +461,12 @@ local function sendAllQuestUpdates()
 end
 
 claimQuestRemote.OnServerEvent:Connect(function(player)
+	local now = os.clock()
+	if claimCooldowns[player.UserId] and now - claimCooldowns[player.UserId] < CLAIM_COOLDOWN then
+		return
+	end
+	claimCooldowns[player.UserId] = now
+
 	local level = getQuestLevel(player)
 	local quest = getQuestForLevel(level)
 
@@ -433,7 +493,7 @@ end)
 Players.PlayerAdded:Connect(function(player)
 	task.defer(function()
 		loadMilestones(player)
-		getQuestLevel(player)
+		loadQuestProgress(player)
 
 		local leaderstats = getOrCreateLeaderstats(player)
 
@@ -455,7 +515,16 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	saveMilestones(player)
+	saveQuestProgress(player)
 	claimedMilestones[player.UserId] = nil
+	claimCooldowns[player.UserId] = nil
+end)
+
+game:BindToClose(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		saveMilestones(player)
+		saveQuestProgress(player)
+	end
 end)
 
 npcFolder.DescendantAdded:Connect(function()

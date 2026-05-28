@@ -30,6 +30,7 @@ local DefaultData = {
 	Daily = {
 		LastClaimDay = 0,
 		Streak = 0,
+		BestStreak = 0,
 	},
 	Settings = {
 		SfxVolume = 1,
