@@ -25,6 +25,8 @@ local HATCH_REQUEST_REMOTE_NAME = "HatchStunnedEggRequest"
 local INITIAL_DELAY = 3
 local DEFAULT_DAMAGE = 10
 local DAMAGE_COOLDOWN = 0.12
+local HATCH_REQUEST_COOLDOWN = 0.65
+local HATCH_MAX_DISTANCE = 14
 local COMMON_EGG_TEMPLATE_NAME = "CommonEgg"
 local COMMON_EGG_RUN_ANIMATION_ID = "126840157397198"
 local COMMON_EGG_STUNNED_ANIMATION_ID = "120071709602508"
@@ -32,6 +34,7 @@ local rng = Random.new()
 
 local activeById = {}
 local lastDamageAt = {}
+local lastHatchRequestAt = {}
 local zoneRuntime = {}
 local eggAnimationState = setmetatable({}, { __mode = "k" })
 local hatchStunnedEgg = nil
@@ -74,6 +77,16 @@ local revealRemote = ensureRemote(remotesFolder, REVEAL_REMOTE_NAME)
 local legacyRevealRemote = ensureRemote(ReplicatedStorage, LEGACY_REVEAL_REMOTE_NAME)
 local startNpcRevealRemote = ensureRemote(remotesFolder, START_NPC_REVEAL_REMOTE_NAME)
 local hatchRequestRemote = ensureRemote(remotesFolder, HATCH_REQUEST_REMOTE_NAME)
+local notifyRemote = ReplicatedStorage:FindFirstChild("NotifyUser")
+
+local function notify(player, message, variant)
+	if notifyRemote and notifyRemote:IsA("RemoteEvent") then
+		notifyRemote:FireClient(player, {
+			message = message,
+			variant = variant or "warning",
+		})
+	end
+end
 
 local function getZoneApi()
 	local started = os.clock()
@@ -880,6 +893,7 @@ local function createEggModel(zoneName, zoneConfig, eggDef, position)
 	model:SetAttribute("EggInvulnerable", false)
 	model:SetAttribute("EggStunEndTime", 0)
 	model:SetAttribute("HatchInProgress", false)
+	model:SetAttribute("Captured", false)
 	model:SetAttribute("CanPickup", false)
 	model:SetAttribute("PickupReady", false)
 
@@ -1367,31 +1381,68 @@ local function finishEgg(player, egg, eggData)
 	end)
 end
 
+local function isPlayerAlive(player)
+	local character = player and player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return humanoid ~= nil and root ~= nil and humanoid.Health > 0
+end
+
+local function canRequestHatch(player)
+	local now = os.clock()
+	local last = lastHatchRequestAt[player.UserId] or 0
+	if now - last < HATCH_REQUEST_COOLDOWN then
+		return false
+	end
+
+	lastHatchRequestAt[player.UserId] = now
+	return true
+end
+
 hatchStunnedEgg = function(player, egg)
 	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return
+	end
+	if not canRequestHatch(player) then
+		return
+	end
+	if not isPlayerAlive(player) then
+		notify(player, "You need to be alive to capture.", "warning")
 		return
 	end
 	if typeof(egg) ~= "Instance" or not egg:IsA("Model") then
 		return
 	end
+	if not egg:IsDescendantOf(eggFolder) then
+		return
+	end
 	if egg:GetAttribute("EggSpawnerId") ~= EGG_SPAWNER_ID then
 		return
 	end
-	if egg:GetAttribute("CaptureStunned") ~= true or egg:GetAttribute("HatchInProgress") == true then
+	if egg:GetAttribute("CaptureStunned") ~= true
+		or egg:GetAttribute("HatchInProgress") == true
+		or egg:GetAttribute("Captured") == true
+		or egg:GetAttribute("InventoryOnly") == true then
 		return
 	end
 
 	local root = getRoot(egg)
 	local playerRoot = getPlayerRoot(player)
-	if not root or not playerRoot or (root.Position - playerRoot.Position).Magnitude > 12 then
+	if not root or not playerRoot or (root.Position - playerRoot.Position).Magnitude > HATCH_MAX_DISTANCE then
+		notify(player, "Move closer to capture.", "warning")
 		return
 	end
 
 	local eggId = tostring(egg:GetAttribute("EggId") or "")
 	local eggData = activeById[eggId]
-	if not eggData then
+	if not eggData or eggData.Model ~= egg then
 		return
 	end
+	if eggData.Model and eggData.Model.Parent ~= eggFolder then
+		return
+	end
+
+	egg:SetAttribute("Captured", true)
 
 	finishEgg(player, egg, eggData)
 end
@@ -1778,6 +1829,8 @@ eggFolder.ChildRemoved:Connect(function(child)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
+	lastHatchRequestAt[player.UserId] = nil
+
 	for key, _ in pairs(lastDamageAt) do
 		if string.sub(key, 1, #tostring(player.UserId)) == tostring(player.UserId) then
 			lastDamageAt[key] = nil
