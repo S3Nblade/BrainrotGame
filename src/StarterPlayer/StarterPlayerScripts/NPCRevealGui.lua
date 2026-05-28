@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local RevealAssets = require(script.Parent:WaitForChild("NPCRevealAssets"))
 local BrainrotConfig = nil
+local SoundManager = nil
 
 do
 	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
@@ -20,6 +21,14 @@ do
 		local ok, result = pcall(require, configModule)
 		if ok and type(result) == "table" then
 			BrainrotConfig = result
+		end
+	end
+
+	local soundModule = sharedFolder and sharedFolder:FindFirstChild("SoundManager")
+	if soundModule and soundModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, soundModule)
+		if ok and type(result) == "table" then
+			SoundManager = result
 		end
 	end
 end
@@ -141,6 +150,17 @@ local function getSoundVolume(name)
 end
 
 local function playSound(name, minInterval)
+	if SoundManager and SoundManager.Play2D then
+		local played = SoundManager.Play2D(name, {
+			minInterval = minInterval,
+			soundId = getSoundId(name),
+			volume = getSoundVolume(name),
+		})
+		if played then
+			return
+		end
+	end
+
 	local soundId = getSoundId(name)
 	if not soundId then
 		return
