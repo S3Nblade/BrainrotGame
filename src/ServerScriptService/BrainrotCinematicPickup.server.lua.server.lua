@@ -11,6 +11,8 @@
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
+local DataStoreService = game:GetService("DataStoreService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 
@@ -18,6 +20,8 @@ local PROMPT_NAME = "BrainrotCinematicCapturePrompt"
 local PROMPT_ACTION_TEXT = "Capture"
 local PROMPT_DISTANCE = 13
 local SCAN_EVERY = 0.15
+local DISCOVERY_STORE_NAME = "BrainrotDiscoveries_v1"
+local START_NPC_REVEAL_REMOTE_NAME = "StartNPCReveal"
 
 local npcFolder = Workspace:FindFirstChild(NPC_FOLDER_NAME)
 if not npcFolder then
@@ -28,6 +32,7 @@ end
 
 local activePickups = {}
 local connectedPrompts = {}
+local discoveryStore = DataStoreService:GetDataStore(DISCOVERY_STORE_NAME)
 
 local function log(...)
 	print("[BrainrotCinematicPickup]", ...)
@@ -45,6 +50,24 @@ local function getRoot(model)
 	return model.PrimaryPart
 		or model:FindFirstChild("HumanoidRootPart", true)
 		or model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function isPlayerAlive(player)
+	local character = player and player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	return humanoid ~= nil and humanoid.Health > 0
+end
+
+local function playerCloseEnough(player, npc)
+	local character = player and player.Character
+	local playerRoot = character and character:FindFirstChild("HumanoidRootPart")
+	local npcRoot = getRoot(npc)
+
+	if not playerRoot or not npcRoot then
+		return false
+	end
+
+	return (playerRoot.Position - npcRoot.Position).Magnitude <= (PROMPT_DISTANCE + 4)
 end
 
 local function getUid(instance)
@@ -71,6 +94,138 @@ local function ensureUid(instance)
 	instance:SetAttribute("InventoryUid", uid)
 
 	return uid
+end
+
+local function normalizeDiscoveryMap(raw)
+	local map = {}
+	if type(raw) == "string" and raw ~= "" then
+		local decoded = nil
+		local ok = pcall(function()
+			decoded = HttpService:JSONDecode(raw)
+		end)
+		if ok then
+			raw = decoded
+		end
+	end
+
+	if type(raw) ~= "table" then
+		return map
+	end
+
+	if type(raw.discovered) == "table" then
+		raw = raw.discovered
+	end
+
+	for key, value in pairs(raw) do
+		if value == true then
+			map[tostring(key)] = true
+		elseif type(value) == "string" and value ~= "" then
+			map[tostring(value)] = true
+		elseif type(value) == "table" then
+			local id = value.id or value.Id or value.configId or value.BrainrotConfigId
+			if id then
+				map[tostring(id)] = true
+			end
+		end
+	end
+
+	return map
+end
+
+local function countDiscoveries(map)
+	local count = 0
+	for _, value in pairs(map or {}) do
+		if value == true then
+			count += 1
+		end
+	end
+	return count
+end
+
+local function setDiscoveryAttributes(player, map)
+	local encoded = "{}"
+	pcall(function()
+		encoded = HttpService:JSONEncode(map or {})
+	end)
+
+	player:SetAttribute("BrainrotDiscoveredCount", countDiscoveries(map))
+	player:SetAttribute("BrainrotDiscoveredJson", encoded)
+end
+
+local function getDiscoveryId(instance)
+	local ids = {
+		instance:GetAttribute("BrainrotConfigId"),
+		instance:GetAttribute("BrainrotDiscoveryId"),
+		instance:GetAttribute("ModelName"),
+		instance:GetAttribute("BrainrotModelName"),
+		instance:GetAttribute("TemplateName"),
+		instance:GetAttribute("DisplayName"),
+		instance:GetAttribute("BrainrotName"),
+		instance.Name,
+	}
+
+	for _, id in ipairs(ids) do
+		if id ~= nil and tostring(id) ~= "" then
+			return tostring(id)
+		end
+	end
+
+	return "Brainrot"
+end
+
+local function markDiscovery(player, instance)
+	local discoveryId = getDiscoveryId(instance)
+	local current = normalizeDiscoveryMap(player:GetAttribute("BrainrotDiscoveredJson"))
+	local wasSeen = current[discoveryId] == true
+	current[discoveryId] = true
+	setDiscoveryAttributes(player, current)
+
+	task.spawn(function()
+		local key = "player_" .. tostring(player.UserId)
+		local ok, err = pcall(function()
+			discoveryStore:UpdateAsync(key, function(old)
+				local merged = normalizeDiscoveryMap(old)
+				merged[discoveryId] = true
+				return merged
+			end)
+		end)
+
+		if not ok then
+			warnLog("Failed to save discovery for", player.Name, discoveryId, err)
+		end
+	end)
+
+	return not wasSeen, discoveryId, countDiscoveries(current)
+end
+
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
+end
+
+local function getStartNpcRevealRemote()
+	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+	if not remotes then
+		remotes = Instance.new("Folder")
+		remotes.Name = "Remotes"
+		remotes.Parent = ReplicatedStorage
+	end
+
+	local remote = remotes:FindFirstChild(START_NPC_REVEAL_REMOTE_NAME)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+
+	if remote then
+		remote:Destroy()
+	end
+
+	remote = Instance.new("RemoteEvent")
+	remote.Name = START_NPC_REVEAL_REMOTE_NAME
+	remote.Parent = remotes
+	return remote
 end
 
 local function getBrainrotName(npc)
@@ -336,7 +491,61 @@ local function createBrainrotTool(player, npc)
 	return tool
 end
 
-local function fireCatchFeedback(player, npc, tool)
+local function buildRevealPayload(npc, tool, isNewDiscovery, discoveryId, discoveredCount)
+	local name = getBrainrotName(npc)
+	local rarity = tostring(tool:GetAttribute("Rarity") or npc:GetAttribute("Rarity") or "Common")
+	local mutation = tostring(tool:GetAttribute("Mutation") or npc:GetAttribute("Mutation") or "Normal")
+	local mps = tonumber(tool:GetAttribute("CashPerSecond")) or tonumber(tool:GetAttribute("MPS")) or 1
+	local configId = tool:GetAttribute("BrainrotConfigId")
+	local modelName = tool:GetAttribute("ModelName") or tool:GetAttribute("BrainrotModelName")
+	local revealId = HttpService:GenerateGUID(false)
+
+	return {
+		RevealId = revealId,
+		revealId = revealId,
+		EggName = "Captured Brainrot",
+		ResultName = name,
+		BrainrotConfigId = configId,
+		BrainrotDiscoveryId = discoveryId,
+		ModelName = modelName,
+		ShowcaseScale = tool:GetAttribute("ShowcaseScale"),
+		Rarity = rarity,
+		selectedRarity = rarity,
+		MPS = mps,
+		CashPerSecond = mps,
+		Mutation = mutation,
+		MutationDisplayName = tostring(tool:GetAttribute("MutationDisplayName") or mutation),
+		MutationMultiplier = tonumber(tool:GetAttribute("MutationMultiplier")) or 1,
+		isNew = isNewDiscovery,
+		IsNew = isNewDiscovery,
+		FirstTime = isNewDiscovery,
+		DiscoveredCount = discoveredCount,
+		revealSource = "OriginalChase",
+		selectedNPC = {
+			id = tostring(configId or discoveryId or name),
+			configId = configId,
+			BrainrotConfigId = configId,
+			modelName = modelName,
+			ModelName = modelName,
+			name = name,
+			displayName = name,
+			rarity = rarity,
+			mps = mps,
+			CashPerSecond = mps,
+			showcaseScale = tool:GetAttribute("ShowcaseScale"),
+			ShowcaseScale = tool:GetAttribute("ShowcaseScale"),
+			mutation = mutation,
+			mutationDisplayName = tostring(tool:GetAttribute("MutationDisplayName") or mutation),
+		},
+	}
+end
+
+local function fireNpcReveal(player, payload)
+	local remote = getStartNpcRevealRemote()
+	remote:FireClient(player, payload)
+end
+
+local function fireCatchFeedback(player, npc, tool, isNewDiscovery, discoveryId, discoveredCount)
 	local remote = ReplicatedStorage:FindFirstChild("BrainrotCatchFeedback")
 	if remote and remote:IsA("RemoteEvent") then
 		pcall(function()
@@ -348,6 +557,11 @@ local function fireCatchFeedback(player, npc, tool)
 				MutationDisplayName = tostring(npc:GetAttribute("MutationDisplayName") or npc:GetAttribute("Mutation") or "Normal"),
 				MutationMultiplier = tonumber(npc:GetAttribute("MutationMultiplier")) or 1,
 				CashPerSecond = tonumber(npc:GetAttribute("CashPerSecond")) or tonumber(npc:GetAttribute("MPS")) or 1,
+				BrainrotConfigId = tool:GetAttribute("BrainrotConfigId"),
+				BrainrotDiscoveryId = discoveryId,
+				FirstDiscovery = isNewDiscovery,
+				IsNew = isNewDiscovery,
+				DiscoveredCount = discoveredCount,
 				Tool = tool,
 			})
 		end)
@@ -381,7 +595,17 @@ local function captureNpc(player, npc, prompt)
 		return
 	end
 
+	if not isPlayerAlive(player) then
+		warnLog("Tried to capture while not alive:", player.Name)
+		return
+	end
+
 	if not npc or not npc.Parent then
+		return
+	end
+
+	if not playerCloseEnough(player, npc) then
+		warnLog("Tried to capture from too far away:", player.Name, npc.Name)
 		return
 	end
 
@@ -422,7 +646,25 @@ local function captureNpc(player, npc, prompt)
 	local tool = createBrainrotTool(player, npc)
 
 	if tool then
-		fireCatchFeedback(player, npc, tool)
+		local isNewDiscovery, discoveryId, discoveredCount = markDiscovery(player, tool)
+		tool:SetAttribute("BrainrotDiscoveryId", discoveryId)
+		tool:SetAttribute("FirstDiscovery", isNewDiscovery)
+		tool:SetAttribute("DiscoveredByUserId", player.UserId)
+
+		local revealPayload = buildRevealPayload(npc, tool, isNewDiscovery, discoveryId, discoveredCount)
+		fireCatchFeedback(player, npc, tool, isNewDiscovery, discoveryId, discoveredCount)
+		fireNpcReveal(player, revealPayload)
+		emitGameplayEvent("CaptureCompleted", player, {
+			source = "OriginalChase",
+			brainrotId = tool:GetAttribute("BrainrotConfigId"),
+			discoveryId = discoveryId,
+			displayName = tool:GetAttribute("DisplayName") or tool.Name,
+			rarity = tostring(tool:GetAttribute("Rarity") or "Common"),
+			mutation = tostring(tool:GetAttribute("Mutation") or "Normal"),
+			cashPerSecond = tonumber(tool:GetAttribute("CashPerSecond")) or tonumber(tool:GetAttribute("MPS")) or 1,
+			isNew = isNewDiscovery,
+			discoveredCount = discoveredCount,
+		})
 
 		log("Captured:", player.Name, tool.Name, "Mutation:", tostring(tool:GetAttribute("Mutation") or "Normal"))
 
