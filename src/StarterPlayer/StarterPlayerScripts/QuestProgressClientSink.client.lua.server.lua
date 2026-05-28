@@ -44,7 +44,7 @@ local root = Instance.new("Frame")
 root.Name = "QuestCard"
 root.AnchorPoint = Vector2.new(1, 0)
 root.Position = UDim2.new(1, -18, 0, 88)
-root.Size = UDim2.fromOffset(316, 126)
+root.Size = UDim2.fromOffset(316, 252)
 root.BackgroundColor3 = Color3.fromRGB(255, 216, 74)
 root.BorderSizePixel = 0
 root.Parent = gui
@@ -216,6 +216,49 @@ claimConstraint.MaxTextSize = 17
 claimConstraint.MinTextSize = 9
 claimConstraint.Parent = claimButton
 
+local dailyPanel = Instance.new("Frame")
+dailyPanel.Name = "DailyQuestPanel"
+dailyPanel.Position = UDim2.fromOffset(12, 124)
+dailyPanel.Size = UDim2.new(1, -24, 0, 116)
+dailyPanel.BackgroundColor3 = Color3.fromRGB(255, 250, 214)
+dailyPanel.BackgroundTransparency = 0.08
+dailyPanel.BorderSizePixel = 0
+dailyPanel.Parent = root
+
+local dailyCorner = Instance.new("UICorner")
+dailyCorner.CornerRadius = UDim.new(0, 14)
+dailyCorner.Parent = dailyPanel
+
+local dailyStroke = Instance.new("UIStroke")
+dailyStroke.Color = Color3.fromRGB(117, 74, 31)
+dailyStroke.Thickness = 2
+dailyStroke.Transparency = 0.08
+dailyStroke.Parent = dailyPanel
+
+local dailyHeader = Instance.new("TextLabel")
+dailyHeader.Name = "DailyHeader"
+dailyHeader.BackgroundTransparency = 1
+dailyHeader.Position = UDim2.fromOffset(10, 3)
+dailyHeader.Size = UDim2.new(1, -20, 0, 20)
+dailyHeader.Text = "DAILY QUESTS"
+dailyHeader.TextColor3 = Color3.fromRGB(85, 48, 24)
+dailyHeader.TextScaled = true
+dailyHeader.Font = FONT
+dailyHeader.TextXAlignment = Enum.TextXAlignment.Left
+dailyHeader.Parent = dailyPanel
+
+local dailyHeaderConstraint = Instance.new("UITextSizeConstraint")
+dailyHeaderConstraint.MaxTextSize = 14
+dailyHeaderConstraint.MinTextSize = 9
+dailyHeaderConstraint.Parent = dailyHeader
+
+local dailyList = Instance.new("Frame")
+dailyList.Name = "DailyList"
+dailyList.BackgroundTransparency = 1
+dailyList.Position = UDim2.fromOffset(8, 27)
+dailyList.Size = UDim2.new(1, -16, 0, 82)
+dailyList.Parent = dailyPanel
+
 local latestPayload = nil
 local claimReady = false
 local burstRunning = false
@@ -244,6 +287,123 @@ local function pop()
 		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 		{ Scale = 1 }
 	):Play()
+end
+
+local function clearDailyRows()
+	for _, child in ipairs(dailyList:GetChildren()) do
+		child:Destroy()
+	end
+end
+
+local function makeDailyText(parent, name, text, position, size, color, maxSize, align)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.Position = position
+	label.Size = size
+	label.Text = text
+	label.TextColor3 = color
+	label.TextScaled = true
+	label.TextWrapped = true
+	label.Font = FONT
+	label.TextXAlignment = align or Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.Parent = parent
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = maxSize
+	constraint.MinTextSize = 8
+	constraint.Parent = label
+
+	return label
+end
+
+local function renderDailyQuests(dailyQuests)
+	clearDailyRows()
+
+	if type(dailyQuests) ~= "table" or #dailyQuests <= 0 then
+		local empty = makeDailyText(
+			dailyList,
+			"Empty",
+			"Daily quests appear after the server loads.",
+			UDim2.fromOffset(6, 18),
+			UDim2.new(1, -12, 0, 28),
+			Color3.fromRGB(112, 73, 46),
+			13
+		)
+		empty.TextXAlignment = Enum.TextXAlignment.Center
+		return
+	end
+
+	for index = 1, math.min(3, #dailyQuests) do
+		local data = dailyQuests[index]
+		local goal = math.max(tonumber(data.goal) or 1, 1)
+		local progress = math.clamp(tonumber(data.progress) or 0, 0, goal)
+		local ratio = progress / goal
+		local claimed = data.claimed == true
+		local complete = data.complete == true
+
+		local row = Instance.new("Frame")
+		row.Name = "DailyQuestRow"
+		row.Position = UDim2.fromOffset(0, (index - 1) * 27)
+		row.Size = UDim2.new(1, 0, 0, 24)
+		row.BackgroundColor3 = claimed and Color3.fromRGB(195, 255, 177) or Color3.fromRGB(255, 232, 133)
+		row.BackgroundTransparency = 0.04
+		row.BorderSizePixel = 0
+		row.Parent = dailyList
+
+		local rowCorner = Instance.new("UICorner")
+		rowCorner.CornerRadius = UDim.new(0, 9)
+		rowCorner.Parent = row
+
+		local name = makeDailyText(
+			row,
+			"Name",
+			tostring(data.action or data.title or "Daily Quest"),
+			UDim2.fromOffset(8, 1),
+			UDim2.new(1, -94, 0, 22),
+			Color3.fromRGB(69, 43, 28),
+			12
+		)
+		name.TextTruncate = Enum.TextTruncate.AtEnd
+		name.TextWrapped = false
+
+		local barBack = Instance.new("Frame")
+		barBack.Name = "BarBack"
+		barBack.Position = UDim2.new(1, -82, 0, 7)
+		barBack.Size = UDim2.fromOffset(42, 10)
+		barBack.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		barBack.BackgroundTransparency = 0.12
+		barBack.BorderSizePixel = 0
+		barBack.Parent = row
+
+		local barCorner = Instance.new("UICorner")
+		barCorner.CornerRadius = UDim.new(1, 0)
+		barCorner.Parent = barBack
+
+		local barFill = Instance.new("Frame")
+		barFill.Name = "BarFill"
+		barFill.Size = UDim2.fromScale(ratio, 1)
+		barFill.BackgroundColor3 = claimed and Color3.fromRGB(69, 220, 88) or Color3.fromRGB(255, 142, 46)
+		barFill.BorderSizePixel = 0
+		barFill.Parent = barBack
+
+		local fillCorner = Instance.new("UICorner")
+		fillCorner.CornerRadius = UDim.new(1, 0)
+		fillCorner.Parent = barFill
+
+		local statusText = claimed and "CLAIMED" or (complete and "DONE" or (tostring(math.floor(progress)) .. "/" .. tostring(math.floor(goal))))
+		makeDailyText(
+			row,
+			"Status",
+			statusText,
+			UDim2.new(1, -38, 1, -21),
+			UDim2.fromOffset(34, 18),
+			claimed and Color3.fromRGB(32, 123, 46) or Color3.fromRGB(90, 53, 25),
+			10,
+			Enum.TextXAlignment.Center
+		)
+	end
 end
 
 local function makeBurstLabel(parent, name, text, position, size, color, maxSize)
@@ -429,6 +589,7 @@ local function applyQuest(payload)
 	reward.Text = "+" .. formatNumber(payload.rewardAmount) .. "\n" .. tostring(payload.rewardType or "Coins")
 	progressText.Text = tostring(math.floor(progress)) .. "/" .. tostring(math.floor(goal))
 	setClaimReady(complete)
+	renderDailyQuests(payload.dailyQuests)
 
 	TweenService:Create(
 		progressFill,
@@ -468,6 +629,7 @@ task.delay(1, function()
 			complete = false,
 			rewardType = "Coins",
 			rewardAmount = 500,
+			dailyQuests = {},
 		})
 	end
 end)
