@@ -10,6 +10,18 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local BrainrotConfig = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local configModule = sharedFolder and sharedFolder:FindFirstChild("BrainrotConfig")
+	if configModule and configModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, configModule)
+		if ok and type(result) == "table" then
+			BrainrotConfig = result
+		end
+	end
+end
 
 local FONT = Enum.Font.FredokaOne
 
@@ -32,6 +44,7 @@ local THEME = {
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(235, 239, 245),
+	Uncommon = Color3.fromRGB(111, 236, 135),
 	Rare = Color3.fromRGB(78, 172, 255),
 	Epic = Color3.fromRGB(205, 94, 255),
 	Mythic = Color3.fromRGB(255, 77, 171),
@@ -39,29 +52,20 @@ local RARITY_COLORS = {
 	Divine = Color3.fromRGB(70, 238, 255),
 	Celestial = Color3.fromRGB(167, 132, 255),
 	Godly = Color3.fromRGB(255, 78, 78),
+	Secret = Color3.fromRGB(68, 255, 184),
 }
 
-local INDEX_NPCS = {
-	{ zone = "Starter", name = "Poppi Plazito", rarity = "Common" },
-	{ zone = "Starter", name = "Bello Bouncini", rarity = "Rare" },
-	{ zone = "Starter", name = "Jumbo Jellino", rarity = "Epic" },
-	{ zone = "Forest", name = "Mossito Bambino", rarity = "Rare" },
-	{ zone = "Forest", name = "Vinecap Troppi", rarity = "Epic" },
-	{ zone = "Forest", name = "Oakleaf Orbitini", rarity = "Mythic" },
-	{ zone = "Desert", name = "Sandy Sahurino", rarity = "Common" },
-	{ zone = "Desert", name = "Cactus Calabro", rarity = "Rare" },
-	{ zone = "Desert", name = "Dune Dancerino", rarity = "Epic" },
-	{ zone = "Desert", name = "Mirage Munchini", rarity = "Mythic" },
-	{ zone = "Crystal", name = "Prisma Puffino", rarity = "Epic" },
-	{ zone = "Crystal", name = "Quartz Quirkini", rarity = "Mythic" },
-	{ zone = "Crystal", name = "Shardino Splendito", rarity = "Legendary" },
-	{ zone = "Lava", name = "Magma Munchino", rarity = "Mythic" },
-	{ zone = "Lava", name = "Ember Bambino", rarity = "Legendary" },
-	{ zone = "Lava", name = "Cinder Crownini", rarity = "Divine" },
-	{ zone = "Galaxy", name = "Nebula Nino", rarity = "Legendary" },
-	{ zone = "Galaxy", name = "Orbitto Maximo", rarity = "Divine" },
-	{ zone = "Galaxy", name = "Cosmo Spaghettini", rarity = "Celestial" },
-	{ zone = "Galaxy", name = "Starlord Bambini", rarity = "Godly" },
+local RARITY_ORDER = {
+	Common = 1,
+	Uncommon = 2,
+	Rare = 3,
+	Epic = 4,
+	Legendary = 5,
+	Mythic = 6,
+	Secret = 7,
+	Divine = 8,
+	Celestial = 9,
+	Godly = 10,
 }
 
 local currentMode = "Shop"
@@ -80,6 +84,58 @@ local rebirthRequestRemote = remotesFolder and remotesFolder:FindFirstChild("Reb
 local rebirthUpdateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthUpdate")
 local rebirthCompleteRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthComplete")
 local rebirthGetStateRemote = remotesFolder and remotesFolder:FindFirstChild("RebirthGetState")
+
+local function buildIndexNpcs()
+	if type(BrainrotConfig) == "table" and type(BrainrotConfig.List) == "table" then
+		local items = {}
+		for order, entry in ipairs(BrainrotConfig.List) do
+			table.insert(items, {
+				id = tostring(entry.Id or entry.DisplayName or ("Brainrot_" .. tostring(order))),
+				modelName = tostring(entry.ModelName or ""),
+				zone = tostring(entry.ZoneUnlockRequirement or "Starter"),
+				name = tostring(entry.DisplayName or entry.Id or "Brainrot"),
+				rarity = tostring(entry.Rarity or "Common"),
+				cashPerSecond = tonumber(entry.CashPerSecond) or 0,
+				order = order,
+			})
+		end
+
+		table.sort(items, function(a, b)
+			local zoneA = tostring(a.zone)
+			local zoneB = tostring(b.zone)
+			if zoneA ~= zoneB then
+				return zoneA < zoneB
+			end
+
+			local rarityA = RARITY_ORDER[a.rarity] or 1
+			local rarityB = RARITY_ORDER[b.rarity] or 1
+			if rarityA ~= rarityB then
+				return rarityA < rarityB
+			end
+
+			return a.order < b.order
+		end)
+
+		return items
+	end
+
+	return {
+		{ id = "WobbleNugget", zone = "Starter", name = "Wobble Nugget", rarity = "Common", cashPerSecond = 6, order = 1 },
+		{ id = "GoofyCone", zone = "Starter", name = "Goofy Cone", rarity = "Common", cashPerSecond = 7, order = 2 },
+		{ id = "TinyBloop", zone = "Starter", name = "Tiny Bloop", rarity = "Common", cashPerSecond = 8, order = 3 },
+		{ id = "SneakyPickle", zone = "Starter", name = "Sneaky Pickle", rarity = "Uncommon", cashPerSecond = 12, order = 4 },
+		{ id = "DizzyDonut", zone = "Starter", name = "Dizzy Donut", rarity = "Uncommon", cashPerSecond = 14, order = 5 },
+		{ id = "BananaGoblin", zone = "Starter", name = "Banana Goblin", rarity = "Rare", cashPerSecond = 22, order = 6 },
+		{ id = "ShyToaster", zone = "Forest", name = "Shy Toaster", rarity = "Rare", cashPerSecond = 26, order = 7 },
+		{ id = "TurboMeatball", zone = "Forest", name = "Turbo Meatball", rarity = "Epic", cashPerSecond = 45, order = 8 },
+		{ id = "GlitchyCapybara", zone = "Crystal", name = "Glitchy Capybara", rarity = "Epic", cashPerSecond = 54, order = 9 },
+		{ id = "BubbleLizard", zone = "Crystal", name = "Bubble Lizard", rarity = "Legendary", cashPerSecond = 95, order = 10 },
+		{ id = "GoldenSpaghettiKing", zone = "Lava", name = "Golden Spaghetti King", rarity = "Mythic", cashPerSecond = 180, order = 11 },
+		{ id = "CosmicBrainFrog", zone = "Galaxy", name = "Cosmic Brain Frog", rarity = "Secret", cashPerSecond = 420, order = 12 },
+	}
+end
+
+local INDEX_NPCS = buildIndexNpcs()
 
 local function formatNumber(value)
 	value = tonumber(value) or 0
@@ -699,19 +755,52 @@ local function renderShop()
 	end
 end
 
-local function scanSeenNpcs()
-	local function markSeenFromInstance(instance)
-		local name = tostring(instance:GetAttribute("DisplayName") or instance:GetAttribute("BrainrotName") or instance.Name)
-		if name ~= "" then
-			seenNpcs[name] = true
+local function markSeenFromInstance(instance)
+	local ids = {
+		instance:GetAttribute("BrainrotDiscoveryId"),
+		instance:GetAttribute("BrainrotConfigId"),
+		instance:GetAttribute("ModelName"),
+		instance:GetAttribute("BrainrotModelName"),
+		instance:GetAttribute("DisplayName"),
+		instance:GetAttribute("BrainrotName"),
+		instance.Name,
+	}
+
+	for _, id in ipairs(ids) do
+		if id ~= nil and tostring(id) ~= "" then
+			seenNpcs[tostring(id)] = true
 		end
 	end
+end
 
+local function scanServerDiscoveries()
+	local encoded = player:GetAttribute("BrainrotDiscoveredJson")
+	if type(encoded) ~= "string" or encoded == "" then
+		return
+	end
+
+	local decoded = nil
+	local ok = pcall(function()
+		decoded = game:GetService("HttpService"):JSONDecode(encoded)
+	end)
+	if not ok or type(decoded) ~= "table" then
+		return
+	end
+
+	for id, value in pairs(decoded) do
+		if value == true then
+			seenNpcs[tostring(id)] = true
+		end
+	end
+end
+
+local function scanSeenNpcs()
+	scanServerDiscoveries()
 	local npcFolder = Workspace:FindFirstChild("BrainrotNPCs")
 
 	if npcFolder then
 		for _, npc in ipairs(npcFolder:GetChildren()) do
-			if npc:IsA("Model") then
+			if npc:IsA("Model") and (npc:GetAttribute("InventoryOnly") == true or npc:GetAttribute("OwnerUserId") == player.UserId or npc:GetAttribute("CapturedByUserId") == player.UserId) then
 				markSeenFromInstance(npc)
 			end
 		end
@@ -732,6 +821,12 @@ local function scanSeenNpcs()
 	end
 end
 
+local function isIndexItemFound(item)
+	return seenNpcs[item.id] == true
+		or seenNpcs[item.modelName] == true
+		or seenNpcs[item.name] == true
+end
+
 local function renderIndex()
 	clearBody()
 	scanSeenNpcs()
@@ -740,7 +835,7 @@ local function renderIndex()
 
 	local discovered = 0
 	for _, item in ipairs(INDEX_NPCS) do
-		if seenNpcs[item.name] then
+		if isIndexItemFound(item) then
 			discovered += 1
 		end
 	end
@@ -780,7 +875,7 @@ local function renderIndex()
 	grid.Parent = scroll
 
 	for index, item in ipairs(INDEX_NPCS) do
-		local found = seenNpcs[item.name] == true
+		local found = isIndexItemFound(item)
 		local rarityColor = RARITY_COLORS[item.rarity] or RARITY_COLORS.Common
 		local card = makePanel(
 			scroll,
@@ -797,13 +892,13 @@ local function renderIndex()
 		silhouette.Position = UDim2.new(0, 12, 0, 12)
 		silhouette.Size = UDim2.fromOffset(52, 52)
 
-		local icon = makeLabel(silhouette, "Icon", found and "NPC" or "?", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 18, found and rarityColor or Color3.fromRGB(180, 190, 210), 34)
+		local icon = makeLabel(silhouette, "Icon", found and string.sub(item.name, 1, 1) or "?", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 24, found and rarityColor or Color3.fromRGB(180, 190, 210), 34)
 		icon.TextStrokeTransparency = 0.15
 
 		local name = makeLabel(card, "Name", found and item.name or "Unknown", UDim2.new(1, -78, 0, 40), UDim2.new(0, 72, 0, 15), 18, Color3.fromRGB(255, 255, 255), 34)
 		name.TextXAlignment = Enum.TextXAlignment.Left
 
-		local zone = makeLabel(card, "Zone", item.zone, UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 72), 15, Color3.fromRGB(255, 250, 210), 34)
+		local zone = makeLabel(card, "Zone", item.zone .. "  +" .. formatNumber(item.cashPerSecond or 0) .. "/s", UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 72), 15, Color3.fromRGB(255, 250, 210), 34)
 		zone.TextXAlignment = Enum.TextXAlignment.Left
 
 		local rarity = makeLabel(card, "Rarity", found and item.rarity or "Locked", UDim2.new(1, -24, 0, 24), UDim2.new(0, 12, 0, 98), 15, found and rarityColor or Color3.fromRGB(210, 218, 232), 34)
@@ -1204,13 +1299,6 @@ local function polishGuiTree(root)
 end
 
 local function bindNpcIndexTracking()
-	local function markSeenFromInstance(instance)
-		local name = tostring(instance:GetAttribute("DisplayName") or instance:GetAttribute("BrainrotName") or instance.Name)
-		if name ~= "" then
-			seenNpcs[name] = true
-		end
-	end
-
 	local function bindToolContainer(container)
 		if not container then
 			return
@@ -1241,6 +1329,13 @@ local function bindNpcIndexTracking()
 	player.CharacterAdded:Connect(function(character)
 		bindToolContainer(character)
 		task.defer(scanSeenNpcs)
+	end)
+
+	player:GetAttributeChangedSignal("BrainrotDiscoveredJson"):Connect(function()
+		scanServerDiscoveries()
+		if isOpen and currentMode == "Index" then
+			renderIndex()
+		end
 	end)
 end
 
