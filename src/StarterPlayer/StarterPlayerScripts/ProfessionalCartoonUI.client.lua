@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local BrainrotConfig = nil
+local SoundManager = nil
 
 do
 	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
@@ -19,6 +20,14 @@ do
 		local ok, result = pcall(require, configModule)
 		if ok and type(result) == "table" then
 			BrainrotConfig = result
+		end
+	end
+
+	local soundModule = sharedFolder and sharedFolder:FindFirstChild("SoundManager")
+	if soundModule and soundModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, soundModule)
+		if ok and type(result) == "table" then
+			SoundManager = result
 		end
 	end
 end
@@ -185,6 +194,29 @@ local function tween(instance, duration, props, style, direction)
 	return t
 end
 
+local function playUiSound(name, options)
+	if SoundManager and SoundManager.Play2D then
+		SoundManager.Play2D(name, options)
+	end
+end
+
+local function playNotifySound(message, variant)
+	local text = string.lower(tostring(message or ""))
+	local kind = tostring(variant or "info")
+
+	if string.find(text, "rebirth", 1, true) and kind == "success" then
+		playUiSound("rebirth", { minInterval = 0.35 })
+	elseif string.find(text, "daily complete", 1, true) or string.find(text, "quest complete", 1, true) then
+		playUiSound("quest_complete", { minInterval = 0.2 })
+	elseif string.find(text, "upgrade", 1, true) and kind == "success" then
+		playUiSound("purchase_success", { minInterval = 0.18 })
+	elseif kind == "error" or kind == "warning" then
+		playUiSound("purchase_fail", { minInterval = 0.18 })
+	elseif kind == "success" then
+		playUiSound("ui_click", { minInterval = 0.08 })
+	end
+end
+
 local function addCorner(parent, radius)
 	local corner = parent:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, radius)
@@ -312,6 +344,7 @@ local function makeButton(parent, name, text, colorTop, colorBottom, zIndex)
 	end)
 
 	button.MouseButton1Down:Connect(function()
+		playUiSound("ui_click", { minInterval = 0.04, volume = 0.22 })
 		tween(scale, 0.06, { Scale = 0.94 })
 	end)
 
@@ -1410,6 +1443,7 @@ local function closeModal()
 end
 
 local function pushToast(message, variant)
+	playNotifySound(message, variant)
 	toastCounter += 1
 
 	local colors = {
