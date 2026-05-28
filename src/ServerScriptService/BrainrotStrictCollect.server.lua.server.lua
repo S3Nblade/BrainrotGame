@@ -13,7 +13,7 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 
-local UPDATE_EVERY = 0.15
+local UPDATE_EVERY = 0.5
 local COLLECT_DEBOUNCE = 0.5
 local SAME_FLOOR_Y_DISTANCE = 12
 local MAX_PAIR_DISTANCE = 45
@@ -378,9 +378,12 @@ local function assignCollects(player, plot)
 
 			for _, collect in ipairs(collects) do
 				if not usedCollects[collect] then
+					local collectSlot =
+						tostring(collect.mainPart:GetAttribute("BrainrotSlotId") or collect.container:GetAttribute("BrainrotSlotId") or "")
 					local yDiff = math.abs(npcData.root.Position.Y - collect.mainPart.Position.Y)
 
-					if yDiff <= SAME_FLOOR_Y_DISTANCE then
+					if (collectSlot == "" or npcData.slotId == "" or collectSlot == npcData.slotId)
+						and yDiff <= SAME_FLOOR_Y_DISTANCE then
 						local distance = (npcData.root.Position - collect.mainPart.Position).Magnitude
 
 						if distance <= MAX_PAIR_DISTANCE then
