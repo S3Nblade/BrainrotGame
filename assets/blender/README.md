@@ -36,6 +36,7 @@ Model names must match `src/ReplicatedStorage/Shared/BrainrotConfig.lua`:
 4. Import generated GLB assets from `exports/models/`, `exports/animations/`, and `exports/vfx/`.
 5. Put final model assets in the Roblox Studio folder that the game uses for NPC templates.
 6. Paste all uploaded asset IDs into `src/ReplicatedStorage/Shared/AssetIds.lua`.
+7. Run `python tools/verify_asset_pipeline.py` before committing asset registry changes.
 
 The generator creates one placeholder model per Brainrot plus `idle`, `run`, `stun`, and `showcase` animation exports for each starter character. It also exports a small props pack with a reveal platform, plot stand, zone gate, and hiding prop placeholders.
 

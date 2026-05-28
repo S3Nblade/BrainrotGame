@@ -17,5 +17,6 @@ This repo is script-first Rojo. Do not expect Rojo to sync `.glb`, meshes, terra
 8. Import rarity VFX placeholders from `exports/vfx/VFX_*Glow.glb`.
 9. Upload icons and sounds when ready.
 10. Paste every uploaded Roblox asset ID into `src/ReplicatedStorage/Shared/AssetIds.lua`.
+11. Run `python tools/verify_asset_pipeline.py`.
 
 Keep these names stable. `BrainrotConfig.ModelName` and the reveal/placement systems depend on matching names.

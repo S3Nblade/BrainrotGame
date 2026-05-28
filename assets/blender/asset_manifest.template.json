@@ -28,5 +28,33 @@
     "PROP_HideCrate",
     "PROP_RevealPlatform"
   ],
-  "assetRegistry": "src/ReplicatedStorage/Shared/AssetIds.lua"
+  "requiredRarityVfx": [
+    "VFX_CommonGlow",
+    "VFX_UncommonGlow",
+    "VFX_RareGlow",
+    "VFX_EpicGlow",
+    "VFX_LegendaryGlow",
+    "VFX_MythicGlow",
+    "VFX_SecretGlow"
+  ],
+  "requiredSoundKeys": [
+    "ui_click",
+    "ui_hover",
+    "hit",
+    "stun",
+    "capture_success",
+    "reveal_tick",
+    "reveal_speedup",
+    "reveal_final_pop",
+    "reveal_rare",
+    "reveal_legendary",
+    "money_collect",
+    "purchase_success",
+    "purchase_fail",
+    "quest_complete",
+    "rebirth",
+    "zone_unlock"
+  ],
+  "assetRegistry": "src/ReplicatedStorage/Shared/AssetIds.lua",
+  "verificationCommand": "python tools/verify_asset_pipeline.py"
 }
