@@ -50,6 +50,7 @@ local DAILY_CONFIG = loadDailyConfig()
 local PROMPT_NAME = "DailyRewardPrompt"
 local COOLDOWN_SECONDS = tonumber(DAILY_CONFIG.CooldownSeconds) or DEFAULT_DAILY_CONFIG.CooldownSeconds
 local CHECK_EVERY = tonumber(DAILY_CONFIG.CheckEverySeconds) or DEFAULT_DAILY_CONFIG.CheckEverySeconds
+local MIN_SCAN_INTERVAL = 15
 local STREAK_RESET_SECONDS = tonumber(DAILY_CONFIG.StreakResetSeconds) or (COOLDOWN_SECONDS * 2)
 local STREAK_REWARDS = type(DAILY_CONFIG.StreakRewards) == "table"
 	and DAILY_CONFIG.StreakRewards
@@ -378,15 +379,30 @@ Players.PlayerRemoving:Connect(function(player)
 	dailyStateCache[player.UserId] = nil
 end)
 
+local function scanChests()
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if isChest(obj) then
+			bindChest(obj)
+		end
+	end
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+	task.defer(function()
+		if isChest(obj) then
+			bindChest(obj)
+		elseif obj.Parent and isChest(obj.Parent) then
+			bindChest(obj.Parent)
+		end
+	end)
+end)
+
+task.defer(scanChests)
+
 task.spawn(function()
 	while true do
-		for _, obj in ipairs(Workspace:GetDescendants()) do
-			if isChest(obj) then
-				bindChest(obj)
-			end
-		end
-
-		task.wait(CHECK_EVERY)
+		task.wait(math.max(CHECK_EVERY, MIN_SCAN_INTERVAL))
+		scanChests()
 	end
 end)
 

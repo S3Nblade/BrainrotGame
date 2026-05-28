@@ -3,7 +3,7 @@
 local DailyRewardConfig = {
 	CooldownSeconds = 24 * 60 * 60,
 	StreakResetSeconds = 2 * 24 * 60 * 60,
-	CheckEverySeconds = 1,
+	CheckEverySeconds = 30,
 	BaseRewardMoney = 5000,
 	RewardPerRebirth = 15000,
 	StreakRewards = {
