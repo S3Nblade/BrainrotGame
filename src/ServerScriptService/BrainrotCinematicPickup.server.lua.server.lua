@@ -33,6 +33,20 @@ end
 local activePickups = {}
 local connectedPrompts = {}
 local discoveryStore = DataStoreService:GetDataStore(DISCOVERY_STORE_NAME)
+local BrainrotConfig = nil
+
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local configModule = sharedFolder and sharedFolder:FindFirstChild("BrainrotConfig")
+	if configModule and configModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, configModule)
+		if ok and type(result) == "table" then
+			BrainrotConfig = result
+		else
+			warn("[BrainrotCinematicPickup] BrainrotConfig failed to load:", result)
+		end
+	end
+end
 
 local function log(...)
 	print("[BrainrotCinematicPickup]", ...)
@@ -226,6 +240,38 @@ local function getStartNpcRevealRemote()
 	remote.Name = START_NPC_REVEAL_REMOTE_NAME
 	remote.Parent = remotes
 	return remote
+end
+
+local function getRevealPool(selectedConfigId)
+	local pool = {}
+	if type(BrainrotConfig) ~= "table" or type(BrainrotConfig.List) ~= "table" then
+		return pool
+	end
+
+	for _, entry in ipairs(BrainrotConfig.List) do
+		if #pool >= 8 then
+			break
+		end
+
+		local id = tostring(entry.Id or "")
+		if id ~= "" and id ~= tostring(selectedConfigId or "") then
+			table.insert(pool, {
+				id = id,
+				configId = id,
+				BrainrotConfigId = id,
+				modelName = tostring(entry.ModelName or ""),
+				ModelName = tostring(entry.ModelName or ""),
+				name = tostring(entry.DisplayName or id),
+				displayName = tostring(entry.DisplayName or id),
+				rarity = tostring(entry.Rarity or "Common"),
+				CashPerSecond = tonumber(entry.CashPerSecond) or 0,
+				showcaseScale = tonumber(entry.ShowcaseScale) or 1,
+				ShowcaseScale = tonumber(entry.ShowcaseScale) or 1,
+			})
+		end
+	end
+
+	return pool
 end
 
 local function getBrainrotName(npc)
@@ -521,6 +567,7 @@ local function buildRevealPayload(npc, tool, isNewDiscovery, discoveryId, discov
 		FirstTime = isNewDiscovery,
 		DiscoveredCount = discoveredCount,
 		revealSource = "OriginalChase",
+		possibleNPCs = getRevealPool(configId),
 		selectedNPC = {
 			id = tostring(configId or discoveryId or name),
 			configId = configId,

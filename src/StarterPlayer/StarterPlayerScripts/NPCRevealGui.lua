@@ -13,6 +13,7 @@ local player = Players.LocalPlayer
 local RevealAssets = require(script.Parent:WaitForChild("NPCRevealAssets"))
 local BrainrotConfig = nil
 local SoundManager = nil
+local BalanceConfig = nil
 
 do
 	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
@@ -31,6 +32,14 @@ do
 			SoundManager = result
 		end
 	end
+
+	local balanceModule = sharedFolder and sharedFolder:FindFirstChild("BalanceConfig")
+	if balanceModule and balanceModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, balanceModule)
+		if ok and type(result) == "table" then
+			BalanceConfig = result
+		end
+	end
 end
 
 local RevealNPC = {}
@@ -40,6 +49,12 @@ local QUEUE_LIMIT = 4
 local MAX_ROLL_CANDIDATES = 8
 local FONT_BOLD = Enum.Font.GothamBold
 local FONT_BLACK = Enum.Font.GothamBlack
+local REVEAL_BALANCE = type(BalanceConfig) == "table" and type(BalanceConfig.Reveal) == "table" and BalanceConfig.Reveal or {}
+local FAKE_PREVIEW_MIN_TIME = tonumber(REVEAL_BALANCE.FakePreviewMinTime) or 0.12
+local FAKE_PREVIEW_MAX_TIME = tonumber(REVEAL_BALANCE.FakePreviewMaxTime) or 0.22
+local FAKE_PREVIEW_COUNT = math.clamp(math.floor(tonumber(REVEAL_BALANCE.FakePreviewCount) or 9), 6, 10)
+local FINAL_REVEAL_SECONDS = tonumber(REVEAL_BALANCE.FinalRevealSeconds) or 1.25
+local ALLOW_SKIP_AFTER_SECONDS = tonumber(REVEAL_BALANCE.AllowSkipAfterSeconds) or 1.75
 
 local queue = {}
 local playing = false
@@ -839,7 +854,7 @@ local function rewardText(data)
 end
 
 local function playRollSequence(stage, data)
-	local rollCount = math.clamp(#data.rollPool + 2, 6, 9)
+	local rollCount = math.clamp(math.max(#data.rollPool + 2, FAKE_PREVIEW_COUNT), 6, 10)
 
 	for index = 1, rollCount do
 		if index == math.ceil(rollCount * 0.62) then
@@ -847,12 +862,13 @@ local function playRollSequence(stage, data)
 		end
 
 		local candidate = chooseRollCandidate(data, index)
-		local hold = math.max(0.035, 0.11 - index * 0.008)
+		local progress = rollCount > 1 and ((index - 1) / (rollCount - 1)) or 1
+		local hold = math.max(0.035, FAKE_PREVIEW_MAX_TIME + (FAKE_PREVIEW_MIN_TIME - FAKE_PREVIEW_MAX_TIME) * progress - 0.08)
 		playCandidate(stage, candidate, index, hold, false)
 		task.wait(math.max(0.015, 0.055 - index * 0.004))
 	end
 
-	return playCandidate(stage, data.selected, rollCount + 1, 0.12, true)
+	return playCandidate(stage, data.selected, rollCount + 1, math.clamp(FINAL_REVEAL_SECONDS - 1.08, 0.12, 0.42), true)
 end
 
 local function playReveal(rawPayload)
@@ -995,7 +1011,7 @@ local function playReveal(rawPayload)
 		tween(item.ring, 1.35, { Rotation = item.ring.Rotation + 220 }, Enum.EasingStyle.Linear)
 	end
 
-	task.wait(0.35)
+	task.wait(math.max(0.12, ALLOW_SKIP_AFTER_SECONDS - FINAL_REVEAL_SECONDS))
 	fadeText(continueLabel, true, 0.16)
 	closeButton.Visible = true
 
