@@ -1640,6 +1640,16 @@ local function finishEgg(player, egg, eggData)
 	revealRemote:FireClient(player, payload)
 	legacyRevealRemote:FireClient(player, payload)
 	startNpcRevealRemote:FireClient(player, payload)
+	emitGameplayEvent("RevealDispatched", player, {
+		source = "ZoneEggHatching",
+		revealId = revealId,
+		brainrotId = tool:GetAttribute("BrainrotConfigId"),
+		displayName = tool:GetAttribute("DisplayName") or tool.Name,
+		rarity = rewardRarity,
+		mutation = mutationName,
+		isNew = isNewDiscovery,
+		zoneName = eggData.Zone,
+	})
 	emitGameplayEvent("CaptureCompleted", player, {
 		source = "ZoneEggHatching",
 		brainrotId = tool:GetAttribute("BrainrotConfigId"),

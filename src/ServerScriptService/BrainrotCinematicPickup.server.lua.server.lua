@@ -784,6 +784,15 @@ local function captureNpc(player, npc, prompt)
 		local revealPayload = buildRevealPayload(npc, tool, isNewDiscovery, discoveryId, discoveredCount)
 		fireCatchFeedback(player, npc, tool, isNewDiscovery, discoveryId, discoveredCount)
 		fireNpcReveal(player, revealPayload)
+		emitGameplayEvent("RevealDispatched", player, {
+			source = "OriginalChase",
+			revealId = revealPayload.revealId,
+			brainrotId = tool:GetAttribute("BrainrotConfigId"),
+			displayName = tool:GetAttribute("DisplayName") or tool.Name,
+			rarity = tostring(tool:GetAttribute("Rarity") or "Common"),
+			mutation = tostring(tool:GetAttribute("Mutation") or "Normal"),
+			isNew = isNewDiscovery,
+		})
 		emitGameplayEvent("CaptureCompleted", player, {
 			source = "OriginalChase",
 			brainrotId = tool:GetAttribute("BrainrotConfigId"),
