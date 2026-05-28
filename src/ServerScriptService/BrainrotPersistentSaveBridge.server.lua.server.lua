@@ -18,6 +18,7 @@ local RunService = game:GetService("RunService")
 
 local STORE_NAME = "BrainrotPersistentSave_v4"
 local NPC_FOLDER_NAME = "BrainrotNPCs"
+local SCHEMA_VERSION = 4
 
 local SAVE_EVERY = 10
 local RESTORE_AFTER_SECONDS = 6
@@ -447,7 +448,8 @@ local function collectSaveData(player)
 	end
 
 	return {
-		version = 4,
+		version = SCHEMA_VERSION,
+		schemaVersion = SCHEMA_VERSION,
 		userId = player.UserId,
 		name = player.Name,
 		savedAt = os.time(),
@@ -455,6 +457,22 @@ local function collectSaveData(player)
 		strength = getStrengthAmount(player),
 		npcs = npcs,
 	}
+end
+
+local function normalizeSaveData(raw)
+	if type(raw) ~= "table" then
+		return nil
+	end
+
+	local data = table.clone(raw)
+	data.schemaVersion = math.max(1, math.floor(tonumber(data.schemaVersion) or tonumber(data.version) or 1))
+	data.version = math.max(data.schemaVersion, math.floor(tonumber(data.version) or data.schemaVersion))
+	data.money = math.max(0, tonumber(data.money) or tonumber(data.Money) or 0)
+	data.strength = math.max(0, tonumber(data.strength) or tonumber(data.Strength) or tonumber(data.speedPower) or tonumber(data.speed) or 0)
+	data.npcs = type(data.npcs) == "table" and data.npcs or {}
+	data.savedAt = tonumber(data.savedAt) or tonumber(data.SavedAt) or 0
+
+	return data
 end
 
 local function markDirty(player, reason)
@@ -685,8 +703,16 @@ local function restorePlayer(player)
 		return
 	end
 
-	setMoneyAmount(player, tonumber(decoded.money) or 0)
-	setStrengthAmount(player, tonumber(decoded.strength) or tonumber(decoded.speedPower) or tonumber(decoded.speed) or 0)
+	decoded = normalizeSaveData(decoded)
+	if not decoded then
+		warnLog("Save data had invalid shape for:", player.Name)
+		return
+	end
+
+	player:SetAttribute("BrainrotPersistentSaveSchema", decoded.schemaVersion)
+
+	setMoneyAmount(player, decoded.money)
+	setStrengthAmount(player, decoded.strength)
 
 	local restored = 0
 
