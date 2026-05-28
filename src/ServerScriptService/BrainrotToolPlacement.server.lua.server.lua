@@ -418,6 +418,37 @@ local function getHeldTool(player)
 	return nil
 end
 
+local function isPlayerAlive(player)
+	local character = player and player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	return humanoid ~= nil and humanoid.Health > 0
+end
+
+local function playerCloseEnoughToStand(player, standPart)
+	local character = player and player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+
+	if not root or not standPart or not standPart:IsA("BasePart") then
+		return false
+	end
+
+	return (root.Position - standPart.Position).Magnitude <= (PROMPT_DISTANCE + 4)
+end
+
+local function validateStandInteraction(player, standPart)
+	if not isPlayerAlive(player) then
+		notify(player, "You need to be alive to use your stand.", "error")
+		return false
+	end
+
+	if not playerCloseEnoughToStand(player, standPart) then
+		notify(player, "Move closer to your Brainrot stand.", "warning")
+		return false
+	end
+
+	return true
+end
+
 local function hideInventoryNpc(npc)
 	for _, obj in ipairs(npc:GetDescendants()) do
 		if obj:IsA("BasePart") then
@@ -853,6 +884,10 @@ local function removeDuplicateCopiesForNpc(player, npcToKeep)
 end
 
 local function placeNpc(player, standPart)
+	if not validateStandInteraction(player, standPart) then
+		return
+	end
+
 	local plot = findPlotFromPart(standPart)
 
 	if not playerOwnsPlot(player, plot) then
@@ -943,6 +978,10 @@ local function placeNpc(player, standPart)
 end
 
 local function returnNpc(player, standPart)
+	if not validateStandInteraction(player, standPart) then
+		return
+	end
+
 	local plot = findPlotFromPart(standPart)
 
 	if not playerOwnsPlot(player, plot) then
