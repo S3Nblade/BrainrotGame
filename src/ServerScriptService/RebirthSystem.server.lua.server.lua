@@ -86,6 +86,7 @@ end
 
 local playerRebirths = {}
 local rebirthCooldowns = {}
+local rebirthStateCooldowns = {}
 
 local updateSpeedStats = ReplicatedStorage:FindFirstChild("UpdateSpeedStats")
 if not updateSpeedStats then
@@ -300,13 +301,19 @@ local function loadPlayer(player)
 
 	task.spawn(function()
 		while player.Parent do
-			task.wait(2)
+			task.wait(5)
 			sendUpdate(player)
 		end
 	end)
 end
 
 rebirthGetState.OnServerInvoke = function(player)
+	local now = os.clock()
+	if rebirthStateCooldowns[player.UserId] and now - rebirthStateCooldowns[player.UserId] < 0.35 then
+		return buildPayload(player)
+	end
+
+	rebirthStateCooldowns[player.UserId] = now
 	return buildPayload(player)
 end
 
@@ -354,6 +361,7 @@ Players.PlayerRemoving:Connect(function(player)
 	savePlayer(player)
 	playerRebirths[player.UserId] = nil
 	rebirthCooldowns[player.UserId] = nil
+	rebirthStateCooldowns[player.UserId] = nil
 end)
 
 game:BindToClose(function()

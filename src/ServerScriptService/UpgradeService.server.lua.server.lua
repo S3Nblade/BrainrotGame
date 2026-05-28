@@ -81,6 +81,7 @@ end
 local DEFINITIONS = loadUpgradeDefinitions()
 local playerUpgrades = {}
 local requestCooldown = {}
+local REQUEST_COOLDOWN_SECONDS = 0.25
 
 local function emitGameplayEvent(eventName, player, payload)
 	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
@@ -250,16 +251,16 @@ local function loadPlayer(player)
 end
 
 local function upgrade(player, key)
+	local now = os.clock()
+	if requestCooldown[player.UserId] and now - requestCooldown[player.UserId] < REQUEST_COOLDOWN_SECONDS then
+		return
+	end
+	requestCooldown[player.UserId] = now
+
 	if key == "_Refresh" then
 		fireUpdate(player)
 		return
 	end
-
-	local now = os.clock()
-	if requestCooldown[player.UserId] and now - requestCooldown[player.UserId] < 0.25 then
-		return
-	end
-	requestCooldown[player.UserId] = now
 
 	local def = DEFINITIONS[key]
 	if not def then
