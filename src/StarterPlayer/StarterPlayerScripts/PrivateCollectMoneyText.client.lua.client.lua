@@ -13,10 +13,12 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local GUI_PREFIX = "PrivateCollectMoneyText_"
-local UPDATE_EVERY = 0.1
+local SCAN_EVERY = 2
 local MAX_DISTANCE = 95
 
 local guisByPart = {}
+local trackedParts = {}
+local partConnections = {}
 
 for _, obj in ipairs(playerGui:GetChildren()) do
 	if obj:IsA("BillboardGui") and string.sub(obj.Name, 1, #GUI_PREFIX) == GUI_PREFIX then
@@ -131,32 +133,109 @@ local function cleanup(validParts)
 	end
 end
 
+local function disconnectPart(part)
+	local connections = partConnections[part]
+	if connections then
+		for _, connection in ipairs(connections) do
+			connection:Disconnect()
+		end
+	end
+
+	partConnections[part] = nil
+	trackedParts[part] = nil
+	hideGui(part)
+end
+
+local function updatePart(part)
+	if not part or not part.Parent or not part:IsA("BasePart") then
+		disconnectPart(part)
+		return
+	end
+
+	if part:GetAttribute("PrivateCollectGuiPart") ~= true then
+		disconnectPart(part)
+		return
+	end
+
+	trackedParts[part] = true
+
+	if shouldShowOnPart(part) then
+		local gui = ensureGui(part)
+		local label = gui:FindFirstChild("Amount")
+
+		if label and label:IsA("TextLabel") then
+			local amount = tonumber(part:GetAttribute("PrivateCollectAmount")) or 0
+			label.Text = "$" .. formatMoney(amount)
+			gui.Enabled = true
+		end
+	else
+		hideGui(part)
+	end
+end
+
+local function trackPart(part)
+	if not part or not part:IsA("BasePart") or partConnections[part] then
+		updatePart(part)
+		return
+	end
+
+	partConnections[part] = {
+		part:GetAttributeChangedSignal("PrivateCollectGuiPart"):Connect(function()
+			updatePart(part)
+		end),
+		part:GetAttributeChangedSignal("PrivateOwnerUserId"):Connect(function()
+			updatePart(part)
+		end),
+		part:GetAttributeChangedSignal("LinkedBrainrotUID"):Connect(function()
+			updatePart(part)
+		end),
+		part:GetAttributeChangedSignal("PrivateCollectAmount"):Connect(function()
+			updatePart(part)
+		end),
+		part.AncestryChanged:Connect(function()
+			if not part.Parent then
+				disconnectPart(part)
+			end
+		end),
+	}
+
+	updatePart(part)
+end
+
+local function scanCollectParts()
+	local validParts = {}
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and obj:GetAttribute("PrivateCollectGuiPart") == true then
+			validParts[obj] = true
+			trackPart(obj)
+		end
+	end
+
+	for part in pairs(trackedParts) do
+		validParts[part] = true
+		updatePart(part)
+	end
+
+	cleanup(validParts)
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+	if obj:IsA("BasePart") then
+		task.defer(function()
+			if obj:GetAttribute("PrivateCollectGuiPart") == true then
+				trackPart(obj)
+			end
+		end)
+	end
+end)
+
+task.defer(scanCollectParts)
+
 task.spawn(function()
 	while true do
-		local validParts = {}
-
-		for _, obj in ipairs(Workspace:GetDescendants()) do
-			if obj:IsA("BasePart") and obj:GetAttribute("PrivateCollectGuiPart") == true then
-				validParts[obj] = true
-
-				if shouldShowOnPart(obj) then
-					local gui = ensureGui(obj)
-					local label = gui:FindFirstChild("Amount")
-
-					if label and label:IsA("TextLabel") then
-						local amount = tonumber(obj:GetAttribute("PrivateCollectAmount")) or 0
-						label.Text = "$" .. formatMoney(amount)
-						gui.Enabled = true
-					end
-				else
-					hideGui(obj)
-				end
-			end
-		end
-
-		cleanup(validParts)
-
-		task.wait(UPDATE_EVERY)
+		task.wait(SCAN_EVERY)
+		scanCollectParts()
 	end
 end)
 
