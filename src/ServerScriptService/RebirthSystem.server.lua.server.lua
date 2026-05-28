@@ -8,9 +8,30 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local REBIRTH_STORE = DataStoreService:GetDataStore("PlayerRebirths_v1")
 
-local BASE_REBIRTH_STRENGTH_REQUIREMENT = 1000
-local REQUIREMENT_MULTIPLIER_PER_REBIRTH = 3
-local MONEY_MULTIPLIER_PER_REBIRTH = 2
+local DEFAULT_REBIRTH_CONFIG = {
+	BaseStrengthRequirement = 1000,
+	RequirementMultiplierPerRebirth = 3,
+	MoneyMultiplierPerRebirth = 2,
+	ResetStats = { "Strength", "Power", "SpeedPower", "Speed" },
+}
+
+local function loadRebirthConfig()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("RebirthConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" then
+			return config
+		end
+
+		warn("[RebirthSystem] Failed to load RebirthConfig, using defaults.")
+	end
+
+	return DEFAULT_REBIRTH_CONFIG
+end
+
+local REBIRTH_CONFIG = loadRebirthConfig()
 
 local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
 if not remotesFolder then
@@ -121,14 +142,14 @@ local function getStrength(player)
 end
 
 local function resetStrength(player)
-	player:SetAttribute("Strength", 0)
-	player:SetAttribute("Power", 0)
-	player:SetAttribute("SpeedPower", 0)
-	player:SetAttribute("Speed", 0)
+	for _, name in ipairs(REBIRTH_CONFIG.ResetStats or DEFAULT_REBIRTH_CONFIG.ResetStats) do
+		player:SetAttribute(name, 0)
+	end
+
 	player:SetAttribute("WalkSpeed", 16)
 
 	local leaderstats = getLeaderstats(player)
-	for _, name in ipairs({ "Strength", "Power", "SpeedPower", "Speed" }) do
+	for _, name in ipairs(REBIRTH_CONFIG.ResetStats or DEFAULT_REBIRTH_CONFIG.ResetStats) do
 		local value = leaderstats:FindFirstChild(name)
 		if value and value:IsA("ValueBase") then
 			value.Value = 0
@@ -161,12 +182,19 @@ end
 
 local function getRequirement(rebirths)
 	rebirths = math.max(0, math.floor(tonumber(rebirths) or 0))
-	return math.floor(BASE_REBIRTH_STRENGTH_REQUIREMENT * (REQUIREMENT_MULTIPLIER_PER_REBIRTH ^ rebirths))
+	local baseRequirement = tonumber(REBIRTH_CONFIG.BaseStrengthRequirement) or DEFAULT_REBIRTH_CONFIG.BaseStrengthRequirement
+	local multiplier = tonumber(REBIRTH_CONFIG.RequirementMultiplierPerRebirth)
+		or DEFAULT_REBIRTH_CONFIG.RequirementMultiplierPerRebirth
+
+	return math.floor(baseRequirement * (multiplier ^ rebirths))
 end
 
 local function getMoneyMultiplier(rebirths)
 	rebirths = math.max(0, math.floor(tonumber(rebirths) or 0))
-	return MONEY_MULTIPLIER_PER_REBIRTH ^ rebirths
+	local multiplier = tonumber(REBIRTH_CONFIG.MoneyMultiplierPerRebirth)
+		or DEFAULT_REBIRTH_CONFIG.MoneyMultiplierPerRebirth
+
+	return multiplier ^ rebirths
 end
 
 local function syncPlayer(player)
@@ -195,7 +223,8 @@ local function buildPayload(player)
 		requirement = requirement,
 		progress = math.clamp(strength / math.max(requirement, 1), 0, 1),
 		moneyMultiplier = moneyMultiplier,
-		nextMoneyMultiplier = moneyMultiplier * MONEY_MULTIPLIER_PER_REBIRTH,
+		nextMoneyMultiplier = moneyMultiplier
+			* (tonumber(REBIRTH_CONFIG.MoneyMultiplierPerRebirth) or DEFAULT_REBIRTH_CONFIG.MoneyMultiplierPerRebirth),
 		canRebirth = strength >= requirement,
 	}
 end

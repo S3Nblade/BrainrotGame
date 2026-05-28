@@ -3,7 +3,17 @@
 
 local BrainrotConfig = {}
 
-BrainrotConfig.RarityOrder = {
+local rarityConfigModule = script.Parent:FindFirstChild("RarityConfig")
+local rarityConfig = nil
+
+if rarityConfigModule and rarityConfigModule:IsA("ModuleScript") then
+	local ok, result = pcall(require, rarityConfigModule)
+	if ok and type(result) == "table" then
+		rarityConfig = result
+	end
+end
+
+BrainrotConfig.RarityOrder = rarityConfig and rarityConfig.Order or {
 	Common = 1,
 	Uncommon = 2,
 	Rare = 3,
@@ -13,7 +23,7 @@ BrainrotConfig.RarityOrder = {
 	Secret = 7,
 }
 
-BrainrotConfig.RarityColors = {
+BrainrotConfig.RarityColors = rarityConfig and rarityConfig.Colors or {
 	Common = Color3.fromRGB(236, 242, 248),
 	Uncommon = Color3.fromRGB(111, 236, 135),
 	Rare = Color3.fromRGB(77, 174, 255),

@@ -1,7 +1,6 @@
 --!nonstrict
 -- UpgradeService.server.lua
--- Put in: ServerScriptService
--- Real upgrade system for Training Power and Auto Train speed.
+-- Server-authoritative upgrade system. Reads shared UpgradeConfig when Rojo has synced it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,24 +33,53 @@ if not notifyRemote then
 	notifyRemote.Parent = ReplicatedStorage
 end
 
-local DEFINITIONS = {
+local DEFAULT_DEFINITIONS = {
 	TrainingPower = {
 		title = "Training Power",
-		desc = "More speed every click.",
-		icon = "⚡",
+		desc = "More strength every training hit.",
+		icon = "STR",
 		maxLevel = 5,
 		requirements = { 250, 750, 1500, 3000, 5000 },
+		effect = {
+			attribute = "TrainingMultiplier",
+			base = 1,
+			perLevel = 0.20,
+		},
 	},
 	AutoTrainRate = {
 		title = "Auto Train Rate",
 		desc = "Auto Train clicks faster.",
-		icon = "⏱️",
+		icon = "SPD",
 		maxLevel = 5,
 		requirements = { 500, 1500, 3000, 6000, 10000 },
+		effect = {
+			attribute = "AutoTrainDelay",
+			base = 0.40,
+			perLevel = -0.025,
+			min = 0.29,
+		},
 	},
 }
 
+local function loadUpgradeDefinitions()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("UpgradeConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" and type(config.Definitions) == "table" then
+			return config.Definitions
+		end
+
+		warn("[UpgradeService] Failed to load UpgradeConfig, using defaults.")
+	end
+
+	return DEFAULT_DEFINITIONS
+end
+
+local DEFINITIONS = loadUpgradeDefinitions()
 local playerUpgrades = {}
+local requestCooldown = {}
 
 local function notify(player, message, variant)
 	notifyRemote:FireClient(player, {
@@ -61,64 +89,89 @@ local function notify(player, message, variant)
 end
 
 local function getDefaultData()
-	return {
-		TrainingPower = 0,
-		AutoTrainRate = 0,
-	}
+	local data = {}
+
+	for key in pairs(DEFINITIONS) do
+		data[key] = 0
+	end
+
+	return data
 end
 
 local function getSpeedPower(player)
-	return tonumber(player:GetAttribute("SpeedPower")) or 0
+	return tonumber(player:GetAttribute("SpeedPower"))
+		or tonumber(player:GetAttribute("Strength"))
+		or tonumber(player:GetAttribute("Power"))
+		or 0
 end
 
-local function getAutoTrainDelay(autoTrainLevel)
-	local delay = 0.40 - (autoTrainLevel * 0.025)
-
-	if delay < 0.29 then
-		delay = 0.29
+local function applyConfiguredEffect(player, level, effect)
+	if type(effect) ~= "table" or type(effect.attribute) ~= "string" then
+		return
 	end
 
-	return delay
-end
+	local value = (tonumber(effect.base) or 0) + (level * (tonumber(effect.perLevel) or 0))
 
-local function getTrainingMultiplier(trainingLevel)
-	return 1 + (trainingLevel * 0.20)
+	if type(effect.min) == "number" then
+		value = math.max(effect.min, value)
+	end
+
+	if type(effect.max) == "number" then
+		value = math.min(effect.max, value)
+	end
+
+	player:SetAttribute(effect.attribute, value)
 end
 
 local function applyUpgrades(player)
 	local data = playerUpgrades[player.UserId] or getDefaultData()
 
-	local trainingLevel = tonumber(data.TrainingPower) or 0
-	local autoTrainLevel = tonumber(data.AutoTrainRate) or 0
+	for key, def in pairs(DEFINITIONS) do
+		local level = tonumber(data[key]) or 0
+		applyConfiguredEffect(player, level, def.effect)
+	end
 
-	player:SetAttribute("TrainingMultiplier", getTrainingMultiplier(trainingLevel))
-	player:SetAttribute("AutoTrainDelay", getAutoTrainDelay(autoTrainLevel))
+	if player:GetAttribute("TrainingMultiplier") == nil then
+		player:SetAttribute("TrainingMultiplier", 1)
+	end
+
+	if player:GetAttribute("AutoTrainDelay") == nil then
+		player:SetAttribute("AutoTrainDelay", 0.40)
+	end
+
+	if player:GetAttribute("CapturePowerMultiplier") == nil then
+		player:SetAttribute("CapturePowerMultiplier", 1)
+	end
+
+	if player:GetAttribute("LuckMultiplier") == nil then
+		player:SetAttribute("LuckMultiplier", 1)
+	end
 end
 
 local function buildPayload(player)
 	local data = playerUpgrades[player.UserId] or getDefaultData()
 	local speed = getSpeedPower(player)
-
 	local upgrades = {}
 
 	for key, def in pairs(DEFINITIONS) do
 		local level = tonumber(data[key]) or 0
+		local maxLevel = tonumber(def.maxLevel) or 1
 		local nextRequirement = nil
 		local canUpgrade = false
-		local maxed = level >= def.maxLevel
+		local maxed = level >= maxLevel
 
 		if not maxed then
-			nextRequirement = def.requirements[level + 1] or 0
+			nextRequirement = tonumber(def.requirements and def.requirements[level + 1]) or 0
 			canUpgrade = speed >= nextRequirement
 		end
 
 		table.insert(upgrades, {
 			key = key,
-			title = def.title,
-			desc = def.desc,
-			icon = def.icon,
+			title = tostring(def.title or key),
+			desc = tostring(def.desc or ""),
+			icon = tostring(def.icon or ""),
 			level = level,
-			maxLevel = def.maxLevel,
+			maxLevel = maxLevel,
 			nextRequirement = nextRequirement,
 			canUpgrade = canUpgrade,
 			maxed = maxed,
@@ -126,13 +179,15 @@ local function buildPayload(player)
 	end
 
 	table.sort(upgrades, function(a, b)
-		return a.key < b.key
+		return tostring(a.key) < tostring(b.key)
 	end)
 
 	return {
 		speedPower = speed,
 		trainingMultiplier = tonumber(player:GetAttribute("TrainingMultiplier")) or 1,
 		autoTrainDelay = tonumber(player:GetAttribute("AutoTrainDelay")) or 0.40,
+		capturePowerMultiplier = tonumber(player:GetAttribute("CapturePowerMultiplier")) or 1,
+		luckMultiplier = tonumber(player:GetAttribute("LuckMultiplier")) or 1,
 		upgrades = upgrades,
 	}
 end
@@ -162,7 +217,9 @@ local function loadPlayer(player)
 	if success and type(loaded) == "table" then
 		for key, value in pairs(loaded) do
 			if data[key] ~= nil then
-				data[key] = tonumber(value) or 0
+				local def = DEFINITIONS[key]
+				local maxLevel = def and tonumber(def.maxLevel) or 0
+				data[key] = math.clamp(math.floor(tonumber(value) or 0), 0, maxLevel)
 			end
 		end
 	end
@@ -177,6 +234,10 @@ local function loadPlayer(player)
 		fireUpdate(player)
 	end)
 
+	player:GetAttributeChangedSignal("Strength"):Connect(function()
+		fireUpdate(player)
+	end)
+
 	print("[UpgradeService] loaded for", player.Name)
 end
 
@@ -185,6 +246,12 @@ local function upgrade(player, key)
 		fireUpdate(player)
 		return
 	end
+
+	local now = os.clock()
+	if requestCooldown[player.UserId] and now - requestCooldown[player.UserId] < 0.25 then
+		return
+	end
+	requestCooldown[player.UserId] = now
 
 	local def = DEFINITIONS[key]
 	if not def then
@@ -196,18 +263,19 @@ local function upgrade(player, key)
 	playerUpgrades[player.UserId] = data
 
 	local currentLevel = tonumber(data[key]) or 0
+	local maxLevel = tonumber(def.maxLevel) or 1
 
-	if currentLevel >= def.maxLevel then
-		notify(player, def.title .. " is already maxed!", "warning")
+	if currentLevel >= maxLevel then
+		notify(player, tostring(def.title or key) .. " is already maxed!", "warning")
 		fireUpdate(player)
 		return
 	end
 
-	local requiredSpeed = def.requirements[currentLevel + 1] or 0
+	local requiredSpeed = tonumber(def.requirements and def.requirements[currentLevel + 1]) or 0
 	local speed = getSpeedPower(player)
 
 	if speed < requiredSpeed then
-		notify(player, "Need " .. tostring(requiredSpeed) .. " Speed!", "warning")
+		notify(player, "Need " .. tostring(requiredSpeed) .. " Strength!", "warning")
 		fireUpdate(player)
 		return
 	end
@@ -218,7 +286,7 @@ local function upgrade(player, key)
 	savePlayer(player)
 	fireUpdate(player)
 
-	notify(player, def.title .. " upgraded to Level " .. tostring(data[key]) .. "!", "success")
+	notify(player, tostring(def.title or key) .. " upgraded to Level " .. tostring(data[key]) .. "!", "success")
 end
 
 requestRemote.OnServerEvent:Connect(function(player, key)
@@ -238,6 +306,7 @@ end
 Players.PlayerRemoving:Connect(function(player)
 	savePlayer(player)
 	playerUpgrades[player.UserId] = nil
+	requestCooldown[player.UserId] = nil
 end)
 
 game:BindToClose(function()
@@ -246,4 +315,4 @@ game:BindToClose(function()
 	end
 end)
 
-print("[UpgradeService] server loaded")
+print("[UpgradeService] server loaded with config-driven definitions.")

@@ -34,6 +34,10 @@ local KNOCKBACK = {
 local COOLDOWN = 0.16
 local lastHit = {}
 
+local function getDamageMultiplier(player)
+	return math.clamp(tonumber(player:GetAttribute("CapturePowerMultiplier")) or 1, 1, 5)
+end
+
 local function getRoot(model)
 	if not model then
 		return nil
@@ -170,13 +174,14 @@ hitRemote.OnServerEvent:Connect(function(player, punchName)
 	end
 
 	local data = candidates[bestTarget]
+	local finalDamage = math.max(1, math.floor((DAMAGE[punchName] or 1) * getDamageMultiplier(player) + 0.5))
 	local eggApi = _G.CleanEggDamageApi
 	if eggApi and eggApi.IsEgg and eggApi.IsEgg(bestTarget) then
-		eggApi.DamageEgg(player, bestTarget, DAMAGE[punchName])
+		eggApi.DamageEgg(player, bestTarget, finalDamage)
 		return
 	end
 
-	data.humanoid:TakeDamage(DAMAGE[punchName])
+	data.humanoid:TakeDamage(finalDamage)
 
 	if data.root:IsA("BasePart") and not data.root.Anchored then
 		data.root.AssemblyLinearVelocity =

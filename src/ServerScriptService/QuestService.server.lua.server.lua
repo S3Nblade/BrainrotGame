@@ -56,7 +56,7 @@ local collectionMilestoneRemote = getOrCreateRemotesFolderRemote("CollectionMile
 local updateCoinsRemote = ReplicatedStorage:FindFirstChild("UpdateCoins")
 local updateGemsRemote = ReplicatedStorage:FindFirstChild("UpdateGems")
 
-local COLLECTION_MILESTONES = {
+local DEFAULT_COLLECTION_MILESTONES = {
 	{
 		Id = "first_brainrot",
 		Goal = 1,
@@ -110,7 +110,7 @@ local COLLECTION_MILESTONES = {
 
 local claimedMilestones = {}
 
-local QUESTS = {
+local DEFAULT_QUESTS = {
 	{
 		Title = "Build Your Squad",
 		Action = "Collect 3 Brainrots",
@@ -154,6 +154,50 @@ local QUESTS = {
 		RewardAmount = 2500,
 	},
 }
+
+local function loadQuestConfig()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("QuestConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" then
+			return {
+				CollectionMilestones = type(config.CollectionMilestones) == "table"
+					and config.CollectionMilestones
+					or DEFAULT_COLLECTION_MILESTONES,
+				Quests = type(config.Quests) == "table" and config.Quests or DEFAULT_QUESTS,
+			}
+		end
+
+		warn("[QuestService] Failed to load QuestConfig, using defaults.")
+	end
+
+	return {
+		CollectionMilestones = DEFAULT_COLLECTION_MILESTONES,
+		Quests = DEFAULT_QUESTS,
+	}
+end
+
+local function loadBalanceConfig()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("BalanceConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" then
+			return config
+		end
+	end
+
+	return nil
+end
+
+local QUEST_CONFIG = loadQuestConfig()
+local COLLECTION_MILESTONES = QUEST_CONFIG.CollectionMilestones
+local QUESTS = QUEST_CONFIG.Quests
+local BALANCE_CONFIG = loadBalanceConfig()
+local QUEST_UPDATE_INTERVAL = tonumber(BALANCE_CONFIG and BALANCE_CONFIG.Quests and BALANCE_CONFIG.Quests.UpdateInterval) or 2.5
 
 local function getQuestForLevel(level)
 	return QUESTS[level] or QUESTS[#QUESTS]
@@ -455,8 +499,8 @@ end)
 task.spawn(function()
 	while true do
 		sendAllQuestUpdates()
-		task.wait(1)
+		task.wait(QUEST_UPDATE_INTERVAL)
 	end
 end)
 
-print("[QuestService] loaded")
+print("[QuestService] loaded with config-driven quest definitions")

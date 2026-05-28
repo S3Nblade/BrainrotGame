@@ -15,7 +15,7 @@ local PORTAL_FOLDER_NAME = "ZonePortals"
 -- Turn this to false after you move/design your own portals.
 local AUTO_CREATE_DEMO_PORTALS = true
 
-local ZONES = {
+local DEFAULT_ZONES = {
 	{
 		Id = "Starter",
 		DisplayName = "Starter Zone",
@@ -58,6 +58,23 @@ local ZONES = {
 	},
 }
 
+local function loadZones()
+	local shared = ReplicatedStorage:FindFirstChild("Shared")
+	local module = shared and shared:FindFirstChild("ZoneConfig")
+
+	if module and module:IsA("ModuleScript") then
+		local ok, config = pcall(require, module)
+		if ok and type(config) == "table" and type(config.List) == "table" then
+			return config.List
+		end
+
+		warn("[ZoneUnlockService] Failed to load ZoneConfig, using defaults.")
+	end
+
+	return DEFAULT_ZONES
+end
+
+local ZONES = loadZones()
 local playerZones = {}
 local touchCooldowns = {}
 

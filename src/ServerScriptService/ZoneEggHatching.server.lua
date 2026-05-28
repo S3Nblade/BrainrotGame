@@ -1226,12 +1226,21 @@ local function createRewardTool(player, rewardNpc, mutationName, mutationInfo, b
 	return tool, finalMps
 end
 
-local function getRewardRarity(eggDef)
-	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Brainrots, eggDef.LuckBonus, eggDef.Rarity, false) or tostring(eggDef.Rarity or "Common")
+local function getPlayerLuckBonus(player, eggDef)
+	local baseLuck = tonumber(eggDef.LuckBonus) or 0
+	local luckMultiplier = math.clamp(tonumber(player and player:GetAttribute("LuckMultiplier")) or 1, 1, 5)
+
+	return baseLuck * luckMultiplier
 end
 
-local function getRewardMutation(eggDef)
-	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Mutations, eggDef.LuckBonus, eggDef.Rarity, true) or "Normal"
+local function getRewardRarity(player, eggDef)
+	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Brainrots, getPlayerLuckBonus(player, eggDef), eggDef.Rarity, false)
+		or tostring(eggDef.Rarity or "Common")
+end
+
+local function getRewardMutation(player, eggDef)
+	return chooseWeightedWithLuck(eggDef.Rewards and eggDef.Rewards.Mutations, getPlayerLuckBonus(player, eggDef), eggDef.Rarity, true)
+		or "Normal"
 end
 
 local function getRevealPool(api, templateZone)
@@ -1454,7 +1463,7 @@ local function finishEgg(player, egg, eggData)
 	local eggDef = eggData.EggDef
 	local zoneConfig = eggData.ZoneConfig
 	local templateZone = tostring(zoneConfig.TemplateZone or eggData.Zone or "Forest")
-	local rewardRarity = getRewardRarity(eggDef)
+	local rewardRarity = getRewardRarity(player, eggDef)
 	local template = api.ChooseTemplate and api.ChooseTemplate(templateZone, rewardRarity)
 	if not template then
 		warn("[ZoneEggHatching] No reward template for", templateZone, rewardRarity)
@@ -1472,7 +1481,7 @@ local function finishEgg(player, egg, eggData)
 		api.PrepareNPC(rewardNpc, templateZone, rewardRarity, baseMps)
 	end
 
-	local mutationName = getRewardMutation(eggDef)
+	local mutationName = getRewardMutation(player, eggDef)
 	local mutationInfo = getMutationInfo(mutationName)
 	local tool, finalMps = createRewardTool(player, rewardNpc, mutationName, mutationInfo, baseMps)
 	rewardNpc:Destroy()
@@ -1488,14 +1497,15 @@ local function finishEgg(player, egg, eggData)
 	tool:SetAttribute("DiscoveredByUserId", player.UserId)
 
 	local revealId = HttpService:GenerateGUID(false)
+	local effectiveLuckBonus = getPlayerLuckBonus(player, eggDef)
 	local payload = {
 		RevealId = revealId,
 		revealId = revealId,
 		EggId = tostring(egg:GetAttribute("EggId") or ""),
 		EggName = tostring(eggDef.DisplayName or "Egg"),
 		EggRarity = tostring(eggDef.Rarity or "Common"),
-		LuckBonus = tonumber(eggDef.LuckBonus) or 0,
-		LuckText = "Egg Luck: +" .. tostring(eggDef.LuckBonus or 0) .. "%",
+		LuckBonus = effectiveLuckBonus,
+		LuckText = "Egg Luck: +" .. tostring(math.floor(effectiveLuckBonus + 0.5)) .. "%",
 		LuckHint = "Better odds for Rare Brainrots",
 		EggHP = tonumber(eggDef.HP) or 100,
 		EggSize = tonumber(eggDef.Size) or 1,
