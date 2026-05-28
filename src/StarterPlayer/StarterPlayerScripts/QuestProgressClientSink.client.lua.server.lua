@@ -217,6 +217,34 @@ claimConstraint.MaxTextSize = 17
 claimConstraint.MinTextSize = 9
 claimConstraint.Parent = claimButton
 
+local collapseButton = Instance.new("TextButton")
+collapseButton.Name = "CollapseButton"
+collapseButton.Position = UDim2.new(1, -34, 0, 8)
+collapseButton.Size = UDim2.fromOffset(24, 24)
+collapseButton.BackgroundColor3 = Color3.fromRGB(255, 250, 214)
+collapseButton.BackgroundTransparency = 0.06
+collapseButton.BorderSizePixel = 0
+collapseButton.AutoButtonColor = false
+collapseButton.Text = "-"
+collapseButton.TextColor3 = Color3.fromRGB(71, 42, 23)
+collapseButton.TextScaled = true
+collapseButton.Font = FONT
+collapseButton.Parent = root
+
+local collapseCorner = Instance.new("UICorner")
+collapseCorner.CornerRadius = UDim.new(1, 0)
+collapseCorner.Parent = collapseButton
+
+local collapseStroke = Instance.new("UIStroke")
+collapseStroke.Color = Color3.fromRGB(27, 29, 50)
+collapseStroke.Thickness = 2
+collapseStroke.Parent = collapseButton
+
+local collapseConstraint = Instance.new("UITextSizeConstraint")
+collapseConstraint.MaxTextSize = 18
+collapseConstraint.MinTextSize = 10
+collapseConstraint.Parent = collapseButton
+
 local dailyPanel = Instance.new("Frame")
 dailyPanel.Name = "DailyQuestPanel"
 dailyPanel.Position = UDim2.fromOffset(12, 124)
@@ -266,6 +294,7 @@ local burstRunning = false
 local dailyRowLimit = 3
 local renderDailyQuests = nil
 local viewportConnection = nil
+local questExpanded = true
 
 local function formatNumber(value)
 	value = tonumber(value) or 0
@@ -292,6 +321,20 @@ local function pop()
 		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 		{ Scale = targetScale }
 	):Play()
+end
+
+local function setQuestExpanded(expanded)
+	questExpanded = expanded
+	collapseButton.Text = expanded and "-" or "+"
+	dailyPanel.Visible = expanded
+
+	TweenService:Create(
+		root,
+		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Size = expanded and UDim2.fromOffset(316, 252) or UDim2.fromOffset(316, 120) }
+	):Play()
+
+	pop()
 end
 
 local function applyResponsiveLayout()
@@ -324,6 +367,10 @@ local function applyResponsiveLayout()
 
 	if latestPayload then
 		renderDailyQuests(latestPayload.dailyQuests)
+	end
+
+	if tiny and questExpanded then
+		setQuestExpanded(false)
 	end
 end
 
@@ -533,7 +580,7 @@ local function showRewardBurst(payload)
 		dot.AnchorPoint = Vector2.new(0.5, 0.5)
 		dot.Position = UDim2.fromScale(0.5, 0.55)
 		dot.Size = UDim2.fromOffset(30, 30)
-		dot.Text = rewardType == "Gems" and "◆" or "$"
+		dot.Text = rewardType == "Gems" and "*" or "$"
 		dot.TextColor3 = rewardType == "Gems" and Color3.fromRGB(124, 241, 255) or Color3.fromRGB(255, 232, 89)
 		dot.TextScaled = true
 		dot.Font = FONT
@@ -667,6 +714,10 @@ claimButton.MouseButton1Click:Connect(function()
 		setClaimReady(false)
 		pop()
 	end
+end)
+
+collapseButton.MouseButton1Click:Connect(function()
+	setQuestExpanded(not questExpanded)
 end)
 
 updateQuestRemote.OnClientEvent:Connect(applyQuest)
