@@ -7,6 +7,7 @@
 
 local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
@@ -24,6 +25,7 @@ local lastAreaRefresh = 0
 
 local RARITY_CAPTURE_HP = {
 	Common = 45,
+	Uncommon = 60,
 	Rare = 80,
 	Epic = 140,
 	Mythic = 230,
@@ -31,10 +33,12 @@ local RARITY_CAPTURE_HP = {
 	Divine = 550,
 	Celestial = 800,
 	Godly = 1150,
+	Secret = 1600,
 }
 
 local RARITY_SELL_MULTIPLIER = {
 	Common = 8,
+	Uncommon = 9,
 	Rare = 10,
 	Epic = 12,
 	Mythic = 15,
@@ -42,6 +46,7 @@ local RARITY_SELL_MULTIPLIER = {
 	Divine = 25,
 	Celestial = 35,
 	Godly = 50,
+	Secret = 65,
 }
 
 local ZONES = {
@@ -329,6 +334,87 @@ local ZONES = {
 		},
 	},
 }
+
+local BrainrotConfig = nil
+do
+	local sharedFolder = ReplicatedStorage:FindFirstChild("Shared")
+	local configModule = sharedFolder and sharedFolder:FindFirstChild("BrainrotConfig")
+	if configModule and configModule:IsA("ModuleScript") then
+		local ok, result = pcall(require, configModule)
+		if ok and type(result) == "table" then
+			BrainrotConfig = result
+		else
+			warn("[ZoneNPCSpawner] BrainrotConfig failed to load:", result)
+		end
+	end
+end
+
+local function softenColor(color, amount)
+	amount = math.clamp(tonumber(amount) or 0, -1, 1)
+	if amount >= 0 then
+		return color:Lerp(Color3.new(1, 1, 1), amount)
+	end
+	return color:Lerp(Color3.new(0, 0, 0), math.abs(amount))
+end
+
+local function addWeightedRarity(zoneConfig, rarity, weight)
+	for _, pair in ipairs(zoneConfig.Rarities or {}) do
+		if pair[1] == rarity then
+			pair[2] = math.max(pair[2], weight)
+			return
+		end
+	end
+
+	table.insert(zoneConfig.Rarities, { rarity, weight })
+end
+
+local function addMpsRange(zoneConfig, rarity, cashPerSecond)
+	zoneConfig.MPS = zoneConfig.MPS or {}
+	if zoneConfig.MPS[rarity] then
+		return
+	end
+
+	local mps = math.max(1, math.floor(tonumber(cashPerSecond) or 1))
+	zoneConfig.MPS[rarity] = { math.max(1, math.floor(mps * 0.9)), math.max(1, math.ceil(mps * 1.1)) }
+end
+
+local function installStarterBrainrotTemplates()
+	if not BrainrotConfig or type(BrainrotConfig.List) ~= "table" then
+		return
+	end
+
+	for _, entry in ipairs(BrainrotConfig.List) do
+		local zoneName = tostring(entry.ZoneUnlockRequirement or "Starter")
+		local zoneConfig = ZONES[zoneName] or ZONES.Starter
+		local rarity = tostring(entry.Rarity or "Common")
+		local rarityColor = (BrainrotConfig.RarityColors and BrainrotConfig.RarityColors[rarity]) or Color3.fromRGB(255, 255, 255)
+		local cashPerSecond = math.max(1, math.floor(tonumber(entry.CashPerSecond) or 1))
+		local spawnWeight = math.max(0.01, tonumber(entry.SpawnWeight) or 1)
+
+		table.insert(zoneConfig.Templates, 1, {
+			Name = tostring(entry.DisplayName or entry.Id or "Brainrot"),
+			Rarity = rarity,
+			Main = softenColor(rarityColor, -0.08),
+			Second = softenColor(rarityColor, 0.32),
+			Accent = Color3.fromRGB(255, 245, 130),
+			ConfigId = tostring(entry.Id or ""),
+			ModelName = tostring(entry.ModelName or entry.Id or ""),
+			CashPerSecond = cashPerSecond,
+			CaptureReward = tonumber(entry.CaptureReward) or 0,
+			CaptureHP = tonumber(entry.HP) or nil,
+			Speed = tonumber(entry.Speed) or nil,
+			SpawnWeight = spawnWeight,
+			ShowcaseScale = tonumber(entry.ShowcaseScale) or 1,
+		})
+
+		addWeightedRarity(zoneConfig, rarity, spawnWeight)
+		addMpsRange(zoneConfig, rarity, cashPerSecond)
+	end
+
+	print("[ZoneNPCSpawner] Installed starter BrainrotConfig templates:", #BrainrotConfig.List)
+end
+
+installStarterBrainrotTemplates()
 
 local function ensureFolder(parent, name)
 	local folder = parent:FindFirstChild(name)
@@ -684,6 +770,32 @@ local function createTemplate(zoneName, zoneConfig, def)
 	model:SetAttribute("BaseBrainrotName", def.Name)
 	model:SetAttribute("TemplateName", def.Name)
 	model:SetAttribute("Rarity", def.Rarity)
+	if def.ConfigId then
+		model:SetAttribute("BrainrotConfigId", def.ConfigId)
+	end
+	if def.ModelName then
+		model:SetAttribute("ModelName", def.ModelName)
+		model:SetAttribute("BrainrotModelName", def.ModelName)
+	end
+	if def.CashPerSecond then
+		model:SetAttribute("ConfigCashPerSecond", def.CashPerSecond)
+		model:SetAttribute("BaseCashPerSecond", def.CashPerSecond)
+		model:SetAttribute("CashPerSecond", def.CashPerSecond)
+		model:SetAttribute("MPS", def.CashPerSecond)
+	end
+	if def.CaptureReward then
+		model:SetAttribute("CaptureReward", def.CaptureReward)
+	end
+	if def.CaptureHP then
+		model:SetAttribute("ConfigHP", def.CaptureHP)
+		model:SetAttribute("CaptureMaxHP", def.CaptureHP)
+	end
+	if def.Speed then
+		model:SetAttribute("ConfigSpeed", def.Speed)
+	end
+	if def.ShowcaseScale then
+		model:SetAttribute("ShowcaseScale", def.ShowcaseScale)
+	end
 
 	local rootCFrame = CFrame.new(0, 5, 0)
 	local root = createPart(
@@ -1215,7 +1327,10 @@ end
 local function prepareNPC(npc, zoneName, rarity, mps)
 	local uid = HttpService:GenerateGUID(false)
 	local zoneConfig = ZONES[zoneName]
-	local captureMaxHP = RARITY_CAPTURE_HP[rarity] or RARITY_CAPTURE_HP.Common
+	local captureMaxHP = tonumber(npc:GetAttribute("ConfigHP"))
+		or tonumber(npc:GetAttribute("CaptureMaxHP"))
+		or RARITY_CAPTURE_HP[rarity]
+		or RARITY_CAPTURE_HP.Common
 
 	npc:SetAttribute("NPCId", uid)
 	npc:SetAttribute("BrainrotUID", uid)
@@ -1233,6 +1348,9 @@ local function prepareNPC(npc, zoneName, rarity, mps)
 	npc:SetAttribute("ZoneSpawnerId", SPAWNER_ID)
 	npc:SetAttribute("Rarity", rarity)
 	npc:SetAttribute("MPS", mps)
+	npc:SetAttribute("CashPerSecond", mps)
+	npc:SetAttribute("BaseCashPerSecond", mps)
+	npc:SetAttribute("OriginalCashPerSecond", mps)
 	npc:SetAttribute("Earned", 0)
 	npc:SetAttribute("SellPrice", getSellPriceFromMPS(mps, rarity))
 	npc:SetAttribute("CaptureMaxHP", captureMaxHP)
@@ -1256,7 +1374,7 @@ local function prepareNPC(npc, zoneName, rarity, mps)
 	local humanoid = npc:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		humanoid.WalkSpeed = zoneConfig.WalkSpeed or 14
+		humanoid.WalkSpeed = tonumber(npc:GetAttribute("ConfigSpeed")) or zoneConfig.WalkSpeed or 14
 		humanoid.AutoRotate = true
 		humanoid.Health = humanoid.MaxHealth
 	end

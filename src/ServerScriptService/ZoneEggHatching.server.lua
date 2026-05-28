@@ -1307,7 +1307,11 @@ local function finishEgg(player, egg, eggData)
 		return
 	end
 
-	local baseMps = api.GetRandomMPS and api.GetRandomMPS(api.Zones[templateZone] or {}, rewardRarity) or 25
+	local baseMps = tonumber(template:GetAttribute("ConfigCashPerSecond"))
+		or tonumber(template:GetAttribute("BaseCashPerSecond"))
+		or tonumber(template:GetAttribute("CashPerSecond"))
+		or (api.GetRandomMPS and api.GetRandomMPS(api.Zones[templateZone] or {}, rewardRarity))
+		or 25
 	local rewardNpc = template:Clone()
 	if api.PrepareNPC then
 		api.PrepareNPC(rewardNpc, templateZone, rewardRarity, baseMps)
