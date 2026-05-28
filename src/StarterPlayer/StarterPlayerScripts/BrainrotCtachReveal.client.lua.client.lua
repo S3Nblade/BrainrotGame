@@ -184,6 +184,10 @@ local function showFound(data)
 		return
 	end
 
+	if data.showFoundPopup == false or data.use3DReveal == true then
+		return
+	end
+
 	-- IMPORTANT:
 	-- Ignore old CAUGHT / touch / claim events.
 	-- Only pickup after holding E should show this popup.

@@ -88,6 +88,8 @@ local function fireFoundOnPickup(npc)
 	remote:FireClient(player, {
 		eventType = "FOUND_PICKUP",
 		pickedUp = true,
+		showFoundPopup = false,
+		use3DReveal = true,
 		npcName = npc:GetAttribute("DisplayName") or npc:GetAttribute("Name") or npc.Name,
 		rarity = getRarity(npc),
 		mps = getMPS(npc),
