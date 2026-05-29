@@ -18,7 +18,10 @@ local SPAWNER_ID = "ZoneThemedNPCSpawner_v2"
 local GLOBAL_SPAWN_INTERVAL = 4
 local AREA_REFRESH_INTERVAL = 10
 local INITIAL_DELAY = 2.5
-local DIRECT_NPC_SPAWNING_ENABLED = false
+local DIRECT_NPC_SPAWNING_ENABLED = true
+local DIRECT_SPAWN_ZONES = {
+	Starter = true,
+}
 
 local rng = Random.new()
 local areaCache = {}
@@ -82,9 +85,7 @@ local ZONES = {
 		AreaNames = { "GeneratedFirstMap", "MainPlaza", "SpawnMap", "Baseplate" },
 		MarkerPrefixes = { "StarterNPC", "SpawnNPC", "Starter", "Spawn" },
 		Rarities = {
-			{ "Common", 80 },
-			{ "Rare", 18 },
-			{ "Epic", 2 },
+			{ "Common", 100 },
 		},
 		MPS = {
 			Common = { 20, 60 },
@@ -405,6 +406,8 @@ local function installStarterBrainrotTemplates()
 		return
 	end
 
+	local clearedZones = {}
+
 	for _, entry in ipairs(BrainrotConfig.List) do
 		local zoneName = tostring(entry.ZoneUnlockRequirement or "Starter")
 		local zoneConfig = ZONES[zoneName] or ZONES.Starter
@@ -413,7 +416,14 @@ local function installStarterBrainrotTemplates()
 		local cashPerSecond = math.max(1, math.floor(tonumber(entry.CashPerSecond) or 1))
 		local spawnWeight = math.max(0.01, tonumber(entry.SpawnWeight) or 1)
 
-		table.insert(zoneConfig.Templates, 1, {
+		if not clearedZones[zoneName] then
+			zoneConfig.Templates = {}
+			zoneConfig.Rarities = {}
+			zoneConfig.MPS = {}
+			clearedZones[zoneName] = true
+		end
+
+		table.insert(zoneConfig.Templates, {
 			Name = tostring(entry.DisplayName or entry.Id or "Brainrot"),
 			Rarity = rarity,
 			Main = softenColor(rarityColor, -0.08),
@@ -1734,6 +1744,10 @@ local function spawnInitialBatch()
 	refreshAreas(true)
 
 	for zoneName, zoneConfig in pairs(ZONES) do
+		if DIRECT_SPAWN_ZONES[zoneName] ~= true then
+			continue
+		end
+
 		local runtime = areaCache[zoneName]
 
 		if runtime and (#runtime.markers > 0 or runtime.area) then
@@ -1773,8 +1787,10 @@ if DIRECT_NPC_SPAWNING_ENABLED then
 	task.spawn(function()
 		while true do
 			for zoneName, _zoneConfig in pairs(ZONES) do
-				spawnNPCInZone(zoneName)
-				task.wait(0.15)
+				if DIRECT_SPAWN_ZONES[zoneName] == true then
+					spawnNPCInZone(zoneName)
+					task.wait(0.15)
+				end
 			end
 
 			task.wait(GLOBAL_SPAWN_INTERVAL)
