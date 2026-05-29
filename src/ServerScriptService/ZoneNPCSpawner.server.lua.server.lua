@@ -12,6 +12,7 @@ local HttpService = game:GetService("HttpService")
 
 local NPC_FOLDER_NAME = "BrainrotNPCs"
 local TEMPLATE_ROOT_NAME = "ZoneThemedBrainrotNPCPools"
+local IMPORTED_POOL_ROOT_NAME = "BrainrotNPCPools"
 local SPAWNER_ID = "ZoneThemedNPCSpawner_v2"
 
 local GLOBAL_SPAWN_INTERVAL = 4
@@ -426,6 +427,9 @@ local function installStarterBrainrotTemplates()
 			Speed = tonumber(entry.Speed) or nil,
 			SpawnWeight = spawnWeight,
 			ShowcaseScale = tonumber(entry.ShowcaseScale) or 1,
+			IdleAnimationId = entry.IdleAnimationId,
+			RunAnimationId = entry.RunAnimationId,
+			StunAnimationId = entry.StunAnimationId,
 		})
 
 		addWeightedRarity(zoneConfig, rarity, spawnWeight)
@@ -457,6 +461,77 @@ end
 
 local NPC_FOLDER = ensureFolder(Workspace, NPC_FOLDER_NAME)
 local TEMPLATE_ROOT = ensureFolder(ServerStorage, TEMPLATE_ROOT_NAME)
+
+local function findImportedTemplate(def)
+	local poolRoot = ServerStorage:FindFirstChild(IMPORTED_POOL_ROOT_NAME)
+	if not poolRoot then
+		return nil
+	end
+
+	local rarityFolder = poolRoot:FindFirstChild(tostring(def.Rarity or "Common"))
+	local modelName = tostring(def.ModelName or def.ConfigId or def.Name or "")
+	local displayName = tostring(def.Name or "")
+
+	local candidates = {}
+	if rarityFolder then
+		table.insert(candidates, rarityFolder)
+	end
+	table.insert(candidates, poolRoot)
+
+	for _, folder in ipairs(candidates) do
+		local model = folder:FindFirstChild(modelName)
+			or folder:FindFirstChild(displayName)
+			or folder:FindFirstChild(tostring(def.ConfigId or ""))
+		if model and model:IsA("Model") then
+			return model
+		end
+	end
+
+	return nil
+end
+
+local function toAssetId(value)
+	if value == nil then
+		return nil
+	end
+
+	local text = tostring(value)
+	if text == "" then
+		return nil
+	end
+
+	if string.find(text, "rbxassetid://", 1, true) then
+		return text
+	end
+
+	return "rbxassetid://" .. text
+end
+
+local function applyTemplateDefinitionAttributes(model, zoneName, zoneConfig, def)
+	model:SetAttribute("GeneratedBrainrotNPC", model:GetAttribute("GeneratedBrainrotNPC") == true)
+	model:SetAttribute("NativeZone", zoneName)
+	model:SetAttribute("ZoneStyle", zoneConfig.Style)
+	model:SetAttribute("DisplayName", def.Name)
+	model:SetAttribute("BrainrotName", def.Name)
+	model:SetAttribute("BaseBrainrotName", def.Name)
+	model:SetAttribute("TemplateName", def.Name)
+	model:SetAttribute("Rarity", def.Rarity)
+	model:SetAttribute("BrainrotConfigId", def.ConfigId)
+	model:SetAttribute("ModelName", def.ModelName)
+	model:SetAttribute("BrainrotModelName", def.ModelName)
+	model:SetAttribute("ConfigCashPerSecond", def.CashPerSecond)
+	model:SetAttribute("BaseCashPerSecond", def.CashPerSecond)
+	model:SetAttribute("CashPerSecond", def.CashPerSecond)
+	model:SetAttribute("MPS", def.CashPerSecond)
+	model:SetAttribute("CaptureReward", def.CaptureReward)
+	model:SetAttribute("ConfigHP", def.CaptureHP)
+	model:SetAttribute("CaptureMaxHP", def.CaptureHP)
+	model:SetAttribute("ConfigSpeed", def.Speed)
+	model:SetAttribute("ShowcaseScale", def.ShowcaseScale)
+	model:SetAttribute("IdleAnimationId", toAssetId(def.IdleAnimationId))
+	model:SetAttribute("RunAnimationId", toAssetId(def.RunAnimationId))
+	model:SetAttribute("StunAnimationId", toAssetId(def.StunAnimationId))
+end
 
 local function pick(list)
 	return list[rng:NextInteger(1, #list)]
@@ -922,7 +997,11 @@ local function buildTemplates()
 		local zoneFolder = ensureFolder(TEMPLATE_ROOT, zoneName)
 
 		for _, def in ipairs(zoneConfig.Templates) do
-			local template = createTemplate(zoneName, zoneConfig, def)
+			local importedTemplate = findImportedTemplate(def)
+			local template = if importedTemplate then importedTemplate:Clone() else createTemplate(zoneName, zoneConfig, def)
+
+			applyTemplateDefinitionAttributes(template, zoneName, zoneConfig, def)
+			template.Name = tostring(def.Name or template.Name)
 			template.Parent = zoneFolder
 		end
 	end
@@ -1349,6 +1428,104 @@ local function countAliveInZone(zoneName)
 	return count
 end
 
+local function loadNpcAnimation(animator, animationId, priority, looped)
+	local assetId = toAssetId(animationId)
+	if not assetId then
+		return nil
+	end
+
+	local animation = Instance.new("Animation")
+	animation.AnimationId = assetId
+
+	local ok, track = pcall(function()
+		return animator:LoadAnimation(animation)
+	end)
+
+	animation:Destroy()
+
+	if not ok or not track then
+		return nil
+	end
+
+	track.Priority = priority
+	track.Looped = looped
+	return track
+end
+
+local function setupNpcAnimations(npc)
+	local humanoid = npc:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Parent = humanoid
+	end
+
+	local idleTrack = loadNpcAnimation(animator, npc:GetAttribute("IdleAnimationId"), Enum.AnimationPriority.Idle, true)
+	local runTrack = loadNpcAnimation(animator, npc:GetAttribute("RunAnimationId"), Enum.AnimationPriority.Movement, true)
+	local stunTrack = loadNpcAnimation(animator, npc:GetAttribute("StunAnimationId"), Enum.AnimationPriority.Action, true)
+
+	local function stop(track, fadeTime)
+		if track and track.IsPlaying then
+			pcall(function()
+				track:Stop(fadeTime)
+			end)
+		end
+	end
+
+	local function play(track, fadeTime)
+		if track and not track.IsPlaying then
+			pcall(function()
+				track:Play(fadeTime)
+			end)
+		end
+	end
+
+	local function refresh()
+		if not npc.Parent then
+			stop(idleTrack, 0)
+			stop(runTrack, 0)
+			stop(stunTrack, 0)
+			return
+		end
+
+		local state = tostring(npc:GetAttribute("AIState") or npc:GetAttribute("BrainrotAIState") or "Idle")
+		if npc:GetAttribute("CaptureStunned") == true then
+			state = "Stunned"
+		end
+
+		if state == "Stunned" then
+			stop(idleTrack, 0.12)
+			stop(runTrack, 0.12)
+			play(stunTrack, 0.12)
+		elseif state == "Hiding" or state == "Fleeing" then
+			stop(idleTrack, 0.16)
+			stop(stunTrack, 0.1)
+			play(runTrack, 0.12)
+		else
+			stop(runTrack, 0.18)
+			stop(stunTrack, 0.12)
+			play(idleTrack, 0.16)
+		end
+	end
+
+	npc:GetAttributeChangedSignal("AIState"):Connect(refresh)
+	npc:GetAttributeChangedSignal("BrainrotAIState"):Connect(refresh)
+	npc:GetAttributeChangedSignal("CaptureStunned"):Connect(refresh)
+	npc.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			stop(idleTrack, 0)
+			stop(runTrack, 0)
+			stop(stunTrack, 0)
+		end
+	end)
+
+	refresh()
+end
+
 local function prepareNPC(npc, zoneName, rarity, mps)
 	local uid = HttpService:GenerateGUID(false)
 	local zoneConfig = ZONES[zoneName]
@@ -1535,8 +1712,9 @@ local function spawnNPCInZone(zoneName)
 
 	prepareNPC(npc, zoneName, rarity, mps)
 	npc:PivotTo(CFrame.new(spawnPosition) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
-	startWander(npc, zoneName)
 	npc.Parent = NPC_FOLDER
+	setupNpcAnimations(npc)
+	startWander(npc, zoneName)
 
 	print(
 		"[ZoneNPCSpawner] Spawned",

@@ -1,31 +1,8 @@
 {
   "schemaVersion": 1,
-  "purpose": "Run scripts/create_starter_brainrots.py in Blender to generate asset_manifest.json with exact exports and AssetIds keys.",
+  "purpose": "Optional placeholder generator. Runtime currently uses the Studio model ServerStorage/BrainrotNPCPools/Common/PipoNuggetini.",
   "requiredModelNames": [
-    "BR_WobbleNugget",
-    "BR_GoofyCone",
-    "BR_TinyBloop",
-    "BR_SneakyPickle",
-    "BR_DizzyDonut",
-    "BR_BananaGoblin",
-    "BR_ShyToaster",
-    "BR_TurboMeatball",
-    "BR_GlitchyCapybara",
-    "BR_BubbleLizard",
-    "BR_GoldenSpaghettiKing",
-    "BR_CosmicBrainFrog",
-    "BR_TralaleroTralala",
-    "BR_TungTungSahur",
-    "BR_BombardiroCrocodilo",
-    "BR_BallerinaCappuccina",
-    "BR_BrrBrrPatapim",
-    "BR_CappuccinoAssassino",
-    "BR_LiriliLarila",
-    "BR_BobritoBandito",
-    "BR_ChimpanziniBananini",
-    "BR_BombombiniGusini",
-    "BR_BonecaAmbalabu",
-    "BR_LaVacaSaturnoSaturnita"
+    "PipoNuggetini"
   ],
   "requiredAnimationClips": [
     "idle",
@@ -33,31 +10,9 @@
     "stun",
     "showcase"
   ],
-  "requiredProps": [
-    "PROP_PlotStand",
-    "PROP_ZoneGate",
-    "PROP_HideBush",
-    "PROP_HideCrate",
-    "PROP_RevealPlatform"
-  ],
-  "requiredRarityVfx": [
-    "VFX_CommonGlow",
-    "VFX_UncommonGlow",
-    "VFX_RareGlow",
-    "VFX_EpicGlow",
-    "VFX_LegendaryGlow",
-    "VFX_MythicGlow",
-    "VFX_SecretGlow"
-  ],
-  "requiredGameplayVfx": [
-    "VFX_HitSpark",
-    "VFX_StunStars",
-    "VFX_CaptureBurst",
-    "VFX_MoneyPop",
-    "VFX_QuestComplete",
-    "VFX_RebirthBurst",
-    "VFX_ZoneUnlockBurst"
-  ],
+  "requiredProps": [],
+  "requiredRarityVfx": [],
+  "requiredGameplayVfx": [],
   "requiredSoundKeys": [
     "ui_click",
     "ui_hover",

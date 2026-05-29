@@ -255,10 +255,10 @@ local function createHPBar(parent)
 	addCorner(fill, 16)
 
 	local fillStroke = Instance.new("UIStroke")
-	fillStroke.Name = "CleanGreenStroke"
-	fillStroke.Color = Color3.fromRGB(226, 255, 218)
-	fillStroke.Thickness = 2.4
-	fillStroke.Transparency = 0
+	fillStroke.Name = "SoftGreenEdge"
+	fillStroke.Color = Color3.fromRGB(215, 255, 205)
+	fillStroke.Thickness = 1.5
+	fillStroke.Transparency = 0.15
 	fillStroke.Parent = fill
 
 	local fillGradient = Instance.new("UIGradient")
@@ -295,6 +295,8 @@ local function createHPBar(parent)
 	)
 	text.TextStrokeTransparency = 1
 	text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	text.TextStrokeColor3 = Color3.fromRGB(24, 118, 38)
+	text.TextStrokeTransparency = 0.35
 
 	return {
 		outer = outer,
@@ -307,7 +309,6 @@ end
 
 local function setBarRatio(barData, ratio)
 	ratio = math.clamp(ratio, 0, 1)
-
 	barData.fill.Size = UDim2.new(ratio, 0, 1, 0)
 end
 
@@ -315,6 +316,53 @@ local function styleHPBarShell(data, isEgg)
 	data.hpBar.outer.BackgroundTransparency = 1
 	data.hpBar.innerClip.Position = UDim2.fromScale(0, 0)
 	data.hpBar.innerClip.Size = UDim2.fromScale(1, 1)
+end
+
+local function showHpDamagePopup(data, damage)
+	damage = math.floor(tonumber(damage) or 0)
+	if damage <= 0 or not data or not data.hpBar or not data.hpBar.outer then
+		return
+	end
+
+	local label = createText(
+		data.hpBar.outer,
+		"DamagePop",
+		UDim2.new(0.5, 0, 0, -22),
+		UDim2.fromOffset(82, 28),
+		"-" .. tostring(damage),
+		Color3.fromRGB(255, 82, 82),
+		18,
+		28
+	)
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextStrokeTransparency = 0.15
+	label.Rotation = math.random(-6, 6)
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.78
+	scale.Parent = label
+
+	TweenService:Create(
+		scale,
+		TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1.1 }
+	):Play()
+	TweenService:Create(
+		label,
+		TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			Position = UDim2.new(0.5, 0, 0, -42),
+			TextTransparency = 1,
+			TextStrokeTransparency = 1,
+		}
+	):Play()
+
+	task.delay(0.6, function()
+		if label then
+			label:Destroy()
+		end
+	end)
 end
 
 local function showStunnedPopup(npc)
@@ -465,6 +513,7 @@ local function createGui(npc)
 		hpTargetRatio = nil,
 		lastMode = "hidden",
 		lastHPRatio = nil,
+		lastHPValue = nil,
 		stunPopupShown = false,
 	}
 end
@@ -588,40 +637,33 @@ local function updateHPBar(data, npc)
 	local shownPercent = math.floor((ratio * 100) + 0.5)
 
 	data.hpBar.text.Text = tostring(shownPercent) .. "%"
+	data.hpBar.text.TextColor3 = Color3.fromRGB(255, 255, 255)
 	data.hpBar.text.Visible = true
 	styleHPBarShell(data, isEgg)
+
+	if data.lastHPValue ~= nil and hp < data.lastHPValue then
+		showHpDamagePopup(data, data.lastHPValue - hp)
+	end
+	data.lastHPValue = hp
 
 	if data.lastHPRatio and math.abs(data.lastHPRatio - ratio) < 0.01 then
 		return
 	end
 
 	data.lastHPRatio = ratio
-	stopTween(data.hpPulseTween)
+	stopTween(data.hpTween)
 	data.hpBar.fill.BackgroundTransparency = 0
 	data.hpTargetRatio = ratio
-	data.hpVisualRatio = data.hpVisualRatio or data.hpBar.fill.Size.X.Scale
+	data.hpTween = TweenService:Create(
+		data.hpBar.fill,
+		TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = UDim2.new(ratio, 0, 1, 0) }
+	)
+	data.hpTween:Play()
 end
 
 local function animateHPBar(data, dt)
-	if not data.hpTargetRatio then
-		return
-	end
-
-	local visual = data.hpVisualRatio
-	if visual == nil then
-		visual = data.hpBar.fill.Size.X.Scale
-	end
-
-	local target = math.clamp(data.hpTargetRatio, 0, 1)
-	local alpha = 1 - math.exp(-math.max(dt or 0, 0) * 12)
-	visual += (target - visual) * alpha
-
-	if math.abs(visual - target) < 0.003 then
-		visual = target
-	end
-
-	data.hpVisualRatio = visual
-	data.hpBar.fill.Size = UDim2.new(visual, 0, 1, 0)
+	return
 end
 
 local function setCaptureMode(data, npc)
@@ -743,6 +785,7 @@ local function updateNpc(npc)
 
 			data.lastMode = "hidden"
 			data.lastHPRatio = nil
+			data.lastHPValue = nil
 			data.hpVisualRatio = nil
 			data.hpTargetRatio = nil
 			setBarRatio(data.hpBar, 1)

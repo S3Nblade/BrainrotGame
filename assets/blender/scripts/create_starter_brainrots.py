@@ -32,30 +32,7 @@ for folder in (MODEL_EXPORTS, ANIMATION_EXPORTS, VFX_EXPORTS, ICON_EXPORTS, SOUN
 
 
 BRAINROTS = [
-    ("BR_WobbleNugget", "Wobble Nugget", (1.0, 0.72, 0.24), "nugget"),
-    ("BR_GoofyCone", "Goofy Cone", (1.0, 0.42, 0.18), "cone"),
-    ("BR_TinyBloop", "Tiny Bloop", (0.24, 0.72, 1.0), "blob"),
-    ("BR_SneakyPickle", "Sneaky Pickle", (0.16, 0.78, 0.25), "pickle"),
-    ("BR_DizzyDonut", "Dizzy Donut", (1.0, 0.55, 0.75), "donut"),
-    ("BR_BananaGoblin", "Banana Goblin", (1.0, 0.88, 0.12), "banana"),
-    ("BR_ShyToaster", "Shy Toaster", (0.82, 0.72, 0.56), "toaster"),
-    ("BR_TurboMeatball", "Turbo Meatball", (0.72, 0.24, 0.16), "meatball"),
-    ("BR_GlitchyCapybara", "Glitchy Capybara", (0.55, 0.42, 0.31), "capybara"),
-    ("BR_BubbleLizard", "Bubble Lizard", (0.18, 0.9, 0.75), "lizard"),
-    ("BR_GoldenSpaghettiKing", "Golden Spaghetti King", (1.0, 0.76, 0.12), "spaghetti"),
-    ("BR_CosmicBrainFrog", "Cosmic Brain Frog", (0.46, 0.32, 1.0), "frog"),
-    ("BR_TralaleroTralala", "Tralalero Tralala", (0.18, 0.58, 1.0), "sneaker_shark"),
-    ("BR_TungTungSahur", "Tung Tung Sahur", (0.72, 0.45, 0.2), "wood_drum"),
-    ("BR_BombardiroCrocodilo", "Bombardiro Crocodilo", (0.18, 0.58, 0.24), "croc_plane"),
-    ("BR_BallerinaCappuccina", "Ballerina Cappuccina", (0.9, 0.63, 0.42), "coffee_ballerina"),
-    ("BR_BrrBrrPatapim", "Brr Brr Patapim", (0.32, 0.78, 0.38), "tree_foot"),
-    ("BR_CappuccinoAssassino", "Cappuccino Assassino", (0.48, 0.28, 0.14), "coffee_ninja"),
-    ("BR_LiriliLarila", "Lirili Larila", (0.88, 0.76, 0.48), "cactus_elephant"),
-    ("BR_BobritoBandito", "Bobrito Bandito", (0.82, 0.42, 0.22), "burrito_bandit"),
-    ("BR_ChimpanziniBananini", "Chimpanzini Bananini", (0.68, 0.48, 0.24), "banana_chimp"),
-    ("BR_BombombiniGusini", "Bombombini Gusini", (0.72, 0.82, 0.9), "goose_plane"),
-    ("BR_BonecaAmbalabu", "Boneca Ambalabu", (0.95, 0.58, 0.78), "doll_frog"),
-    ("BR_LaVacaSaturnoSaturnita", "La Vaca Saturno Saturnita", (0.92, 0.92, 0.86), "saturn_cow"),
+    ("PipoNuggetini", "Pipo Nuggetini", (1.0, 0.74, 0.22), "nugget"),
 ]
 
 ANIMATION_CLIPS = ("idle", "run", "stun", "showcase")
