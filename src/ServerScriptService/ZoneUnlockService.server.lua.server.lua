@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local Workspace = game:GetService("Workspace")
+local ServerStorage = game:GetService("ServerStorage")
 
 local zoneStore = DataStoreService:GetDataStore("PlayerZones_v1")
 
@@ -14,6 +15,8 @@ local PORTAL_FOLDER_NAME = "ZonePortals"
 
 -- Turn this to false after you move/design your own portals.
 local AUTO_CREATE_DEMO_PORTALS = true
+local REQUEST_COOLDOWN_SECONDS = 0.75
+local REMOTE_PORTAL_DISTANCE = 24
 
 local DEFAULT_ZONES = {
 	{
@@ -77,6 +80,7 @@ end
 local ZONES = loadZones()
 local playerZones = {}
 local touchCooldowns = {}
+local requestCooldowns = {}
 
 local function ensureRemoteEvent(name)
 	local existing = ReplicatedStorage:FindFirstChild(name)
@@ -104,6 +108,13 @@ local function notify(player, message, variant)
 		message = message,
 		variant = variant or "success",
 	})
+end
+
+local function emitGameplayEvent(eventName, player, payload)
+	local event = ServerStorage:FindFirstChild("BrainrotGameplayEvent")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(eventName, player, payload or {})
+	end
 end
 
 local function getZoneById(zoneId)
@@ -251,6 +262,44 @@ local function getDestinationForZone(zoneId)
 	return nil
 end
 
+local function getPortalForZone(zoneId)
+	local folder = getPortalFolder()
+	local portal = folder:FindFirstChild(tostring(zoneId) .. "Portal")
+	if portal and portal:IsA("BasePart") then
+		return portal
+	end
+
+	for _, obj in ipairs(folder:GetChildren()) do
+		if obj:IsA("BasePart") and tostring(obj:GetAttribute("ZoneId") or "") == tostring(zoneId) then
+			return obj
+		end
+	end
+
+	return nil
+end
+
+local function isPlayerAlive(player)
+	local character = player and player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return humanoid ~= nil and root ~= nil and humanoid.Health > 0
+end
+
+local function playerCloseToPortal(player, zoneId)
+	local portal = getPortalForZone(zoneId)
+	if not portal then
+		return true
+	end
+
+	local character = player and player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return false
+	end
+
+	return (root.Position - portal.Position).Magnitude <= REMOTE_PORTAL_DISTANCE
+end
+
 local function unlockZone(player, zone)
 	local data = playerZones[player.UserId]
 	if not data then
@@ -268,6 +317,11 @@ local function unlockZone(player, zone)
 	savePlayerZones(player)
 
 	notify(player, "Unlocked " .. zone.DisplayName .. "!", "success")
+	emitGameplayEvent("ZoneUnlocked", player, {
+		zoneId = zone.Id,
+		displayName = zone.DisplayName,
+		requiredSpeed = zone.RequiredSpeed,
+	})
 end
 
 local function tryEnterZone(player, zoneId)
@@ -458,6 +512,23 @@ requestZoneRemote.OnServerEvent:Connect(function(player, zoneId)
 		return
 	end
 
+	local now = os.clock()
+	local last = requestCooldowns[player.UserId] or 0
+	if now - last < REQUEST_COOLDOWN_SECONDS then
+		return
+	end
+	requestCooldowns[player.UserId] = now
+
+	if not isPlayerAlive(player) then
+		notify(player, "You need to be alive to enter zones.", "warning")
+		return
+	end
+
+	if not playerCloseToPortal(player, zoneId) then
+		notify(player, "Use the zone portal to travel.", "warning")
+		return
+	end
+
 	tryEnterZone(player, zoneId)
 end)
 
@@ -484,6 +555,8 @@ Players.PlayerRemoving:Connect(function(player)
 			touchCooldowns[key] = nil
 		end
 	end
+
+	requestCooldowns[player.UserId] = nil
 end)
 
 game:BindToClose(function()
