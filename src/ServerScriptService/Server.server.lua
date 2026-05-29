@@ -6,6 +6,61 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local TS = require(ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("RuntimeLib"))
 
+local PERFORMANCE_DISABLED_SCRIPTS = {
+	AuraNpcTagger = true,
+	BrainrotMutationReveal = true,
+	BrainrotPlacedCoreRepair = true,
+	BrainrotPlacedFeedback = true,
+	BrainrotStandSnapFix = true,
+	CaptureFeedbackBridge = true,
+	CaptureRevealAnnouncements = true,
+	ForceNPCSpawnBase = true,
+	ForestNPCSpawner = true,
+	GoldenAuraOnNPC = true,
+	GoldenAuraOnPlayer = true,
+	GoldenAuraPlayerSpeedTest = true,
+	GoldenAuraTest = true,
+	GoldenBrainrotAura_Installer = true,
+	HideSpotCoverBuilder = true,
+	MutationRevealBridge = true,
+	MutationRollService = true,
+	PlacedBrainrotVisualRepair = true,
+	SimulatorWorldPolish = true,
+	SpeedAuraTest = true,
+	tmp = true,
+	ZoneEggHatching = true,
+}
+
+local function performanceBaseName(scriptName)
+	local name = tostring(scriptName or "")
+	name = string.gsub(name, "%.server%.lua.*$", "")
+	name = string.gsub(name, "%.client%.lua.*$", "")
+	name = string.gsub(name, "%.lua$", "")
+	return name
+end
+
+local function disablePerformanceScript(instance)
+	if not instance:IsA("Script") or instance == script then
+		return
+	end
+
+	local key = performanceBaseName(instance.Name)
+	if PERFORMANCE_DISABLED_SCRIPTS[key] then
+		instance:SetAttribute("PerformanceModeDisabled", true)
+		instance.Disabled = true
+	end
+end
+
+for _, child in ipairs(ServerScriptService:GetChildren()) do
+	disablePerformanceScript(child)
+end
+
+ServerScriptService.ChildAdded:Connect(function(child)
+	task.defer(disablePerformanceScript, child)
+end)
+
+print("[PerformanceMode] Server cosmetic/test systems disabled for smooth Pipo build.")
+
 local function ensureRemoteEvent(name)
 	local existing = ReplicatedStorage:FindFirstChild(name)
 

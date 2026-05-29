@@ -23,6 +23,7 @@ local BILLBOARD_OFFSET = Vector3.new(0, 6.75, 0)
 
 local CLOCK_SIZE = 40
 local LOW_TIME_SECONDS = 5
+local UPDATE_INTERVAL = 0.12
 
 local function getImageFromAsset(asset)
 	if not asset then
@@ -866,13 +867,23 @@ npcFolder.ChildAdded:Connect(function(npc)
 	end
 end)
 
+local updateAccumulator = 0
+
 RunService.RenderStepped:Connect(function(dt)
+	updateAccumulator += dt
+	if updateAccumulator < UPDATE_INTERVAL then
+		return
+	end
+
+	local elapsed = updateAccumulator
+	updateAccumulator = 0
+
 	for _, npc in ipairs(npcFolder:GetChildren()) do
 		if npc:IsA("Model") then
 			updateNpc(npc)
 			local data = tracked[npc]
 			if data and data.billboard and data.billboard.Enabled then
-				animateHPBar(data, dt)
+				animateHPBar(data, elapsed)
 			end
 		end
 	end
