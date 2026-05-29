@@ -1,6 +1,7 @@
 # BrainrotGame Blender Asset Pipeline
 
 This folder is the asset-ready pipeline for the 12 starter Brainrots and simulator props.
+The generated assets are original, polished, cartoony simulator-style starter assets inspired by the readability and punch of successful Roblox simulator games, without copying another game's models, sounds, icons, or animations.
 
 ## Folders
 
@@ -38,7 +39,7 @@ Model names must match `src/ReplicatedStorage/Shared/BrainrotConfig.lua`:
 6. Paste all uploaded asset IDs into `src/ReplicatedStorage/Shared/AssetIds.lua`.
 7. Run `python tools/verify_asset_pipeline.py` before committing asset registry changes.
 
-The generator creates one placeholder model per Brainrot plus `idle`, `run`, `stun`, and `showcase` animation exports for each starter character. It also exports transparent icon renders, uploadable placeholder WAV files, a props pack with a reveal platform, plot stand, zone gate, hiding prop placeholders, rarity glows, and gameplay VFX placeholders for hit/stun/capture/money/quest/rebirth/zone feedback.
+The generator creates one chunky stylized model per Brainrot plus `idle`, `run`, `stun`, and `showcase` animation exports for each starter character. It also exports lit transparent icon renders, layered uploadable WAV starter sounds, a props pack with a reveal platform, plot stand, zone gate, hiding prop placeholders, rarity glows, and gameplay VFX placeholders for hit/stun/capture/money/quest/rebirth/zone feedback.
 
 This pipeline uses placeholder geometry and animation timing. Replace or polish meshes later while preserving object/model names and asset registry keys.
 

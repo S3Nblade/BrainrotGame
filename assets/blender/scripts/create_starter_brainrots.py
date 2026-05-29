@@ -1,10 +1,10 @@
-"""Generate placeholder BrainrotGame starter assets in Blender.
+"""Generate polished original BrainrotGame starter assets in Blender.
 
 Run inside Blender:
     blender --background --python assets/blender/scripts/create_starter_brainrots.py
 
 The generated model names intentionally match BrainrotConfig.ModelName values.
-These are asset-ready placeholders, not final art.
+The assets are original cartoony simulator-style starter art, not copied from other games.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import struct
 from pathlib import Path
 
 import bpy
+from mathutils import Vector
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -99,22 +100,34 @@ def clear_scene() -> None:
     bpy.ops.object.delete()
 
 
-def material(name: str, color: tuple[float, float, float], roughness: float = 0.65) -> bpy.types.Material:
+def material(
+    name: str,
+    color: tuple[float, float, float],
+    roughness: float = 0.55,
+    metallic: float = 0.0,
+    emission_strength: float = 0.0,
+) -> bpy.types.Material:
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if bsdf:
         bsdf.inputs["Base Color"].default_value = (color[0], color[1], color[2], 1)
         bsdf.inputs["Roughness"].default_value = roughness
+        if "Metallic" in bsdf.inputs:
+            bsdf.inputs["Metallic"].default_value = metallic
+        if emission_strength > 0 and "Emission Strength" in bsdf.inputs:
+            bsdf.inputs["Emission Color"].default_value = (color[0], color[1], color[2], 1)
+            bsdf.inputs["Emission Strength"].default_value = emission_strength
     return mat
 
 
 def add_uv_sphere(name: str, location: tuple[float, float, float], scale: tuple[float, float, float], mat: bpy.types.Material) -> bpy.types.Object:
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, location=location)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=24, location=location)
     obj = bpy.context.object
     obj.name = name
     obj.scale = scale
     obj.data.materials.append(mat)
+    bpy.ops.object.shade_smooth()
     return obj
 
 
@@ -125,9 +138,21 @@ def add_cube(name: str, location: tuple[float, float, float], scale: tuple[float
     obj.scale = scale
     obj.data.materials.append(mat)
     bevel = obj.modifiers.new("SoftBevel", "BEVEL")
-    bevel.width = 0.08
-    bevel.segments = 5
+    bevel.width = 0.1
+    bevel.segments = 8
     obj.modifiers.new("SoftShade", "WEIGHTED_NORMAL")
+    return obj
+
+
+def add_cylinder(name: str, location: tuple[float, float, float], radius: float, depth: float, mat: bpy.types.Material) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=radius, depth=depth, location=location)
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(mat)
+    bevel = obj.modifiers.new("SoftEdge", "BEVEL")
+    bevel.width = 0.035
+    bevel.segments = 5
+    obj.modifiers.new("WeightedNormals", "WEIGHTED_NORMAL")
     return obj
 
 
@@ -136,6 +161,7 @@ def add_cone(name: str, location: tuple[float, float, float], radius: float, dep
     obj = bpy.context.object
     obj.name = name
     obj.data.materials.append(mat)
+    bpy.ops.object.shade_smooth()
     return obj
 
 
@@ -145,63 +171,143 @@ def add_torus(name: str, location: tuple[float, float, float], mat: bpy.types.Ma
     obj.name = name
     obj.rotation_euler[0] = math.radians(90)
     obj.data.materials.append(mat)
+    bpy.ops.object.shade_smooth()
     return obj
 
 
-def add_face(parent_name: str, accent: bpy.types.Material, black: bpy.types.Material) -> list[bpy.types.Object]:
-    left = add_uv_sphere(parent_name + "_LeftEye", (-0.22, -0.72, 1.68), (0.09, 0.035, 0.09), black)
-    right = add_uv_sphere(parent_name + "_RightEye", (0.22, -0.72, 1.68), (0.09, 0.035, 0.09), black)
-    mouth = add_cube(parent_name + "_Mouth", (0, -0.77, 1.42), (0.22, 0.025, 0.04), accent)
-    return [left, right, mouth]
+def add_face(parent_name: str, accent: bpy.types.Material, black: bpy.types.Material, white: bpy.types.Material) -> list[bpy.types.Object]:
+    parts = []
+    for side, x in (("Left", -0.23), ("Right", 0.23)):
+        eye = add_uv_sphere(parent_name + f"_{side}Eye", (x, -0.77, 1.68), (0.13, 0.045, 0.14), black)
+        shine = add_uv_sphere(parent_name + f"_{side}EyeShine", (x - 0.035, -0.807, 1.735), (0.035, 0.012, 0.035), white)
+        brow = add_cube(parent_name + f"_{side}Brow", (x, -0.79, 1.86), (0.16, 0.022, 0.035), accent)
+        brow.rotation_euler[1] = math.radians(-10 if side == "Left" else 10)
+        parts.extend([eye, shine, brow])
+
+    mouth = add_cube(parent_name + "_Smile", (0, -0.8, 1.4), (0.28, 0.028, 0.055), black)
+    tooth = add_cube(parent_name + "_Tooth", (0.08, -0.825, 1.355), (0.045, 0.012, 0.055), white)
+    cheek_l = add_uv_sphere(parent_name + "_LeftCheek", (-0.38, -0.78, 1.48), (0.07, 0.018, 0.05), accent)
+    cheek_r = add_uv_sphere(parent_name + "_RightCheek", (0.38, -0.78, 1.48), (0.07, 0.018, 0.05), accent)
+    parts.extend([mouth, tooth, cheek_l, cheek_r])
+    return parts
+
+
+def add_simulator_details(model_name: str, style: str, accent: bpy.types.Material, dark: bpy.types.Material, gold: bpy.types.Material, glow: bpy.types.Material) -> list[bpy.types.Object]:
+    parts: list[bpy.types.Object] = []
+
+    if style == "nugget":
+        for i, x in enumerate((-0.32, 0.0, 0.3)):
+            spot = add_uv_sphere(f"{model_name}_CrispySpot_{i}", (x, -0.63, 1.98 - i * 0.18), (0.1, 0.025, 0.07), accent)
+            parts.append(spot)
+    elif style == "cone":
+        hat = add_cone(model_name + "_PartyHat", (0, -0.02, 2.34), 0.28, 0.62, accent)
+        brim = add_torus(model_name + "_HatBrim", (0, -0.02, 2.08), gold)
+        brim.scale = (0.42, 0.42, 0.06)
+        parts.extend([hat, brim])
+    elif style == "blob":
+        bubble = add_uv_sphere(model_name + "_BubbleCrown", (0.22, -0.12, 2.12), (0.16, 0.16, 0.16), glow)
+        antenna = add_cylinder(model_name + "_TinyAntenna", (-0.16, -0.03, 2.12), 0.025, 0.42, accent)
+        antenna.rotation_euler[1] = math.radians(18)
+        parts.extend([bubble, antenna])
+    elif style == "pickle":
+        for i in range(7):
+            x = -0.34 + (i % 3) * 0.34
+            z = 1.05 + (i // 3) * 0.34
+            parts.append(add_uv_sphere(f"{model_name}_Bump_{i}", (x, -0.69, z), (0.055, 0.02, 0.055), accent))
+        parts.append(add_cube(model_name + "_SneakyMask", (0, -0.82, 1.68), (0.5, 0.018, 0.12), dark))
+    elif style == "donut":
+        for i in range(10):
+            sprinkle = add_cube(f"{model_name}_Sprinkle_{i}", (math.cos(i) * 0.42, -0.62, 1.35 + math.sin(i) * 0.24), (0.065, 0.018, 0.018), accent if i % 2 else gold)
+            sprinkle.rotation_euler[2] = math.radians(i * 23)
+            parts.append(sprinkle)
+    elif style == "banana":
+        parts.append(add_cone(model_name + "_GoblinLeftEar", (-0.44, -0.05, 1.58), 0.14, 0.42, accent))
+        parts[-1].rotation_euler[2] = math.radians(90)
+        parts.append(add_cone(model_name + "_GoblinRightEar", (0.44, -0.05, 1.58), 0.14, 0.42, accent))
+        parts[-1].rotation_euler[2] = math.radians(-90)
+    elif style == "toaster":
+        parts.append(add_cube(model_name + "_ShyScreen", (0, -0.81, 1.25), (0.38, 0.018, 0.18), dark))
+        parts.append(add_cube(model_name + "_Lever", (0.76, -0.08, 1.28), (0.04, 0.08, 0.24), gold))
+    elif style == "meatball":
+        for i in range(5):
+            flame = add_cone(f"{model_name}_TurboFlame_{i}", (-0.32 + i * 0.16, 0.48, 0.78), 0.075, 0.5, glow)
+            flame.rotation_euler[0] = math.radians(75)
+            parts.append(flame)
+    elif style == "capybara":
+        parts.append(add_cube(model_name + "_GlitchVisor", (0, -0.81, 1.52), (0.46, 0.02, 0.1), glow))
+        for i in range(3):
+            pixel = add_cube(f"{model_name}_GlitchPixel_{i}", (0.42 + i * 0.08, -0.64, 1.28 + i * 0.11), (0.045, 0.018, 0.045), glow)
+            parts.append(pixel)
+    elif style == "lizard":
+        for i in range(5):
+            spike = add_cone(f"{model_name}_BackSpike_{i}", (0, 0.22 + i * 0.12, 1.7 - i * 0.16), 0.055, 0.24, accent)
+            spike.rotation_euler[0] = math.radians(-25)
+            parts.append(spike)
+    elif style == "frog":
+        for i in range(5):
+            swirl = add_torus(f"{model_name}_BrainSwirl_{i}", (-0.24 + i * 0.12, -0.08, 1.86), glow)
+            swirl.scale = (0.11, 0.11, 0.018)
+            parts.append(swirl)
+
+    badge = add_torus(model_name + "_ShowcaseBaseRing", (0, 0, 0.25), glow)
+    badge.scale = (0.82, 0.82, 0.025)
+    parts.append(badge)
+    return parts
 
 
 def make_brainrot(model_name: str, display_name: str, color: tuple[float, float, float], style: str) -> list[bpy.types.Object]:
-    main = material(model_name + "_Main", color)
+    main = material(model_name + "_Main", color, 0.48)
     accent = material(model_name + "_Accent", tuple(min(1.0, c + 0.18) for c in color))
     dark = material(model_name + "_Dark", (0.05, 0.06, 0.09))
-    gold = material(model_name + "_Gold", (1.0, 0.72, 0.08))
+    white = material(model_name + "_White", (1.0, 0.97, 0.9), 0.35)
+    gold = material(model_name + "_Gold", (1.0, 0.72, 0.08), 0.28, 0.15)
+    glow = material(model_name + "_Glow", tuple(min(1.0, c + 0.28) for c in color), 0.25, 0.0, 0.18)
 
     objects: list[bpy.types.Object] = []
 
     if style == "cone":
-        objects.append(add_cone(model_name + "_Body", (0, 0, 1.05), 0.62, 1.75, main))
+        objects.append(add_cone(model_name + "_Body", (0, 0, 1.05), 0.72, 1.82, main))
     elif style == "donut":
         objects.append(add_torus(model_name + "_Body", (0, 0, 1.35), main))
+        objects[-1].scale = (1.08, 1.08, 1.08)
     elif style == "toaster":
-        objects.append(add_cube(model_name + "_Body", (0, 0, 1.15), (0.68, 0.44, 0.58), main))
-        objects.append(add_cube(model_name + "_Toast", (0, 0.02, 1.88), (0.46, 0.12, 0.28), accent))
+        objects.append(add_cube(model_name + "_Body", (0, 0, 1.15), (0.78, 0.48, 0.68), main))
+        objects.append(add_cube(model_name + "_Toast", (0, 0.02, 1.94), (0.52, 0.14, 0.32), accent))
     elif style == "banana":
-        objects.append(add_cone(model_name + "_Body", (0, 0, 1.2), 0.42, 1.95, main))
+        objects.append(add_cone(model_name + "_Body", (0, 0, 1.2), 0.5, 2.05, main))
         objects[-1].rotation_euler[2] = math.radians(11)
     elif style == "spaghetti":
-        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.15), (0.58, 0.44, 0.58), main))
-        for i in range(10):
+        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.15), (0.66, 0.5, 0.64), main))
+        for i in range(14):
             strand = add_cone(model_name + f"_Noodle_{i:02d}", (math.cos(i) * 0.32, math.sin(i) * 0.16, 1.95), 0.045, 0.72, gold)
             strand.rotation_euler[0] = math.radians(90 + i * 9)
             objects.append(strand)
-        objects.append(add_cube(model_name + "_Crown", (0, 0, 2.36), (0.46, 0.12, 0.16), gold))
+        objects.append(add_cube(model_name + "_Crown", (0, 0, 2.36), (0.52, 0.14, 0.18), gold))
     elif style == "capybara":
-        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.06), (0.75, 0.42, 0.44), main))
+        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.06), (0.82, 0.46, 0.48), main))
         objects.append(add_uv_sphere(model_name + "_Snout", (0, -0.58, 1.15), (0.28, 0.16, 0.18), accent))
     elif style == "lizard":
-        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.05), (0.64, 0.34, 0.42), main))
+        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.05), (0.7, 0.38, 0.46), main))
         objects.append(add_cone(model_name + "_Tail", (0, 0.65, 0.86), 0.18, 0.88, accent))
         objects[-1].rotation_euler[0] = math.radians(72)
     elif style == "frog":
-        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.05), (0.62, 0.42, 0.45), main))
-        objects.append(add_uv_sphere(model_name + "_BrainDome", (0, -0.03, 1.74), (0.42, 0.32, 0.22), accent))
+        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.05), (0.7, 0.48, 0.5), main))
+        objects.append(add_uv_sphere(model_name + "_BrainDome", (0, -0.03, 1.78), (0.48, 0.36, 0.24), accent))
     else:
-        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.12), (0.58, 0.46, 0.52), main))
+        objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.12), (0.66, 0.52, 0.58), main))
 
     if style in {"pickle", "blob", "nugget", "meatball"}:
-        objects.append(add_uv_sphere(model_name + "_Head", (0, -0.02, 1.72), (0.42, 0.38, 0.38), accent))
+        objects.append(add_uv_sphere(model_name + "_Head", (0, -0.02, 1.76), (0.48, 0.42, 0.42), accent))
 
     for x in (-0.52, 0.52):
-        objects.append(add_cube(model_name + ("_LeftArm" if x < 0 else "_RightArm"), (x, -0.02, 1.1), (0.13, 0.13, 0.42), accent))
+        arm = add_cube(model_name + ("_LeftArm" if x < 0 else "_RightArm"), (x, -0.02, 1.1), (0.15, 0.15, 0.48), accent)
+        arm.rotation_euler[1] = math.radians(10 if x < 0 else -10)
+        objects.append(arm)
     for x in (-0.24, 0.24):
-        objects.append(add_cube(model_name + ("_LeftFoot" if x < 0 else "_RightFoot"), (x, -0.02, 0.34), (0.16, 0.22, 0.12), dark))
+        objects.append(add_cube(model_name + ("_LeftFoot" if x < 0 else "_RightFoot"), (x, -0.02, 0.34), (0.2, 0.25, 0.13), dark))
 
-    objects.extend(add_face(model_name, accent, dark))
+    objects.extend(add_face(model_name, accent, dark, white))
+    objects.extend(add_simulator_details(model_name, style, accent, dark, gold, glow))
 
     for obj in objects:
         obj["BrainrotDisplayName"] = display_name
@@ -229,42 +335,45 @@ def keyframe_clip(root: bpy.types.Object, clip_name: str) -> None:
 
     if clip_name == "run":
         bpy.context.scene.frame_start = 1
-        bpy.context.scene.frame_end = 32
+        bpy.context.scene.frame_end = 28
         frames = (
-            (1, (0, 0, 0), (0, 0, -7), (1, 1, 1)),
-            (8, (0, 0, 0.08), (0, 0, 7), (1.04, 0.96, 1)),
-            (16, (0, 0, 0), (0, 0, -7), (1, 1, 1)),
-            (24, (0, 0, 0.08), (0, 0, 7), (1.04, 0.96, 1)),
-            (32, (0, 0, 0), (0, 0, 0), (1, 1, 1)),
+            (1, (0, 0, 0), (0, 0, -10), (1.02, 0.98, 1)),
+            (7, (0.05, 0, 0.13), (0, 0, 11), (1.08, 0.93, 1.03)),
+            (14, (0, 0, 0), (0, 0, -10), (1.02, 0.98, 1)),
+            (21, (-0.05, 0, 0.13), (0, 0, 11), (1.08, 0.93, 1.03)),
+            (28, (0, 0, 0), (0, 0, 0), (1.02, 0.98, 1)),
         )
     elif clip_name == "stun":
         bpy.context.scene.frame_start = 1
-        bpy.context.scene.frame_end = 48
+        bpy.context.scene.frame_end = 42
         frames = (
             (1, (0, 0, 0), (0, 0, 0), (1, 1, 1)),
-            (12, (0, 0, -0.05), (0, 0, -16), (1.08, 0.92, 0.92)),
-            (24, (0, 0, -0.05), (0, 0, 16), (1.08, 0.92, 0.92)),
-            (36, (0, 0, -0.05), (0, 0, -10), (1.05, 0.95, 0.95)),
-            (48, (0, 0, 0), (0, 0, 0), (1, 1, 1)),
+            (6, (0, 0, 0.05), (0, 0, -22), (1.16, 0.86, 0.9)),
+            (13, (0, 0, -0.07), (0, 0, 22), (0.94, 1.08, 0.95)),
+            (21, (0, 0, -0.08), (0, 0, -16), (1.1, 0.9, 0.9)),
+            (31, (0, 0, -0.04), (0, 0, 12), (1.04, 0.96, 0.94)),
+            (42, (0, 0, 0), (0, 0, 0), (1, 1, 1)),
         )
     elif clip_name == "showcase":
         bpy.context.scene.frame_start = 1
-        bpy.context.scene.frame_end = 96
+        bpy.context.scene.frame_end = 90
         frames = (
             (1, (0, 0, 0), (0, 0, 0), (0.25, 0.25, 0.25)),
-            (18, (0, 0, 0.08), (0, 0, 35), (1.16, 1.16, 1.16)),
-            (32, (0, 0, 0.02), (0, 0, 80), (1, 1, 1)),
-            (64, (0, 0, 0.1), (0, 0, 220), (1, 1, 1)),
-            (96, (0, 0, 0.02), (0, 0, 360), (1, 1, 1)),
+            (10, (0, 0, 0.14), (0, 0, 22), (1.34, 1.34, 1.34)),
+            (18, (0, 0, 0.04), (0, 0, 55), (0.94, 0.94, 0.94)),
+            (28, (0, 0, 0.08), (0, 0, 90), (1.04, 1.04, 1.04)),
+            (58, (0, 0, 0.12), (0, 0, 230), (1, 1, 1)),
+            (90, (0, 0, 0.06), (0, 0, 360), (1, 1, 1)),
         )
     else:
         bpy.context.scene.frame_start = 1
         bpy.context.scene.frame_end = 48
         frames = (
-            (1, (0, 0, 0), (0, 0, -2), (1, 1, 1)),
-            (16, (0, 0, 0.05), (0, 0, 2), (1.02, 0.98, 1)),
-            (32, (0, 0, 0), (0, 0, -2), (1, 1, 1)),
-            (48, (0, 0, 0.05), (0, 0, 0), (1.02, 0.98, 1)),
+            (1, (0, 0, 0), (0, 0, -3), (1, 1, 1)),
+            (12, (0, 0, 0.06), (0, 0, 3), (1.035, 0.965, 1.01)),
+            (24, (0, 0, 0), (0, 0, -2), (0.99, 1.01, 1)),
+            (36, (0, 0, 0.06), (0, 0, 2), (1.035, 0.965, 1.01)),
+            (48, (0, 0, 0.01), (0, 0, 0), (1, 1, 1)),
         )
 
     for frame, location, rotation, scale in frames:
@@ -275,6 +384,11 @@ def keyframe_clip(root: bpy.types.Object, clip_name: str) -> None:
         root.keyframe_insert("location", frame=frame)
         root.keyframe_insert("rotation_euler", frame=frame)
         root.keyframe_insert("scale", frame=frame)
+
+    if root.animation_data and root.animation_data.action and hasattr(root.animation_data.action, "fcurves"):
+        for curve in root.animation_data.action.fcurves:
+            for keyframe in curve.keyframe_points:
+                keyframe.interpolation = "BEZIER"
 
 
 def export_model(model_name: str, objects: list[bpy.types.Object]) -> None:
@@ -288,20 +402,36 @@ def export_model(model_name: str, objects: list[bpy.types.Object]) -> None:
 
 
 def render_icon(model_name: str, display_name: str, objects: list[bpy.types.Object]) -> None:
+    try:
+        bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except TypeError:
+        bpy.context.scene.render.engine = "BLENDER_EEVEE"
     camera_data = bpy.data.cameras.new(model_name + "_IconCamera")
     camera = bpy.data.objects.new(model_name + "_IconCamera", camera_data)
     bpy.context.collection.objects.link(camera)
-    camera.location = (0, -5.4, 2.0)
-    camera.rotation_euler = (math.radians(72), 0, 0)
-    camera_data.lens = 70
+    camera.location = (0, -6.4, 2.35)
+    direction = Vector((0, 0, 1.35)) - camera.location
+    camera.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
+    camera_data.type = "ORTHO"
+    camera_data.ortho_scale = 3.85
     bpy.context.scene.camera = camera
 
     light_data = bpy.data.lights.new(model_name + "_IconKeyLight", "AREA")
     light = bpy.data.objects.new(model_name + "_IconKeyLight", light_data)
     bpy.context.collection.objects.link(light)
     light.location = (0, -3.2, 4.0)
-    light_data.energy = 420
-    light_data.size = 4
+    light_data.energy = 560
+    light_data.size = 4.5
+
+    rim_data = bpy.data.lights.new(model_name + "_IconRimLight", "POINT")
+    rim = bpy.data.objects.new(model_name + "_IconRimLight", rim_data)
+    bpy.context.collection.objects.link(rim)
+    rim.location = (-2.2, 1.2, 3.2)
+    rim_data.energy = 120
+
+    base_mat = material(model_name + "_IconGlowDisc", (0.18, 0.52, 1.0), 0.28, 0.0, 0.12)
+    disc = add_cylinder(model_name + "_IconGlowDisc", (0, 0.18, 0.04), 1.1, 0.035, base_mat)
+    disc.scale = (1.0, 0.72, 1.0)
 
     bpy.context.scene.render.resolution_x = 512
     bpy.context.scene.render.resolution_y = 512
@@ -397,11 +527,19 @@ def create_gameplay_vfx() -> None:
 
 def create_sound_placeholders() -> None:
     sample_rate = 44100
-    duration = 0.18
-    amplitude = 0.22
+    duration_by_key = {
+        "reveal_speedup": 0.42,
+        "reveal_final_pop": 0.36,
+        "reveal_rare": 0.58,
+        "reveal_legendary": 0.72,
+        "quest_complete": 0.46,
+        "rebirth": 0.78,
+        "zone_unlock": 0.58,
+    }
 
     for key in SOUND_KEYS:
         frequency = SOUND_FREQUENCIES.get(key, 440)
+        duration = duration_by_key.get(key, 0.22)
         path = SOUND_EXPORTS / f"{key}.wav"
         frame_count = int(sample_rate * duration)
 
@@ -412,8 +550,21 @@ def create_sound_placeholders() -> None:
 
             for frame in range(frame_count):
                 t = frame / sample_rate
-                fade = max(0.0, 1.0 - (frame / frame_count))
-                sample = math.sin(2 * math.pi * frequency * t) * amplitude * fade
+                progress = frame / frame_count
+                attack = min(1.0, progress / 0.08)
+                fade = max(0.0, 1.0 - progress)
+                chirp = frequency * (1.0 + 0.22 * progress)
+                harmonic = math.sin(2 * math.pi * chirp * t)
+                sparkle = 0.45 * math.sin(2 * math.pi * (frequency * 1.5) * t)
+                sub = 0.22 * math.sin(2 * math.pi * max(80, frequency * 0.5) * t)
+                noise = 0.08 * math.sin(2 * math.pi * (frequency * 3.7) * t + math.sin(t * 80))
+                if "fail" in key:
+                    harmonic = math.sin(2 * math.pi * (frequency * (1.0 - 0.35 * progress)) * t)
+                    sparkle *= 0.1
+                if key in {"reveal_rare", "reveal_legendary", "rebirth", "zone_unlock"}:
+                    sparkle *= 1.6
+                    sub *= 1.25
+                sample = (harmonic + sparkle + sub + noise) * 0.16 * attack * fade
                 wav.writeframes(struct.pack("<h", int(sample * 32767)))
 
 
