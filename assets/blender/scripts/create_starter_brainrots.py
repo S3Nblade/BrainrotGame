@@ -44,6 +44,18 @@ BRAINROTS = [
     ("BR_BubbleLizard", "Bubble Lizard", (0.18, 0.9, 0.75), "lizard"),
     ("BR_GoldenSpaghettiKing", "Golden Spaghetti King", (1.0, 0.76, 0.12), "spaghetti"),
     ("BR_CosmicBrainFrog", "Cosmic Brain Frog", (0.46, 0.32, 1.0), "frog"),
+    ("BR_TralaleroTralala", "Tralalero Tralala", (0.18, 0.58, 1.0), "sneaker_shark"),
+    ("BR_TungTungSahur", "Tung Tung Sahur", (0.72, 0.45, 0.2), "wood_drum"),
+    ("BR_BombardiroCrocodilo", "Bombardiro Crocodilo", (0.18, 0.58, 0.24), "croc_plane"),
+    ("BR_BallerinaCappuccina", "Ballerina Cappuccina", (0.9, 0.63, 0.42), "coffee_ballerina"),
+    ("BR_BrrBrrPatapim", "Brr Brr Patapim", (0.32, 0.78, 0.38), "tree_foot"),
+    ("BR_CappuccinoAssassino", "Cappuccino Assassino", (0.48, 0.28, 0.14), "coffee_ninja"),
+    ("BR_LiriliLarila", "Lirili Larila", (0.88, 0.76, 0.48), "cactus_elephant"),
+    ("BR_BobritoBandito", "Bobrito Bandito", (0.82, 0.42, 0.22), "burrito_bandit"),
+    ("BR_ChimpanziniBananini", "Chimpanzini Bananini", (0.68, 0.48, 0.24), "banana_chimp"),
+    ("BR_BombombiniGusini", "Bombombini Gusini", (0.72, 0.82, 0.9), "goose_plane"),
+    ("BR_BonecaAmbalabu", "Boneca Ambalabu", (0.95, 0.58, 0.78), "doll_frog"),
+    ("BR_LaVacaSaturnoSaturnita", "La Vaca Saturno Saturnita", (0.92, 0.92, 0.86), "saturn_cow"),
 ]
 
 ANIMATION_CLIPS = ("idle", "run", "stun", "showcase")
@@ -192,7 +204,15 @@ def add_face(parent_name: str, accent: bpy.types.Material, black: bpy.types.Mate
     return parts
 
 
-def add_simulator_details(model_name: str, style: str, accent: bpy.types.Material, dark: bpy.types.Material, gold: bpy.types.Material, glow: bpy.types.Material) -> list[bpy.types.Object]:
+def add_simulator_details(
+    model_name: str,
+    style: str,
+    accent: bpy.types.Material,
+    dark: bpy.types.Material,
+    white: bpy.types.Material,
+    gold: bpy.types.Material,
+    glow: bpy.types.Material,
+) -> list[bpy.types.Object]:
     parts: list[bpy.types.Object] = []
 
     if style == "nugget":
@@ -248,6 +268,80 @@ def add_simulator_details(model_name: str, style: str, accent: bpy.types.Materia
             swirl = add_torus(f"{model_name}_BrainSwirl_{i}", (-0.24 + i * 0.12, -0.08, 1.86), glow)
             swirl.scale = (0.11, 0.11, 0.018)
             parts.append(swirl)
+    elif style == "sneaker_shark":
+        sole = add_cube(model_name + "_SneakerSole", (0, -0.04, 0.2), (0.62, 0.42, 0.1), white)
+        stripe = add_cube(model_name + "_ShoeStripe", (0, -0.5, 0.38), (0.45, 0.02, 0.045), accent)
+        parts.extend([sole, stripe])
+    elif style == "wood_drum":
+        for i, x in enumerate((-0.32, 0.32)):
+            stick = add_cylinder(f"{model_name}_DrumStick_{i}", (x, -0.72, 1.65), 0.035, 0.72, gold)
+            stick.rotation_euler[0] = math.radians(65)
+            stick.rotation_euler[2] = math.radians(16 if x < 0 else -16)
+            parts.append(stick)
+        for i in range(4):
+            band = add_torus(f"{model_name}_WoodRing_{i}", (0, -0.34 + i * 0.22, 1.15), accent)
+            band.scale = (0.52, 0.52, 0.025)
+            parts.append(band)
+    elif style == "croc_plane":
+        for i in range(6):
+            tooth = add_cone(f"{model_name}_Tooth_{i}", (-0.25 + i * 0.1, -0.91, 1.0), 0.035, 0.12, white)
+            parts.append(tooth)
+        tail = add_cone(model_name + "_TailFin", (0, 0.58, 1.18), 0.16, 0.44, accent)
+        tail.rotation_euler[0] = math.radians(-90)
+        parts.append(tail)
+    elif style == "coffee_ballerina":
+        for i, x in enumerate((-0.18, 0.18)):
+            leg = add_cylinder(f"{model_name}_BalletLeg_{i}", (x, -0.02, 0.42), 0.04, 0.55, white)
+            leg.rotation_euler[0] = math.radians(8 if x < 0 else -8)
+            parts.append(leg)
+        parts.append(add_cube(model_name + "_CupHandle", (0.56, 0, 1.08), (0.08, 0.18, 0.28), accent))
+    elif style == "tree_foot":
+        for i in range(5):
+            leaf = add_uv_sphere(f"{model_name}_LeafTuft_{i}", (-0.36 + i * 0.18, -0.02, 2.15), (0.16, 0.1, 0.12), glow)
+            parts.append(leaf)
+        parts.append(add_cube(model_name + "_BigLeftFoot", (-0.28, -0.08, 0.22), (0.24, 0.32, 0.1), dark))
+        parts.append(add_cube(model_name + "_BigRightFoot", (0.28, -0.08, 0.22), (0.24, 0.32, 0.1), dark))
+    elif style == "coffee_ninja":
+        scarf = add_cube(model_name + "_RedScarf", (0.48, -0.08, 1.38), (0.26, 0.035, 0.08), accent)
+        scarf.rotation_euler[2] = math.radians(-20)
+        parts.append(scarf)
+        parts.append(add_cube(model_name + "_FoamBelt", (0, -0.56, 1.02), (0.48, 0.028, 0.06), gold))
+    elif style == "cactus_elephant":
+        for i in range(8):
+            spike = add_cone(f"{model_name}_CactusSpike_{i}", (-0.34 + (i % 4) * 0.22, -0.5, 0.88 + (i // 4) * 0.42), 0.025, 0.12, white)
+            spike.rotation_euler[0] = math.radians(90)
+            parts.append(spike)
+    elif style == "burrito_bandit":
+        for i in range(3):
+            filling = add_cube(f"{model_name}_Filling_{i}", (-0.18 + i * 0.18, -0.54, 1.82), (0.08, 0.04, 0.14), accent if i % 2 else gold)
+            parts.append(filling)
+        hat = add_torus(model_name + "_TinySombrero", (0, -0.02, 2.02), gold)
+        hat.scale = (0.5, 0.5, 0.055)
+        parts.append(hat)
+    elif style == "banana_chimp":
+        for x in (-0.44, 0.44):
+            ear = add_uv_sphere(model_name + ("_LeftEar" if x < 0 else "_RightEar"), (x, -0.05, 1.52), (0.16, 0.08, 0.18), accent)
+            parts.append(ear)
+        parts.append(add_cube(model_name + "_BananaPeelBelt", (0, -0.58, 0.98), (0.5, 0.03, 0.08), gold))
+    elif style == "goose_plane":
+        wing_l = add_cube(model_name + "_LeftWing", (-0.6, 0.02, 1.05), (0.48, 0.07, 0.07), accent)
+        wing_r = add_cube(model_name + "_RightWing", (0.6, 0.02, 1.05), (0.48, 0.07, 0.07), accent)
+        wing_l.rotation_euler[2] = math.radians(-8)
+        wing_r.rotation_euler[2] = math.radians(8)
+        parts.extend([wing_l, wing_r])
+    elif style == "doll_frog":
+        bow = add_cube(model_name + "_DollBow", (0, -0.56, 2.02), (0.32, 0.03, 0.09), gold)
+        bow.rotation_euler[2] = math.radians(12)
+        parts.append(bow)
+        parts.append(add_uv_sphere(model_name + "_FrogHatLeftEye", (-0.22, -0.2, 1.98), (0.08, 0.04, 0.08), dark))
+        parts.append(add_uv_sphere(model_name + "_FrogHatRightEye", (0.22, -0.2, 1.98), (0.08, 0.04, 0.08), dark))
+    elif style == "saturn_cow":
+        for i, x in enumerate((-0.22, 0.18)):
+            spot = add_uv_sphere(f"{model_name}_CowSpot_{i}", (x, -0.62, 1.32 + i * 0.18), (0.16, 0.026, 0.11), dark)
+            parts.append(spot)
+        horn_l = add_cone(model_name + "_LeftHorn", (-0.24, -0.08, 1.86), 0.07, 0.28, gold)
+        horn_r = add_cone(model_name + "_RightHorn", (0.24, -0.08, 1.86), 0.07, 0.28, gold)
+        parts.extend([horn_l, horn_r])
 
     badge = add_torus(model_name + "_ShowcaseBaseRing", (0, 0, 0.25), glow)
     badge.scale = (0.82, 0.82, 0.025)
@@ -293,6 +387,78 @@ def make_brainrot(model_name: str, display_name: str, color: tuple[float, float,
     elif style == "frog":
         objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.05), (0.7, 0.48, 0.5), main))
         objects.append(add_uv_sphere(model_name + "_BrainDome", (0, -0.03, 1.78), (0.48, 0.36, 0.24), accent))
+    elif style == "sneaker_shark":
+        objects.append(add_uv_sphere(model_name + "_SharkBody", (0, 0, 1.18), (0.78, 0.34, 0.42), main))
+        dorsal = add_cone(model_name + "_DorsalFin", (0, 0.04, 1.74), 0.18, 0.55, accent)
+        dorsal.rotation_euler[0] = math.radians(-90)
+        objects.append(dorsal)
+        snout = add_cone(model_name + "_Snout", (0, -0.64, 1.22), 0.32, 0.7, accent)
+        snout.rotation_euler[0] = math.radians(90)
+        objects.append(snout)
+    elif style == "wood_drum":
+        body = add_cylinder(model_name + "_LogBody", (0, 0, 1.15), 0.52, 1.35, main)
+        body.rotation_euler[0] = math.radians(90)
+        objects.append(body)
+        objects.append(add_cylinder(model_name + "_DrumTop", (0, -0.68, 1.15), 0.54, 0.08, accent))
+        objects[-1].rotation_euler[0] = math.radians(90)
+    elif style == "croc_plane":
+        objects.append(add_uv_sphere(model_name + "_CrocBody", (0, 0, 1.1), (0.78, 0.36, 0.34), main))
+        snout = add_cube(model_name + "_LongSnout", (0, -0.68, 1.12), (0.38, 0.38, 0.16), accent)
+        objects.append(snout)
+        wing_l = add_cube(model_name + "_LeftWing", (-0.62, 0.02, 1.14), (0.5, 0.08, 0.08), accent)
+        wing_r = add_cube(model_name + "_RightWing", (0.62, 0.02, 1.14), (0.5, 0.08, 0.08), accent)
+        wing_l.rotation_euler[2] = math.radians(-8)
+        wing_r.rotation_euler[2] = math.radians(8)
+        objects.extend([wing_l, wing_r])
+    elif style == "coffee_ballerina":
+        objects.append(add_cylinder(model_name + "_CupBody", (0, 0, 1.08), 0.52, 0.96, main))
+        tutu = add_torus(model_name + "_Tutu", (0, 0, 0.88), accent)
+        tutu.scale = (0.95, 0.95, 0.08)
+        objects.append(tutu)
+        foam = add_uv_sphere(model_name + "_FoamHead", (0, 0, 1.72), (0.46, 0.38, 0.26), white)
+        objects.append(foam)
+    elif style == "tree_foot":
+        objects.append(add_cylinder(model_name + "_TreeBody", (0, 0, 1.05), 0.42, 1.22, main))
+        objects.append(add_uv_sphere(model_name + "_LeafHead", (0, 0, 1.84), (0.62, 0.46, 0.42), accent))
+    elif style == "coffee_ninja":
+        objects.append(add_cylinder(model_name + "_CupBody", (0, 0, 1.08), 0.5, 0.98, main))
+        objects.append(add_uv_sphere(model_name + "_FoamHead", (0, 0, 1.7), (0.44, 0.34, 0.25), accent))
+        mask = add_cube(model_name + "_NinjaMask", (0, -0.78, 1.68), (0.48, 0.02, 0.12), dark)
+        objects.append(mask)
+    elif style == "cactus_elephant":
+        objects.append(add_uv_sphere(model_name + "_CactusBody", (0, 0, 1.1), (0.5, 0.36, 0.78), main))
+        trunk = add_cone(model_name + "_Trunk", (0, -0.64, 1.08), 0.14, 0.72, accent)
+        trunk.rotation_euler[0] = math.radians(90)
+        objects.append(trunk)
+        objects.append(add_uv_sphere(model_name + "_LeftEar", (-0.48, -0.06, 1.36), (0.22, 0.08, 0.26), accent))
+        objects.append(add_uv_sphere(model_name + "_RightEar", (0.48, -0.06, 1.36), (0.22, 0.08, 0.26), accent))
+    elif style == "burrito_bandit":
+        roll = add_cylinder(model_name + "_BurritoBody", (0, 0, 1.14), 0.46, 1.34, main)
+        roll.rotation_euler[2] = math.radians(12)
+        objects.append(roll)
+        objects.append(add_cube(model_name + "_BanditMask", (0, -0.76, 1.54), (0.48, 0.02, 0.12), dark))
+    elif style == "banana_chimp":
+        objects.append(add_uv_sphere(model_name + "_ChimpBody", (0, 0, 1.08), (0.58, 0.42, 0.56), main))
+        banana = add_cone(model_name + "_BananaCrown", (0, -0.02, 1.96), 0.26, 0.72, gold)
+        banana.rotation_euler[2] = math.radians(12)
+        objects.append(banana)
+    elif style == "goose_plane":
+        objects.append(add_uv_sphere(model_name + "_GooseBody", (0, 0, 1.06), (0.72, 0.32, 0.42), main))
+        neck = add_cylinder(model_name + "_GooseNeck", (0, -0.38, 1.54), 0.12, 0.64, accent)
+        neck.rotation_euler[0] = math.radians(-18)
+        objects.append(neck)
+        beak = add_cone(model_name + "_Beak", (0, -0.78, 1.72), 0.12, 0.38, gold)
+        beak.rotation_euler[0] = math.radians(90)
+        objects.append(beak)
+    elif style == "doll_frog":
+        objects.append(add_uv_sphere(model_name + "_DollBody", (0, 0, 1.12), (0.52, 0.38, 0.6), main))
+        objects.append(add_uv_sphere(model_name + "_FrogHat", (0, -0.02, 1.82), (0.5, 0.34, 0.22), accent))
+    elif style == "saturn_cow":
+        objects.append(add_uv_sphere(model_name + "_CowBody", (0, 0, 1.1), (0.68, 0.42, 0.52), main))
+        ring = add_torus(model_name + "_SaturnRing", (0, 0, 1.15), gold)
+        ring.scale = (1.18, 1.18, 0.04)
+        ring.rotation_euler[1] = math.radians(22)
+        objects.append(ring)
     else:
         objects.append(add_uv_sphere(model_name + "_Body", (0, 0, 1.12), (0.66, 0.52, 0.58), main))
 
@@ -307,7 +473,7 @@ def make_brainrot(model_name: str, display_name: str, color: tuple[float, float,
         objects.append(add_cube(model_name + ("_LeftFoot" if x < 0 else "_RightFoot"), (x, -0.02, 0.34), (0.2, 0.25, 0.13), dark))
 
     objects.extend(add_face(model_name, accent, dark, white))
-    objects.extend(add_simulator_details(model_name, style, accent, dark, gold, glow))
+    objects.extend(add_simulator_details(model_name, style, accent, dark, white, gold, glow))
 
     for obj in objects:
         obj["BrainrotDisplayName"] = display_name

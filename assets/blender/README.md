@@ -28,6 +28,18 @@ Model names must match `src/ReplicatedStorage/Shared/BrainrotConfig.lua`:
 - `BR_BubbleLizard`
 - `BR_GoldenSpaghettiKing`
 - `BR_CosmicBrainFrog`
+- `BR_TralaleroTralala`
+- `BR_TungTungSahur`
+- `BR_BombardiroCrocodilo`
+- `BR_BallerinaCappuccina`
+- `BR_BrrBrrPatapim`
+- `BR_CappuccinoAssassino`
+- `BR_LiriliLarila`
+- `BR_BobritoBandito`
+- `BR_ChimpanziniBananini`
+- `BR_BombombiniGusini`
+- `BR_BonecaAmbalabu`
+- `BR_LaVacaSaturnoSaturnita`
 
 ## Export Flow
 
