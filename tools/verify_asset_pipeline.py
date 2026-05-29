@@ -71,12 +71,25 @@ def main() -> int:
         if asset_key.removesuffix("Glow") not in generator_text:
             failures.append(f"{vfx_name} is required but missing from create_starter_brainrots.py")
 
+    for vfx_name in manifest.get("requiredGameplayVfx") or []:
+        asset_key = vfx_name.removeprefix("VFX_")
+        if not re.search(rf"\b{re.escape(asset_key)}\s*=", asset_text):
+            failures.append(f"Gameplay VFX key AssetIds.VFX.{asset_key} is missing")
+        if vfx_name not in generator_text:
+            failures.append(f"{vfx_name} is required but missing from create_starter_brainrots.py")
+
     for prop_name in manifest.get("requiredProps") or []:
         asset_key = prop_name.removeprefix("PROP_")
         if not re.search(rf"\b{re.escape(asset_key)}\s*=", asset_text):
             failures.append(f"Prop key AssetIds.VFX.{asset_key} is missing")
         if prop_name not in generator_text:
             failures.append(f"{prop_name} is required but missing from create_starter_brainrots.py")
+
+    if "render_icon(" not in generator_text:
+        failures.append("create_starter_brainrots.py must render icon placeholders for every Brainrot")
+
+    if "create_sound_placeholders(" not in generator_text:
+        failures.append("create_starter_brainrots.py must create placeholder WAV files for required sounds")
 
     if failures:
         print("Asset pipeline verification failed:")

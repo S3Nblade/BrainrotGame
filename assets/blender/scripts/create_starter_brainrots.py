@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import math
 import json
+import wave
+import struct
 from pathlib import Path
 
 import bpy
@@ -63,6 +65,33 @@ SOUND_KEYS = (
     "zone_unlock",
 )
 RARITY_GLOWS = ("Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Secret")
+GAMEPLAY_VFX = (
+    ("VFX_HitSpark", (1.0, 0.82, 0.18), "HitSpark"),
+    ("VFX_StunStars", (1.0, 0.95, 0.28), "StunStars"),
+    ("VFX_CaptureBurst", (0.28, 0.88, 1.0), "CaptureBurst"),
+    ("VFX_MoneyPop", (0.22, 1.0, 0.42), "MoneyPop"),
+    ("VFX_QuestComplete", (1.0, 0.58, 0.18), "QuestComplete"),
+    ("VFX_RebirthBurst", (0.78, 0.26, 1.0), "RebirthBurst"),
+    ("VFX_ZoneUnlockBurst", (0.18, 0.64, 1.0), "ZoneUnlockBurst"),
+)
+SOUND_FREQUENCIES = {
+    "ui_click": 880,
+    "ui_hover": 660,
+    "hit": 190,
+    "stun": 330,
+    "capture_success": 740,
+    "reveal_tick": 960,
+    "reveal_speedup": 1120,
+    "reveal_final_pop": 520,
+    "reveal_rare": 680,
+    "reveal_legendary": 820,
+    "money_collect": 1040,
+    "purchase_success": 720,
+    "purchase_fail": 150,
+    "quest_complete": 900,
+    "rebirth": 440,
+    "zone_unlock": 620,
+}
 
 
 def clear_scene() -> None:
@@ -258,6 +287,31 @@ def export_model(model_name: str, objects: list[bpy.types.Object]) -> None:
     bpy.ops.export_scene.gltf(filepath=str(glb_path), use_selection=True, export_format="GLB")
 
 
+def render_icon(model_name: str, display_name: str, objects: list[bpy.types.Object]) -> None:
+    camera_data = bpy.data.cameras.new(model_name + "_IconCamera")
+    camera = bpy.data.objects.new(model_name + "_IconCamera", camera_data)
+    bpy.context.collection.objects.link(camera)
+    camera.location = (0, -5.4, 2.0)
+    camera.rotation_euler = (math.radians(72), 0, 0)
+    camera_data.lens = 70
+    bpy.context.scene.camera = camera
+
+    light_data = bpy.data.lights.new(model_name + "_IconKeyLight", "AREA")
+    light = bpy.data.objects.new(model_name + "_IconKeyLight", light_data)
+    bpy.context.collection.objects.link(light)
+    light.location = (0, -3.2, 4.0)
+    light_data.energy = 420
+    light_data.size = 4
+
+    bpy.context.scene.render.resolution_x = 512
+    bpy.context.scene.render.resolution_y = 512
+    bpy.context.scene.render.film_transparent = True
+    if hasattr(bpy.context.scene, "eevee"):
+        bpy.context.scene.eevee.taa_render_samples = 32
+    bpy.context.scene.render.filepath = str(ICON_EXPORTS / f"{model_name.replace('BR_', '', 1)}.png")
+    bpy.ops.render.render(write_still=True)
+
+
 def export_objects(objects: list[bpy.types.Object], path: Path) -> None:
     bpy.ops.object.select_all(action="DESELECT")
     for obj in objects:
@@ -312,6 +366,57 @@ def create_rarity_glows() -> None:
         export_objects([ring, burst], VFX_EXPORTS / f"VFX_{rarity}Glow.glb")
 
 
+def create_gameplay_vfx() -> None:
+    for vfx_name, color, _asset_key in GAMEPLAY_VFX:
+        clear_scene()
+        mat = material(vfx_name + "_Mat", color, 0.32)
+        ring = add_torus(vfx_name + "_Ring", (0, 0, 0.12), mat)
+        ring.scale = (0.75, 0.75, 0.05)
+        parts = [ring]
+
+        for i in range(6):
+            angle = (math.pi * 2 / 6) * i
+            spark = add_cone(
+                f"{vfx_name}_Ray_{i:02d}",
+                (math.cos(angle) * 0.62, math.sin(angle) * 0.62, 0.18),
+                0.07,
+                0.45,
+                mat,
+            )
+            spark.rotation_euler[1] = math.radians(90)
+            spark.rotation_euler[2] = angle
+            parts.append(spark)
+
+        if vfx_name == "VFX_StunStars":
+            for i in range(3):
+                star = add_uv_sphere(f"{vfx_name}_Star_{i:02d}", (-0.32 + i * 0.32, 0, 0.72), (0.12, 0.04, 0.12), mat)
+                parts.append(star)
+
+        export_objects(parts, VFX_EXPORTS / f"{vfx_name}.glb")
+
+
+def create_sound_placeholders() -> None:
+    sample_rate = 44100
+    duration = 0.18
+    amplitude = 0.22
+
+    for key in SOUND_KEYS:
+        frequency = SOUND_FREQUENCIES.get(key, 440)
+        path = SOUND_EXPORTS / f"{key}.wav"
+        frame_count = int(sample_rate * duration)
+
+        with wave.open(str(path), "w") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(sample_rate)
+
+            for frame in range(frame_count):
+                t = frame / sample_rate
+                fade = max(0.0, 1.0 - (frame / frame_count))
+                sample = math.sin(2 * math.pi * frequency * t) * amplitude * fade
+                wav.writeframes(struct.pack("<h", int(sample * 32767)))
+
+
 def write_manifest() -> None:
     brainrots = []
     for model_name, display_name, _color, _style in BRAINROTS:
@@ -354,6 +459,14 @@ def write_manifest() -> None:
             }
             for rarity in RARITY_GLOWS
         ],
+        "gameplayVfx": [
+            {
+                "name": vfx_name,
+                "export": f"exports/vfx/{vfx_name}.glb",
+                "assetIdsKey": f"AssetIds.VFX.{asset_key}",
+            }
+            for vfx_name, _color, asset_key in GAMEPLAY_VFX
+        ],
         "sounds": [
             {
                 "key": key,
@@ -383,6 +496,7 @@ def main() -> None:
         objects = make_brainrot(model_name, display_name, color, style)
         keyframe_clip(objects[-1], "idle")
         export_model(model_name, objects)
+        render_icon(model_name, display_name, objects)
 
         for clip_name in ANIMATION_CLIPS:
             keyframe_clip(objects[-1], clip_name)
@@ -392,6 +506,8 @@ def main() -> None:
     clear_scene()
     create_props()
     create_rarity_glows()
+    create_gameplay_vfx()
+    create_sound_placeholders()
     write_manifest()
 
 

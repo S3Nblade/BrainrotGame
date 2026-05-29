@@ -12,5 +12,12 @@ Generated names:
 - `VFX_LegendaryGlow.glb`
 - `VFX_MythicGlow.glb`
 - `VFX_SecretGlow.glb`
+- `VFX_HitSpark.glb`
+- `VFX_StunStars.glb`
+- `VFX_CaptureBurst.glb`
+- `VFX_MoneyPop.glb`
+- `VFX_QuestComplete.glb`
+- `VFX_RebirthBurst.glb`
+- `VFX_ZoneUnlockBurst.glb`
 
 After upload, paste IDs into `AssetIds.VFX`.

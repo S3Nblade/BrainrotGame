@@ -37,6 +37,15 @@
     "VFX_MythicGlow",
     "VFX_SecretGlow"
   ],
+  "requiredGameplayVfx": [
+    "VFX_HitSpark",
+    "VFX_StunStars",
+    "VFX_CaptureBurst",
+    "VFX_MoneyPop",
+    "VFX_QuestComplete",
+    "VFX_RebirthBurst",
+    "VFX_ZoneUnlockBurst"
+  ],
   "requiredSoundKeys": [
     "ui_click",
     "ui_hover",
