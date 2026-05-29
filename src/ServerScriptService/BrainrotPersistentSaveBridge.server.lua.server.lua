@@ -438,6 +438,41 @@ local function serializeNpc(player, npc)
 	}
 end
 
+local function collectProgressionSnapshot(player)
+	local zones = {}
+	for key, value in pairs(player:GetAttributes()) do
+		if type(key) == "string" and string.sub(key, 1, 5) == "Zone_" and string.sub(key, -9) == "_Unlocked" then
+			local zoneId = string.sub(key, 6, #key - 9)
+			zones[zoneId] = value == true
+		end
+	end
+	zones.Starter = true
+
+	return {
+		rebirths = math.max(0, math.floor(tonumber(player:GetAttribute("Rebirths")) or 0)),
+		moneyMultiplier = tonumber(player:GetAttribute("MoneyMultiplier")) or 1,
+		nextRebirthStrengthRequirement = math.max(0, math.floor(tonumber(player:GetAttribute("NextRebirthStrengthRequirement")) or 0)),
+		upgrades = {
+			TrainingMultiplier = tonumber(player:GetAttribute("TrainingMultiplier")) or 1,
+			AutoTrainDelay = tonumber(player:GetAttribute("AutoTrainDelay")) or 0.4,
+			CapturePowerMultiplier = tonumber(player:GetAttribute("CapturePowerMultiplier")) or 1,
+			LuckMultiplier = tonumber(player:GetAttribute("LuckMultiplier")) or 1,
+			InventoryCapacityBonus = math.max(0, math.floor(tonumber(player:GetAttribute("InventoryCapacityBonus")) or 0)),
+			PlotSlotDiscount = math.max(0, tonumber(player:GetAttribute("PlotSlotDiscount")) or 0),
+			ShopCashMultiplier = tonumber(player:GetAttribute("ShopCashMultiplier")) or 1,
+		},
+		zones = zones,
+		quests = {
+			level = math.max(1, math.floor(tonumber(player:GetAttribute("BrainrotQuestLevel")) or 1)),
+			dailyDay = tostring(player:GetAttribute("BrainrotDailyQuestDay") or ""),
+		},
+		discoveries = {
+			count = math.max(0, math.floor(tonumber(player:GetAttribute("BrainrotDiscoveredCount")) or 0)),
+			json = tostring(player:GetAttribute("BrainrotDiscoveredJson") or ""),
+		},
+	}
+end
+
 local function collectSaveData(player)
 	local npcs = {}
 
@@ -456,6 +491,7 @@ local function collectSaveData(player)
 		money = getMoneyAmount(player),
 		strength = getStrengthAmount(player),
 		npcs = npcs,
+		progression = collectProgressionSnapshot(player),
 	}
 end
 
@@ -470,6 +506,7 @@ local function normalizeSaveData(raw)
 	data.money = math.max(0, tonumber(data.money) or tonumber(data.Money) or 0)
 	data.strength = math.max(0, tonumber(data.strength) or tonumber(data.Strength) or tonumber(data.speedPower) or tonumber(data.speed) or 0)
 	data.npcs = type(data.npcs) == "table" and data.npcs or {}
+	data.progression = type(data.progression) == "table" and data.progression or {}
 	data.savedAt = tonumber(data.savedAt) or tonumber(data.SavedAt) or 0
 
 	return data
@@ -710,6 +747,7 @@ local function restorePlayer(player)
 	end
 
 	player:SetAttribute("BrainrotPersistentSaveSchema", decoded.schemaVersion)
+	player:SetAttribute("BrainrotPersistentProgressionBackup", HttpService:JSONEncode(decoded.progression or {}))
 
 	setMoneyAmount(player, decoded.money)
 	setStrengthAmount(player, decoded.strength)
@@ -774,11 +812,39 @@ local function connectStatWatch(player)
 			end
 		end)
 
-		for _, attr in ipairs({ "Money", "Coins", "Cash", "Strength", "Power", "SpeedPower", "Speed" }) do
+		for _, attr in ipairs({
+			"Money",
+			"Coins",
+			"Cash",
+			"Strength",
+			"Power",
+			"SpeedPower",
+			"Speed",
+			"Rebirths",
+			"MoneyMultiplier",
+			"NextRebirthStrengthRequirement",
+			"TrainingMultiplier",
+			"AutoTrainDelay",
+			"CapturePowerMultiplier",
+			"LuckMultiplier",
+			"InventoryCapacityBonus",
+			"PlotSlotDiscount",
+			"ShopCashMultiplier",
+			"BrainrotQuestLevel",
+			"BrainrotDailyQuestDay",
+			"BrainrotDiscoveredCount",
+			"BrainrotDiscoveredJson",
+		}) do
 			player:GetAttributeChangedSignal(attr):Connect(function()
 				markDirty(player, string.lower(attr) .. " attribute")
 			end)
 		end
+
+		player.AttributeChanged:Connect(function(attr)
+			if type(attr) == "string" and string.sub(attr, 1, 5) == "Zone_" and string.sub(attr, -9) == "_Unlocked" then
+				markDirty(player, string.lower(attr) .. " attribute")
+			end
+		end)
 	end)
 end
 
