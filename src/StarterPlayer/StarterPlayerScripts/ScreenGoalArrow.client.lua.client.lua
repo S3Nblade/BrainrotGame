@@ -16,10 +16,13 @@ local STEP_DONE = 4
 
 local TARGET_REFRESH_EVERY = 0.45
 local VETERAN_CHECK_DELAY = 2
+local DEFAULT_CARD_WIDTH = 430
 
 local currentStep = STEP_CATCH
 local currentTargetPart = nil
 local lastTargetRefresh = 0
+local lastResponsiveScale = nil
+local lastCompactTop = nil
 local completed = false
 
 local baseline = {
@@ -402,9 +405,9 @@ local function getCurrentStepInfo()
 	if currentStep == STEP_CATCH then
 		return {
 			icon = "1",
-			title = "Catch 1 Brainrot",
-			subtitle = "Follow the arrow to a wild Brainrot.",
-			targetName = "Catch",
+			title = "Find & Capture Brainrots!",
+			subtitle = "Run to one, attack until stunned, then Hold E.",
+			targetName = "Hunt",
 			target = findNearestWildBrainrot(),
 		}
 	end
@@ -413,7 +416,7 @@ local function getCurrentStepInfo()
 		return {
 			icon = "2",
 			title = "Place your Brainrot",
-			subtitle = "Go to your plot stand and place it.",
+			subtitle = "Equip the tool, then Hold E on your plot stand.",
 			targetName = "Place",
 			target = findStandTarget(),
 		}
@@ -423,7 +426,7 @@ local function getCurrentStepInfo()
 		return {
 			icon = "3",
 			title = "Collect your money",
-			subtitle = "Step on the green collect pad.",
+			subtitle = "Wait for earnings, then step on the green pad.",
 			targetName = "Collect",
 			target = findMoneyTarget(),
 		}
@@ -477,6 +480,11 @@ local function makeUI()
 	goalCard.BorderSizePixel = 0
 	goalCard.Parent = gui
 	addCorner(goalCard, 22)
+
+	local goalScale = Instance.new("UIScale")
+	goalScale.Name = "ResponsiveScale"
+	goalScale.Scale = 1
+	goalScale.Parent = goalCard
 
 	local goalStroke = addStroke(goalCard, Color3.fromRGB(23, 27, 55), 4)
 
@@ -644,6 +652,7 @@ local function makeUI()
 
 	ui.gui = gui
 	ui.goalCard = goalCard
+	ui.goalScale = goalScale
 	ui.goalStroke = goalStroke
 	ui.icon = icon
 	ui.title = title
@@ -655,6 +664,30 @@ local function makeUI()
 	ui.arrowText = arrowText
 	ui.arrowLabel = arrowLabel
 	ui.distanceLabel = distanceLabel
+end
+
+local function applyResponsiveLayout()
+	local camera = Workspace.CurrentCamera
+	local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	local safeWidth = math.max(260, viewport.X - 28)
+	local targetScale = math.clamp(safeWidth / DEFAULT_CARD_WIDTH, 0.72, 1)
+
+	if viewport.Y < 520 then
+		targetScale = math.min(targetScale, 0.82)
+	end
+
+	if ui.goalScale and (lastResponsiveScale == nil or math.abs(lastResponsiveScale - targetScale) > 0.01) then
+		lastResponsiveScale = targetScale
+		tween(ui.goalScale, 0.16, { Scale = targetScale }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
+
+	if ui.goalCard then
+		local compactTop = viewport.Y < 520
+		if lastCompactTop ~= compactTop then
+			lastCompactTop = compactTop
+			ui.goalCard.Position = compactTop and UDim2.fromScale(0.5, 0.018) or UDim2.fromScale(0.5, 0.035)
+		end
+	end
 end
 
 local function updateGoalCard(info)
@@ -766,7 +799,13 @@ local function refreshTarget()
 
 	if not currentTargetPart then
 		ui.arrowHolder.Visible = false
-		ui.subtitle.Text = "Looking for the next target..."
+		if currentStep == STEP_CATCH then
+			ui.subtitle.Text = "Brainrots are spawning. Get ready to chase!"
+		elseif currentStep == STEP_PLACE then
+			ui.subtitle.Text = "Equip your Brainrot tool and head to your plot."
+		else
+			ui.subtitle.Text = "Your collect pad will light up when money is ready."
+		end
 	end
 end
 
@@ -849,8 +888,15 @@ end)
 
 player.CharacterAdded:Connect(function()
 	task.wait(1)
+	applyResponsiveLayout()
 	refreshTarget()
 end)
+
+Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+	task.defer(applyResponsiveLayout)
+end)
+
+task.defer(applyResponsiveLayout)
 
 player.Chatted:Connect(function(message)
 	local lower = string.lower(message)
@@ -874,6 +920,7 @@ RunService.RenderStepped:Connect(function()
 	local now = os.clock()
 	if now - lastTargetRefresh >= TARGET_REFRESH_EVERY then
 		lastTargetRefresh = now
+		applyResponsiveLayout()
 		refreshTarget()
 	end
 
