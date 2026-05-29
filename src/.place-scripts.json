@@ -1435,8 +1435,8 @@
       "sha256": "b5d49f54d47db75c5e579c12c982d8651d072bcc3ae17668a9356ebb6357d3c2"
     },
     {
-      "file": "StarterPlayer/StarterPlayerScripts/QuestProgressClientSink.client.lua.server.lua",
-      "class": "Script",
+      "file": "StarterPlayer/StarterPlayerScripts/QuestProgressClientSink.client.lua",
+      "class": "LocalScript",
       "name": "QuestProgressClientSink.client.lua",
       "referent": "RBX3717096366F74CB19C27B39ADD816D4F",
       "robloxPath": "StarterPlayer/StarterPlayerScripts/QuestProgressClientSink.client.lua",
