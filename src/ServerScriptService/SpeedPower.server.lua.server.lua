@@ -22,6 +22,7 @@ local STATE_REMOTE_NAME = "WeightTrainingState"
 local AUTO_GAIN_INTERVAL = 0.8
 local AUTO_BASE_GAIN = 1
 local METER_BONUS_COOLDOWN = 1.2
+local REMOTE_REQUEST_COOLDOWN = 0.15
 
 local DEFAULT_WALK_SPEED = 16
 local DEFAULT_JUMP_POWER = 50
@@ -96,6 +97,24 @@ local addSavedSpeedFunction = getOrCreateBindableFunction("AddSavedSpeedFunction
 local saveSpeedFunction = getOrCreateBindableFunction("SaveSpeedFunction")
 
 local trainingStates = {}
+local remoteCooldowns = {}
+
+local function canUseRemote(player, remoteKey)
+	if not player or not player:IsA("Player") then
+		return false
+	end
+
+	local key = tostring(player.UserId) .. ":" .. tostring(remoteKey)
+	local now = os.clock()
+	local lastRequest = remoteCooldowns[key] or 0
+
+	if now - lastRequest < REMOTE_REQUEST_COOLDOWN then
+		return false
+	end
+
+	remoteCooldowns[key] = now
+	return true
+end
 
 local function getLeaderstats(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
@@ -501,14 +520,26 @@ local function handleMeterHit(player, quality, alpha)
 end
 
 startRemote.OnServerEvent:Connect(function(player)
+	if not canUseRemote(player, "start") then
+		return
+	end
+
 	startTraining(player)
 end)
 
 stopRemote.OnServerEvent:Connect(function(player)
+	if not canUseRemote(player, "stop") then
+		return
+	end
+
 	stopTraining(player, "ClientStopped")
 end)
 
 meterRemote.OnServerEvent:Connect(function(player, quality, alpha)
+	if not canUseRemote(player, "meter") then
+		return
+	end
+
 	handleMeterHit(player, quality, alpha)
 end)
 
@@ -549,6 +580,13 @@ end)
 Players.PlayerRemoving:Connect(function(player)
 	saveStrength(player)
 	trainingStates[player] = nil
+
+	local prefix = tostring(player.UserId) .. ":"
+	for key in pairs(remoteCooldowns) do
+		if string.sub(key, 1, #prefix) == prefix then
+			remoteCooldowns[key] = nil
+		end
+	end
 end)
 
 game:BindToClose(function()

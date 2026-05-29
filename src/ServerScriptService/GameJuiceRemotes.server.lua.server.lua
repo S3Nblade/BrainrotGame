@@ -56,7 +56,9 @@ local PLAYTIME_REWARDS = {
 	{ Seconds = 900, Money = 15000, Label = "15m Gift" },
 }
 
+local CLAIM_COOLDOWN_SECONDS = 0.75
 local playtimeState = {}
+local claimCooldowns = {}
 
 local function formatMoney(value)
 	value = tonumber(value) or 0
@@ -161,6 +163,13 @@ local function firePlaytimeUpdate(player)
 end
 
 playtimeClaimRemote.OnServerEvent:Connect(function(player)
+	local now = os.clock()
+	local lastClaimRequest = claimCooldowns[player.UserId] or 0
+	if now - lastClaimRequest < CLAIM_COOLDOWN_SECONDS then
+		return
+	end
+	claimCooldowns[player.UserId] = now
+
 	local state = getState(player)
 	local index, reward, remaining = getNextReward(player)
 
@@ -200,6 +209,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	playtimeState[player.UserId] = nil
+	claimCooldowns[player.UserId] = nil
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
