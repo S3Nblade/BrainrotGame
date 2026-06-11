@@ -1,0 +1,10 @@
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+.DS_Store
+__pycache__/
+*.pyc
+.vscode/
+work/
+outputs/

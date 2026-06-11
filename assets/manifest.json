@@ -1,0 +1,968 @@
+{
+  "game": "Pixel Brainrot Simulator",
+  "generator": "tools/generate_pixel_assets.py",
+  "license": "Original project-generated artwork",
+  "count": 80,
+  "assets": [
+    {
+      "path": "assets/generated/brainrots/byte_bunny.png",
+      "category": "brainrots",
+      "name": "byte_bunny",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for byte_bunny",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/cactus_cat.png",
+      "category": "brainrots",
+      "name": "cactus_cat",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for cactus_cat",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/chill_chinchilla.png",
+      "category": "brainrots",
+      "name": "chill_chinchilla",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for chill_chinchilla",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/dune_duck.png",
+      "category": "brainrots",
+      "name": "dune_duck",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for dune_duck",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/ember_eel.png",
+      "category": "brainrots",
+      "name": "ember_eel",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for ember_eel",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/frost_frog.png",
+      "category": "brainrots",
+      "name": "frost_frog",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for frost_frog",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/glitch_gloop.png",
+      "category": "brainrots",
+      "name": "glitch_gloop",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for glitch_gloop",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/magma_moth.png",
+      "category": "brainrots",
+      "name": "magma_moth",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for magma_moth",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/null_narwhal.png",
+      "category": "brainrots",
+      "name": "null_narwhal",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for null_narwhal",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/pixel_prime.png",
+      "category": "brainrots",
+      "name": "pixel_prime",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for pixel_prime",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/puddle_pup.png",
+      "category": "brainrots",
+      "name": "puddle_pup",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for puddle_pup",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/brainrots/toast_ghost.png",
+      "category": "brainrots",
+      "name": "toast_ghost",
+      "robloxUse": "World BillboardGui sprite, inventory card, index card, and reveal for toast_ghost",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_1.png",
+      "category": "capture",
+      "name": "capture_burst_1",
+      "robloxUse": "World capture burst frame 1",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_2.png",
+      "category": "capture",
+      "name": "capture_burst_2",
+      "robloxUse": "World capture burst frame 2",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_3.png",
+      "category": "capture",
+      "name": "capture_burst_3",
+      "robloxUse": "World capture burst frame 3",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_4.png",
+      "category": "capture",
+      "name": "capture_burst_4",
+      "robloxUse": "World capture burst frame 4",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_5.png",
+      "category": "capture",
+      "name": "capture_burst_5",
+      "robloxUse": "World capture burst frame 5",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/capture/capture_burst_6.png",
+      "category": "capture",
+      "name": "capture_burst_6",
+      "robloxUse": "World capture burst frame 6",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/eggs/desert_egg.png",
+      "category": "eggs",
+      "name": "desert_egg",
+      "robloxUse": "Reveal animation egg for the Desert Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/eggs/glitch_egg.png",
+      "category": "eggs",
+      "name": "glitch_egg",
+      "robloxUse": "Reveal animation egg for the Glitch Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/eggs/grass_egg.png",
+      "category": "eggs",
+      "name": "grass_egg",
+      "robloxUse": "Reveal animation egg for the Grass Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/eggs/ice_egg.png",
+      "category": "eggs",
+      "name": "ice_egg",
+      "robloxUse": "Reveal animation egg for the Ice Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/eggs/lava_egg.png",
+      "category": "eggs",
+      "name": "lava_egg",
+      "robloxUse": "Reveal animation egg for the Lava Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/coin.png",
+      "category": "icons",
+      "name": "coin",
+      "robloxUse": "HUD and menu icon for coin",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/gem.png",
+      "category": "icons",
+      "name": "gem",
+      "robloxUse": "HUD and menu icon for gem",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/index.png",
+      "category": "icons",
+      "name": "index",
+      "robloxUse": "HUD and menu icon for index",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/inventory.png",
+      "category": "icons",
+      "name": "inventory",
+      "robloxUse": "HUD and menu icon for inventory",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/rebirth.png",
+      "category": "icons",
+      "name": "rebirth",
+      "robloxUse": "HUD and menu icon for rebirth",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/icons/shop.png",
+      "category": "icons",
+      "name": "shop",
+      "robloxUse": "HUD and menu icon for shop",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/mutations/diamond_overlay.png",
+      "category": "mutations",
+      "name": "diamond_overlay",
+      "robloxUse": "Transparent sprite overlay for the Diamond mutation",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/mutations/glitched_overlay.png",
+      "category": "mutations",
+      "name": "glitched_overlay",
+      "robloxUse": "Transparent sprite overlay for the Glitched mutation",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/mutations/golden_overlay.png",
+      "category": "mutations",
+      "name": "golden_overlay",
+      "robloxUse": "Transparent sprite overlay for the Golden mutation",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/mutations/shadow_overlay.png",
+      "category": "mutations",
+      "name": "shadow_overlay",
+      "robloxUse": "Transparent sprite overlay for the Shadow mutation",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/common_frame.png",
+      "category": "rarity_frames",
+      "name": "common_frame",
+      "robloxUse": "Nine-slice style frame for Common cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/divine_frame.png",
+      "category": "rarity_frames",
+      "name": "divine_frame",
+      "robloxUse": "Nine-slice style frame for Divine cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/epic_frame.png",
+      "category": "rarity_frames",
+      "name": "epic_frame",
+      "robloxUse": "Nine-slice style frame for Epic cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/legendary_frame.png",
+      "category": "rarity_frames",
+      "name": "legendary_frame",
+      "robloxUse": "Nine-slice style frame for Legendary cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/mythic_frame.png",
+      "category": "rarity_frames",
+      "name": "mythic_frame",
+      "robloxUse": "Nine-slice style frame for Mythic cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/rare_frame.png",
+      "category": "rarity_frames",
+      "name": "rare_frame",
+      "robloxUse": "Nine-slice style frame for Rare cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/rarity_frames/secret_frame.png",
+      "category": "rarity_frames",
+      "name": "secret_frame",
+      "robloxUse": "Nine-slice style frame for Secret cards",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_1.png",
+      "category": "reveal",
+      "name": "egg_shake_1",
+      "robloxUse": "Reveal animation egg shake frame 1",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_2.png",
+      "category": "reveal",
+      "name": "egg_shake_2",
+      "robloxUse": "Reveal animation egg shake frame 2",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_3.png",
+      "category": "reveal",
+      "name": "egg_shake_3",
+      "robloxUse": "Reveal animation egg shake frame 3",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_4.png",
+      "category": "reveal",
+      "name": "egg_shake_4",
+      "robloxUse": "Reveal animation egg shake frame 4",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_5.png",
+      "category": "reveal",
+      "name": "egg_shake_5",
+      "robloxUse": "Reveal animation egg shake frame 5",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/egg_shake_6.png",
+      "category": "reveal",
+      "name": "egg_shake_6",
+      "robloxUse": "Reveal animation egg shake frame 6",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 6,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/flash_1.png",
+      "category": "reveal",
+      "name": "flash_1",
+      "robloxUse": "Reveal animation flash frame 1",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 4,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/flash_2.png",
+      "category": "reveal",
+      "name": "flash_2",
+      "robloxUse": "Reveal animation flash frame 2",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 4,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/flash_3.png",
+      "category": "reveal",
+      "name": "flash_3",
+      "robloxUse": "Reveal animation flash frame 3",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 4,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/reveal/flash_4.png",
+      "category": "reveal",
+      "name": "flash_4",
+      "robloxUse": "Reveal animation flash frame 4",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 4,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/tiles/desert_tile.png",
+      "category": "tiles",
+      "name": "desert_tile",
+      "robloxUse": "Repeating floor texture for Desert Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/tiles/glitch_tile.png",
+      "category": "tiles",
+      "name": "glitch_tile",
+      "robloxUse": "Repeating floor texture for Glitch Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/tiles/grass_tile.png",
+      "category": "tiles",
+      "name": "grass_tile",
+      "robloxUse": "Repeating floor texture for Grass Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/tiles/ice_tile.png",
+      "category": "tiles",
+      "name": "ice_tile",
+      "robloxUse": "Repeating floor texture for Ice Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/tiles/lava_tile.png",
+      "category": "tiles",
+      "name": "lava_tile",
+      "robloxUse": "Repeating floor texture for Lava Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_common.png",
+      "category": "ui",
+      "name": "index_card_common",
+      "robloxUse": "Index card background for Common rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_divine.png",
+      "category": "ui",
+      "name": "index_card_divine",
+      "robloxUse": "Index card background for Divine rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_epic.png",
+      "category": "ui",
+      "name": "index_card_epic",
+      "robloxUse": "Index card background for Epic rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_legendary.png",
+      "category": "ui",
+      "name": "index_card_legendary",
+      "robloxUse": "Index card background for Legendary rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_mythic.png",
+      "category": "ui",
+      "name": "index_card_mythic",
+      "robloxUse": "Index card background for Mythic rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_rare.png",
+      "category": "ui",
+      "name": "index_card_rare",
+      "robloxUse": "Index card background for Rare rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/index_card_secret.png",
+      "category": "ui",
+      "name": "index_card_secret",
+      "robloxUse": "Index card background for Secret rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_common.png",
+      "category": "ui",
+      "name": "inventory_slot_common",
+      "robloxUse": "Inventory slot background for Common rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_divine.png",
+      "category": "ui",
+      "name": "inventory_slot_divine",
+      "robloxUse": "Inventory slot background for Divine rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_epic.png",
+      "category": "ui",
+      "name": "inventory_slot_epic",
+      "robloxUse": "Inventory slot background for Epic rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_legendary.png",
+      "category": "ui",
+      "name": "inventory_slot_legendary",
+      "robloxUse": "Inventory slot background for Legendary rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_mythic.png",
+      "category": "ui",
+      "name": "inventory_slot_mythic",
+      "robloxUse": "Inventory slot background for Mythic rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_rare.png",
+      "category": "ui",
+      "name": "inventory_slot_rare",
+      "robloxUse": "Inventory slot background for Rare rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/inventory_slot_secret.png",
+      "category": "ui",
+      "name": "inventory_slot_secret",
+      "robloxUse": "Inventory slot background for Secret rarity",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/shop_luck.png",
+      "category": "ui",
+      "name": "shop_luck",
+      "robloxUse": "Shop button for Luck Boost",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/shop_money.png",
+      "category": "ui",
+      "name": "shop_money",
+      "robloxUse": "Shop button for Money Boost",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/shop_speed.png",
+      "category": "ui",
+      "name": "shop_speed",
+      "robloxUse": "Shop button for Speed Boost",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/shop_storage.png",
+      "category": "ui",
+      "name": "shop_storage",
+      "robloxUse": "Shop button for Storage Upgrade",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/upgrade_max.png",
+      "category": "ui",
+      "name": "upgrade_max",
+      "robloxUse": "Disabled max-level upgrade button",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/ui/upgrade_normal.png",
+      "category": "ui",
+      "name": "upgrade_normal",
+      "robloxUse": "Brainrot upgrade button",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/zone_icons/desert_zone.png",
+      "category": "zone_icons",
+      "name": "desert_zone",
+      "robloxUse": "Zone selector icon for Desert Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/zone_icons/glitch_zone.png",
+      "category": "zone_icons",
+      "name": "glitch_zone",
+      "robloxUse": "Zone selector icon for Glitch Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/zone_icons/grass_zone.png",
+      "category": "zone_icons",
+      "name": "grass_zone",
+      "robloxUse": "Zone selector icon for Grass Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/zone_icons/ice_zone.png",
+      "category": "zone_icons",
+      "name": "ice_zone",
+      "robloxUse": "Zone selector icon for Ice Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    },
+    {
+      "path": "assets/generated/zone_icons/lava_zone.png",
+      "category": "zone_icons",
+      "name": "lava_zone",
+      "robloxUse": "Zone selector icon for Lava Zone",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "assetId": "rbxassetid://0"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "name": "PixelBrainrotSimulator",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "UI": {
+        "$path": "src/ui"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": true
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Brightness": 2,
+        "ClockTime": 12,
+        "GlobalShadows": false,
+        "Technology": "Compatibility",
+        "Ambient": [0.62, 0.68, 0.78],
+        "OutdoorAmbient": [0.72, 0.78, 0.88]
+      }
+    }
+  }
+}

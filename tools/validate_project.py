@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Fast structural checks for the Pixel Brainrot Simulator project."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+from PIL import Image
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REQUIRED = [
+    "default.project.json",
+    "src/shared/AssetIds.lua",
+    "src/shared/Config/Brainrots.lua",
+    "src/server/Main.server.lua",
+    "src/client/Main.client.lua",
+    "tools/generate_pixel_assets.py",
+    "assets/manifest.json",
+    "README.md",
+]
+
+
+def fail(message: str) -> None:
+    print(f"ERROR: {message}")
+    raise SystemExit(1)
+
+
+def main() -> None:
+    for relative in REQUIRED:
+        if not (ROOT / relative).exists():
+            fail(f"Missing required file: {relative}")
+
+    try:
+        json.loads((ROOT / "default.project.json").read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        fail(f"default.project.json is invalid: {error}")
+
+    manifest = json.loads((ROOT / "assets/manifest.json").read_text(encoding="utf-8"))
+    assets = manifest.get("assets", [])
+    if manifest.get("count") != len(assets):
+        fail("Manifest count does not match its asset list")
+    if len(assets) < 60:
+        fail(f"Expected a broad asset set; found only {len(assets)} assets")
+
+    seen: set[str] = set()
+    for entry in assets:
+        relative = entry.get("path")
+        if not isinstance(relative, str) or relative in seen:
+            fail(f"Invalid or duplicate manifest path: {relative}")
+        seen.add(relative)
+        path = ROOT / relative
+        if not path.exists():
+            fail(f"Manifest references a missing file: {relative}")
+        with Image.open(path) as image:
+            if image.format != "PNG" or image.mode != "RGBA":
+                fail(f"Asset is not a transparent-capable RGBA PNG: {relative}")
+            if image.width % 4 or image.height % 4:
+                fail(f"Asset is not nearest-neighbor scale aligned: {relative}")
+
+    print(f"Validated project structure and {len(assets)} PNG assets.")
+    return None
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(130)
