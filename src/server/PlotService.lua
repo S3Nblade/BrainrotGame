@@ -15,16 +15,17 @@ local function collect(player, standIndex)
 	standIndex = tonumber(standIndex)
 	local amount = standIndex and accrued[player] and accrued[player][standIndex]
 	if not amount or amount <= 0 then
-		return
+		return 0
 	end
 	local payout = math.floor(amount)
 	if payout <= 0 then
-		return
+		return 0
 	end
 	accrued[player][standIndex] -= payout
 	context.DataService.Update(player, function(data)
 		data.Money += payout
 	end)
+	return payout
 end
 
 function PlotService.Init(newContext)
@@ -140,6 +141,52 @@ function PlotService.Start()
 		accrued[player][standIndex] = 0
 		context.DataService.PushState(player)
 		PlotService.RefreshPlot(player)
+	end)
+
+	context.Remotes.UnplaceRequest.OnServerEvent:Connect(function(player, uid)
+		if type(uid) ~= "string" then
+			return
+		end
+		local data = context.DataService.Get(player)
+		if not data or not findItem(data, uid) then
+			return
+		end
+		local removedStand
+		for key, placedUid in pairs(data.Placed) do
+			if placedUid == uid then
+				removedStand = tonumber(key)
+				data.Placed[key] = nil
+			end
+		end
+		if not removedStand then
+			return
+		end
+		collect(player, removedStand)
+		accrued[player] = accrued[player] or {}
+		accrued[player][removedStand] = 0
+		context.DataService.PushState(player)
+		PlotService.RefreshPlot(player)
+		context.Remotes.Notify:FireClient(player, "Creature returned to your bag.", "Success")
+	end)
+
+	context.Remotes.TravelPlotRequest.OnServerEvent:Connect(function(player)
+		local plot = context.MapService.GetPlot(player)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if not plot or not plot.PrimaryPart or not root then
+			return
+		end
+		local total = 0
+		for standIndex = 1, context.Config.Economy.PlotStandCount do
+			total += collect(player, standIndex)
+		end
+		root.CFrame = CFrame.new(plot.PrimaryPart.Position + Vector3.new(0, 4, 15))
+		if total > 0 then
+			context.Remotes.Notify:FireClient(
+				player,
+				"Plot collected! +$" .. context.Util.FormatNumber(total),
+				"Success"
+			)
+		end
 	end)
 
 	context.Remotes.CollectRequest.OnServerEvent:Connect(function(player, standIndex)

@@ -40,6 +40,13 @@ REGRESSION_SNIPPETS = {
     ],
     "src/client/InputController.lua": [
         'model:GetAttribute("Stunned") == true',
+        "context.PlayerGui:GetGuiObjectsAtPosition",
+        'highlight.Name = "TargetHighlight"',
+    ],
+    "src/server/PlotService.lua": [
+        "context.Remotes.UnplaceRequest.OnServerEvent",
+        "context.Remotes.TravelPlotRequest.OnServerEvent",
+        '"Plot collected! +$"',
     ],
 }
 

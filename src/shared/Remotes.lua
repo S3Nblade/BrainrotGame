@@ -4,6 +4,8 @@ return {
 		"AttackRequest",
 		"CaptureRequest",
 		"PlaceRequest",
+		"UnplaceRequest",
+		"TravelPlotRequest",
 		"CollectRequest",
 		"UpgradeRequest",
 		"RebirthRequest",

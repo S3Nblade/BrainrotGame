@@ -1,11 +1,14 @@
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local InputController = {}
 local player = Players.LocalPlayer
 local context
+local highlight
+local targetLabel
 
 local function closestBrainrot(requireStunned)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -18,7 +21,7 @@ local function closestBrainrot(requireStunned)
 		local modelRoot = model.PrimaryPart
 		if modelRoot then
 			local stunned = model:GetAttribute("Stunned") == true
-			if stunned == requireStunned then
+			if requireStunned == nil or stunned == requireStunned then
 				local distance = (root.Position - modelRoot.Position).Magnitude
 				if distance < bestDistance then
 					best = model
@@ -30,15 +33,23 @@ local function closestBrainrot(requireStunned)
 	return best, bestDistance
 end
 
-local function attack(_, state)
+local function attack(_, state, input)
 	if state ~= Enum.UserInputState.Begin then
 		return Enum.ContextActionResult.Pass
+	end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		for _, object in ipairs(context.PlayerGui:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)) do
+			if object:IsA("GuiButton") or object:FindFirstAncestorWhichIsA("GuiButton") then
+				return Enum.ContextActionResult.Pass
+			end
+		end
 	end
 	local model, distance = closestBrainrot(false)
 	if model and distance <= context.Config.Economy.AttackRange then
 		context.Remotes.AttackRequest:FireServer(model)
 	end
-	return Enum.ContextActionResult.Sink
+	return input.UserInputType == Enum.UserInputType.MouseButton1 and Enum.ContextActionResult.Pass
+		or Enum.ContextActionResult.Sink
 end
 
 local function capture(_, state)
@@ -52,8 +63,63 @@ local function capture(_, state)
 	return Enum.ContextActionResult.Sink
 end
 
+local function makeTargetGui()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "TargetGuide"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 12
+	gui.Parent = context.PlayerGui
+	targetLabel = Instance.new("TextLabel")
+	targetLabel.AnchorPoint = Vector2.new(1, 0)
+	targetLabel.Position = UDim2.new(1, -18, 0, 112)
+	targetLabel.Size = UDim2.fromOffset(310, 42)
+	targetLabel.BackgroundColor3 = Color3.fromRGB(31, 35, 51)
+	targetLabel.BackgroundTransparency = 0.08
+	targetLabel.BorderSizePixel = 0
+	targetLabel.Font = Enum.Font.GothamBlack
+	targetLabel.TextColor3 = Color3.fromRGB(245, 248, 255)
+	targetLabel.TextStrokeTransparency = 0.55
+	targetLabel.TextScaled = true
+	targetLabel.Visible = false
+	targetLabel.Parent = gui
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = 20
+	constraint.MinTextSize = 12
+	constraint.Parent = targetLabel
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(16, 18, 29)
+	stroke.Thickness = 3
+	stroke.Parent = targetLabel
+end
+
+local function updateTarget()
+	local target, distance = closestBrainrot(nil)
+	highlight.Adornee = target
+	if not target then
+		targetLabel.Visible = false
+		return
+	end
+	local stunned = target:GetAttribute("Stunned") == true
+	local inRange = distance <= (stunned and context.Config.Economy.CaptureRange or context.Config.Economy.AttackRange)
+	highlight.FillColor = stunned and Color3.fromRGB(255, 226, 74) or Color3.fromRGB(255, 92, 92)
+	highlight.OutlineColor = inRange and Color3.new(1, 1, 1) or Color3.fromRGB(90, 94, 112)
+	highlight.FillTransparency = inRange and 0.68 or 0.88
+	local definition = context.Config.Brainrots[target:GetAttribute("BrainrotId")]
+	local action = stunned and "E: CAPTURE" or "CLICK / SPACE: ATTACK"
+	targetLabel.Text =
+		string.format("%s  |  %.0f studs  |  %s", definition and definition.Name or target.Name, distance, action)
+	targetLabel.TextColor3 = inRange and Color3.fromRGB(245, 248, 255) or Color3.fromRGB(170, 180, 204)
+	targetLabel.Visible = true
+end
+
 function InputController.Init(newContext)
 	context = newContext
+	highlight = Instance.new("Highlight")
+	highlight.Name = "TargetHighlight"
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Enabled = true
+	highlight.Parent = workspace.CurrentCamera
+	makeTargetGui()
 end
 
 function InputController.Start()
@@ -73,6 +139,7 @@ function InputController.Start()
 	if not UserInputService.TouchEnabled then
 		ContextActionService:SetImage("PixelAttack", "")
 	end
+	RunService.RenderStepped:Connect(updateTarget)
 end
 
 return InputController

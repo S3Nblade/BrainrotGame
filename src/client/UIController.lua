@@ -101,6 +101,13 @@ local function renderInventory(body)
 			* mutation.Multiplier
 			* zone.RewardMultiplier
 			* context.Config.Economy.LevelIncomeGrowth ^ (item.Level - 1)
+		local placedStand
+		for stand, uid in pairs(state.Placed) do
+			if uid == item.Uid then
+				placedStand = tonumber(stand)
+				break
+			end
+		end
 		local card = Components.Card(body, rarity.Color)
 		addFace(card, definition.Color, false)
 		local info = Components.Label(
@@ -117,10 +124,15 @@ local function renderInventory(body)
 			UDim2.fromOffset(6, 92)
 		)
 		info.TextColor3 = rarity.Color
-		local place = Components.Button(card, standsFull and "FULL" or "PLACE", Theme.Colors.Green)
+		local placeText = placedStand and ("REMOVE " .. placedStand) or (standsFull and "FULL" or "PLACE")
+		local place = Components.Button(card, placeText, placedStand and Theme.Colors.Red or Theme.Colors.Green)
 		place.Size = UDim2.new(0.48, -8, 0, 34)
 		place.Position = UDim2.new(0.02, 0, 1, -40)
 		place.Activated:Connect(function()
+			if placedStand then
+				context.Remotes.UnplaceRequest:FireServer(item.Uid)
+				return
+			end
 			if standsFull then
 				return
 			end
@@ -355,7 +367,7 @@ function UIController.Init(newContext)
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
 	nav.Position = UDim2.fromOffset(18, 205)
-	nav.Size = UDim2.fromOffset(600, 58)
+	nav.Size = UDim2.fromOffset(620, 58)
 	nav.BackgroundTransparency = 1
 	nav.Parent = gui
 	local navLayout = Instance.new("UIListLayout")
@@ -376,12 +388,21 @@ function UIController.Init(newContext)
 		local window, body = Components.Window(gui, spec[1], string.upper(spec[1]))
 		windows[spec[1]] = window
 		local button = Components.Button(nav, spec[2], spec[3])
-		button.Size = UDim2.fromOffset(112, 50)
+		button.Size = UDim2.fromOffset(96, 50)
 		button.LayoutOrder = index
 		button.Activated:Connect(function()
 			openOnly(window)
 		end)
 	end
+	local plotButton = Components.Button(nav, "PLOT", Color3.fromRGB(91, 224, 209))
+	plotButton.Size = UDim2.fromOffset(96, 50)
+	plotButton.LayoutOrder = 6
+	plotButton.Activated:Connect(function()
+		for _, window in pairs(windows) do
+			window.Visible = false
+		end
+		context.Remotes.TravelPlotRequest:FireServer()
+	end)
 end
 
 function UIController.Start()
