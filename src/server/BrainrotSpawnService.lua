@@ -62,7 +62,7 @@ local function randomPoint(zone)
 		)
 end
 
-function BrainrotSpawnService.Spawn(zoneId)
+function BrainrotSpawnService.Spawn(zoneId, forcedPosition)
 	local id = chooseForZone(zoneId)
 	if not id then
 		return
@@ -81,7 +81,7 @@ function BrainrotSpawnService.Spawn(zoneId)
 	root.Size = Vector3.new(6, 1, 6)
 	root.Color = definition.Color
 	root.Material = Enum.Material.Neon
-	root.Position = randomPoint(context.Config.Zones[zoneId])
+	root.Position = forcedPosition or randomPoint(context.Config.Zones[zoneId])
 	root.Parent = model
 	model.PrimaryPart = root
 	PixelVisuals.Build(model, root, id, definition.Color, rarity.Color, 0.82)
@@ -117,6 +117,7 @@ function BrainrotSpawnService.Spawn(zoneId)
 		Attacker = nil,
 		ChaseEnds = 0,
 		Stunned = false,
+		IdleUntil = forcedPosition and os.clock() + 10 or 0,
 	}
 	active[model] = record
 	makeBar(root, record)
@@ -150,6 +151,14 @@ function BrainrotSpawnService.Init(newContext)
 end
 
 function BrainrotSpawnService.Start()
+	local grass = context.Config.Zones.Grass
+	for _, offset in ipairs({
+		Vector3.new(0, 2.5, -20),
+		Vector3.new(14, 2.5, -24),
+		Vector3.new(-14, 2.5, -24),
+	}) do
+		BrainrotSpawnService.Spawn("Grass", grass.Center + offset)
+	end
 	RunService.Heartbeat:Connect(function(delta)
 		for model, record in pairs(active) do
 			if not model.Parent then
@@ -157,6 +166,9 @@ function BrainrotSpawnService.Start()
 				continue
 			end
 			if record.Stunned then
+				continue
+			end
+			if os.clock() < record.IdleUntil then
 				continue
 			end
 			if record.Attacker and os.clock() > record.ChaseEnds then

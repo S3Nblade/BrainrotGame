@@ -54,7 +54,7 @@
         "Brightness": 2,
         "ClockTime": 12,
         "GlobalShadows": false,
-        "Technology": "Compatibility",
+        "Technology": "Voxel",
         "Ambient": [0.62, 0.68, 0.78],
         "OutdoorAmbient": [0.72, 0.78, 0.88]
       }

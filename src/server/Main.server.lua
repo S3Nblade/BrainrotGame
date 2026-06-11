@@ -30,6 +30,7 @@ local context = {
 local serviceNames = {
 	"DataService",
 	"MapService",
+	"PlayerVisualService",
 	"BrainrotSpawnService",
 	"EconomyService",
 	"PlotService",

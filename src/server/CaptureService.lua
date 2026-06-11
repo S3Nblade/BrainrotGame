@@ -48,6 +48,7 @@ function CaptureService.Start()
 		end
 		cooldowns[player] = now + context.Config.Economy.AttackCooldown
 		record.Attacker = player
+		record.IdleUntil = 0
 		record.ChaseEnds = now + context.Config.Economy.ChaseDuration
 		local damage = context.Config.Economy.BaseDamage
 		record.HP = math.max(0, record.HP - damage)

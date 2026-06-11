@@ -62,7 +62,7 @@ local function openOnly(window)
 end
 
 local function makeCounter(parent, name, color)
-	local panel = Components.Panel(parent, name, UDim2.fromOffset(190, 48), UDim2.new())
+	local panel = Components.Panel(parent, name, UDim2.fromOffset(138, 38), UDim2.new())
 	panel.BackgroundColor3 = color
 	local label = Components.Label(panel, name .. ": 0", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4))
 	label.TextXAlignment = Enum.TextXAlignment.Left
@@ -210,16 +210,13 @@ local function renderZones(body)
 		local owned = state.UnlockedZones[zoneId]
 		local button = Components.Button(
 			body,
-			owned and (zone.DisplayName .. " - UNLOCKED")
+			owned and (zone.DisplayName .. " - TRAVEL")
 				or (zone.DisplayName .. " - $" .. context.Util.FormatNumber(zone.UnlockCost)),
 			owned and Theme.Colors.Green or zone.AccentColor
 		)
 		button.Size = UDim2.new(1, -12, 0, 58)
-		button.Active = not owned
 		button.Activated:Connect(function()
-			if not owned then
-				context.Remotes.UnlockZoneRequest:FireServer(zoneId)
-			end
+			context.Remotes.UnlockZoneRequest:FireServer(zoneId)
 		end)
 	end
 end
@@ -276,14 +273,14 @@ function UIController.Init(newContext)
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
 	gui.Parent = context.PlayerGui
-	local title = Components.Panel(gui, "GameTitle", UDim2.fromOffset(310, 54), UDim2.new(0.5, -155, 0, 10))
+	local title = Components.Panel(gui, "GameTitle", UDim2.fromOffset(230, 40), UDim2.new(0.5, -115, 0, 10))
 	title.BackgroundColor3 = Color3.fromRGB(36, 31, 61)
 	local titleLabel = Components.Label(title, "PIXEL BRAINROT", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4))
 	titleLabel.TextColor3 = Theme.Colors.Yellow
 	local top = Instance.new("Frame")
 	top.Name = "Counters"
-	top.Size = UDim2.new(1, -24, 0, 52)
-	top.Position = UDim2.fromOffset(12, 74)
+	top.Size = UDim2.new(1, -24, 0, 42)
+	top.Position = UDim2.fromOffset(12, 58)
 	top.BackgroundTransparency = 1
 	top.Parent = gui
 	local layout = Instance.new("UIListLayout")
@@ -294,34 +291,31 @@ function UIController.Init(newContext)
 	makeCounter(top, "Gems", Theme.Colors.Blue)
 	makeCounter(top, "Rebirths", Theme.Colors.Purple)
 
-	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(300, 96), UDim2.fromOffset(14, 138))
+	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(246, 82), UDim2.fromOffset(14, 112))
 	objective.BackgroundColor3 = Color3.fromRGB(35, 41, 58)
-	objectiveTitleLabel = Components.Label(objective, "FIRST QUEST", UDim2.new(1, -20, 0, 28), UDim2.fromOffset(10, 8))
+	objectiveTitleLabel = Components.Label(objective, "FIRST QUEST", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(10, 8))
 	objectiveTitleLabel.TextColor3 = Theme.Colors.Yellow
 	objectiveTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	objectiveBodyLabel = Components.Label(
 		objective,
 		"Find a pixel creature\nATTACK: click / Space\nCAPTURE: E when stunned",
-		UDim2.new(1, -20, 0, 52),
-		UDim2.fromOffset(10, 38)
+		UDim2.new(1, -20, 0, 43),
+		UDim2.fromOffset(10, 32)
 	)
 	objectiveBodyLabel.TextXAlignment = Enum.TextXAlignment.Left
 	objectiveBodyLabel.TextYAlignment = Enum.TextYAlignment.Top
 
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
-	nav.AnchorPoint = Vector2.new(0.5, 1)
-	nav.Position = UDim2.new(0.5, 0, 1, -14)
-	nav.Size = UDim2.new(0.9, 0, 0, 58)
+	nav.AnchorPoint = Vector2.new(1, 0.5)
+	nav.Position = UDim2.new(1, -18, 0.56, 0)
+	nav.Size = UDim2.fromOffset(118, 286)
 	nav.BackgroundTransparency = 1
 	nav.Parent = gui
-	local navConstraint = Instance.new("UISizeConstraint")
-	navConstraint.MaxSize = Vector2.new(760, 58)
-	navConstraint.Parent = nav
-	local navLayout = Instance.new("UIGridLayout")
-	navLayout.CellPadding = UDim2.fromOffset(8, 0)
-	navLayout.CellSize = UDim2.new(0.19, -7, 1, 0)
-	navLayout.FillDirectionMaxCells = 5
+	local navLayout = Instance.new("UIListLayout")
+	navLayout.Padding = UDim.new(0, 8)
+	navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	navLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	navLayout.Parent = nav
 
 	for _, spec in ipairs({
@@ -334,6 +328,7 @@ function UIController.Init(newContext)
 		local window, body = Components.Window(gui, spec[1], string.upper(spec[1]))
 		windows[spec[1]] = window
 		local button = Components.Button(nav, spec[2], spec[3])
+		button.Size = UDim2.fromOffset(112, 50)
 		button.Activated:Connect(function()
 			openOnly(window)
 		end)
