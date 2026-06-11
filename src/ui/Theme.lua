@@ -13,6 +13,6 @@ return {
 	},
 	Font = Enum.Font.GothamBold,
 	FontHeavy = Enum.Font.GothamBlack,
-	Corner = UDim.new(0, 8),
+	Corner = UDim.new(0, 2),
 	Stroke = 3,
 }

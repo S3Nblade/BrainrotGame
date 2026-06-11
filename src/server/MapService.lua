@@ -6,6 +6,7 @@ local context
 local world
 local plotsFolder
 local claimedPlots = {}
+local random = Random.new(4815)
 
 local function part(name, size, position, color, parent)
 	local item = Instance.new("Part")
@@ -43,6 +44,101 @@ local function label(adornee, text, color)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 6)
 	corner.Parent = textLabel
+end
+
+local function pixelCluster(parent, name, origin, palette, layout, pixelSize)
+	local model = Instance.new("Model")
+	model.Name = name
+	model.Parent = parent
+	pixelSize = pixelSize or 2
+	for row, line in ipairs(layout) do
+		for column = 1, #line do
+			local symbol = string.sub(line, column, column)
+			local color = palette[symbol]
+			if color then
+				part(
+					"Pixel",
+					Vector3.new(pixelSize, random:NextNumber(0.7, 1.3), pixelSize),
+					origin + Vector3.new((column - (#line + 1) / 2) * pixelSize, 1, (row - 1) * pixelSize),
+					color,
+					model
+				).CanCollide =
+					false
+			end
+		end
+	end
+	return model
+end
+
+local function decorateZone(zoneId, zone, folder)
+	local dark = zone.AccentColor:Lerp(Color3.fromRGB(22, 25, 36), 0.35)
+	local light = zone.TileColor:Lerp(Color3.new(1, 1, 1), 0.25)
+	local layouts = {
+		Grass = {
+			"  L  ",
+			" LLL ",
+			"LLLLL",
+			"  D  ",
+			"  D  ",
+		},
+		Desert = {
+			"  D  ",
+			"  D L",
+			"L D L",
+			"LDDD ",
+			"  D  ",
+		},
+		Ice = {
+			"  L  ",
+			" LLL ",
+			" LLL ",
+			"LLLLL",
+			"  D  ",
+		},
+		Lava = {
+			" D D ",
+			"DDDDD",
+			" DLL ",
+			"LLLLL",
+			" DDD ",
+		},
+		Glitch = {
+			"L D L",
+			" DLD ",
+			"LDLDL",
+			" DLD ",
+			"L D L",
+		},
+	}
+	local palette = { D = dark, L = light }
+	for index = 1, 9 do
+		local edge = index % 2 == 0 and -1 or 1
+		local position = zone.Center
+			+ Vector3.new(
+				edge * random:NextNumber(zone.Size.X * 0.3, zone.Size.X * 0.43),
+				0,
+				random:NextNumber(-zone.Size.Y * 0.35, zone.Size.Y * 0.34)
+			)
+		pixelCluster(folder, zoneId .. "Landmark" .. index, position, palette, layouts[zoneId], 1.7)
+	end
+	for x = -zone.Size.X / 2 + 2, zone.Size.X / 2 - 2, 8 do
+		part(
+			"BorderPixel",
+			Vector3.new(4, 0.45, 4),
+			zone.Center + Vector3.new(x, 0.85, -zone.Size.Y / 2 + 2),
+			dark,
+			folder
+		).CanCollide =
+			false
+		part(
+			"BorderPixel",
+			Vector3.new(4, 0.45, 4),
+			zone.Center + Vector3.new(x, 0.85, zone.Size.Y / 2 - 2),
+			dark,
+			folder
+		).CanCollide =
+			false
+	end
 end
 
 local function buildZone(zoneId, zone)
@@ -83,6 +179,7 @@ local function buildZone(zoneId, zone)
 	spawnRegion.CanCollide = false
 	CollectionService:AddTag(spawnRegion, "BrainrotSpawnRegion")
 	spawnRegion:SetAttribute("ZoneId", zoneId)
+	decorateZone(zoneId, zone, folder)
 end
 
 local function buildGate(zoneId, zone, previous)
@@ -108,6 +205,20 @@ local function buildPlots()
 		model.Parent = plotsFolder
 		local floor = part("Floor", Vector3.new(60, 1, 46), origin, Color3.fromRGB(54, 61, 82), model)
 		model.PrimaryPart = floor
+		for x = -27, 27, 6 do
+			for z = -20, 20, 6 do
+				if (math.floor(x / 6) + math.floor(z / 6)) % 2 == 0 then
+					local tile = part(
+						"PlotPixel",
+						Vector3.new(5.6, 0.12, 5.6),
+						origin + Vector3.new(x, 0.56, z),
+						Color3.fromRGB(65, 73, 99),
+						model
+					)
+					tile.CanCollide = false
+				end
+			end
+		end
 		local sign =
 			part("Sign", Vector3.new(18, 1, 4), origin + Vector3.new(0, 2, -18), Color3.fromRGB(93, 98, 130), model)
 		label(sign, "Unclaimed Plot", Color3.new(1, 1, 1))

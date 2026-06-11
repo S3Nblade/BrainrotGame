@@ -1,5 +1,6 @@
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
+local PixelVisuals = require(script.Parent.PixelVisuals)
 
 local BrainrotSpawnService = {}
 local context
@@ -77,12 +78,13 @@ function BrainrotSpawnService.Spawn(zoneId)
 	root.Name = "Root"
 	root.Anchored = true
 	root.CanCollide = false
-	root.Size = Vector3.new(5, 5, 1)
+	root.Size = Vector3.new(6, 1, 6)
 	root.Color = definition.Color
 	root.Material = Enum.Material.Neon
 	root.Position = randomPoint(context.Config.Zones[zoneId])
 	root.Parent = model
 	model.PrimaryPart = root
+	PixelVisuals.Build(model, root, id, definition.Color, rarity.Color, 0.82)
 	local spriteId = context.AssetIds.Brainrots[id]
 	if spriteId and spriteId ~= "rbxassetid://0" then
 		local spriteGui = Instance.new("BillboardGui")
@@ -97,7 +99,7 @@ function BrainrotSpawnService.Spawn(zoneId)
 		image.Image = spriteId
 		image.ResampleMode = Enum.ResamplerMode.Pixelated
 		image.Parent = spriteGui
-		root.Transparency = 1
+		model.PixelArt:Destroy()
 	end
 	local outline = Instance.new("SelectionBox")
 	outline.Adornee = root
@@ -161,12 +163,15 @@ function BrainrotSpawnService.Start()
 				record.Attacker = nil
 				record.HP = record.MaxHP
 				record.Root.Status.HPBack.Fill.Size = UDim2.fromScale(1, 1)
+				record.Root.Status.NameLabel.Text = record.Definition.Name
 			end
 			local zone = context.Config.Zones[model:GetAttribute("ZoneId")]
 			if (record.Root.Position - record.Target).Magnitude < 3 then
 				record.Target = randomPoint(zone)
 			end
 			if record.Attacker and record.Attacker.Character and record.Attacker.Character.PrimaryPart then
+				record.Root.Status.NameLabel.Text =
+					string.format("%s  %.1fs", record.Definition.Name, math.max(0, record.ChaseEnds - os.clock()))
 				local away = record.Root.Position - record.Attacker.Character.PrimaryPart.Position
 				if away.Magnitude > 0.1 then
 					record.Target = record.Root.Position + away.Unit * 25

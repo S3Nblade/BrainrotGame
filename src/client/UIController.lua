@@ -10,6 +10,42 @@ local state
 local gui
 local counters = {}
 local windows = {}
+local objectiveTitleLabel
+local objectiveBodyLabel
+
+local function addFace(parent, color, locked)
+	local sprite = Instance.new("Frame")
+	sprite.Size = UDim2.new(1, -28, 0, 76)
+	sprite.Position = UDim2.fromOffset(14, 12)
+	sprite.BackgroundColor3 = locked and Color3.fromRGB(23, 25, 35) or color
+	sprite.BorderSizePixel = 0
+	sprite.Parent = parent
+	local outline = Instance.new("UIStroke")
+	outline.Color = Color3.fromRGB(18, 20, 31)
+	outline.Thickness = 3
+	outline.Parent = sprite
+	for _, x in ipairs({ 0.29, 0.67 }) do
+		local eye = Instance.new("Frame")
+		eye.Size = UDim2.fromOffset(12, 12)
+		eye.Position = UDim2.new(x, -6, 0.35, 0)
+		eye.BackgroundColor3 = locked and Color3.fromRGB(62, 66, 82) or Color3.fromRGB(245, 248, 255)
+		eye.BorderSizePixel = 0
+		eye.Parent = sprite
+		local pupil = Instance.new("Frame")
+		pupil.Size = UDim2.fromOffset(5, 5)
+		pupil.Position = UDim2.fromOffset(4, 4)
+		pupil.BackgroundColor3 = Color3.fromRGB(24, 26, 38)
+		pupil.BorderSizePixel = 0
+		pupil.Parent = eye
+	end
+	local mouth = Instance.new("Frame")
+	mouth.Size = UDim2.fromOffset(24, 6)
+	mouth.Position = UDim2.new(0.5, -12, 0.7, 0)
+	mouth.BackgroundColor3 = Color3.fromRGB(38, 40, 54)
+	mouth.BorderSizePixel = 0
+	mouth.Parent = sprite
+	return sprite
+end
 
 local function clear(container)
 	for _, child in ipairs(container:GetChildren()) do
@@ -42,12 +78,7 @@ local function renderInventory(body)
 		local rarity = context.Config.Rarities[definition.Rarity]
 		local mutation = context.Config.Mutations[item.Mutation]
 		local card = Components.Card(body, rarity.Color)
-		local sprite = Instance.new("Frame")
-		sprite.Size = UDim2.new(1, -28, 0, 76)
-		sprite.Position = UDim2.fromOffset(14, 12)
-		sprite.BackgroundColor3 = definition.Color
-		sprite.BorderSizePixel = 0
-		sprite.Parent = card
+		addFace(card, definition.Color, false)
 		local info = Components.Label(
 			card,
 			string.format(
@@ -126,11 +157,7 @@ local function renderIndex(body)
 		end
 		local rarity = context.Config.Rarities[definition.Rarity]
 		local card = Components.Card(body, rarity.Color)
-		local visual = Instance.new("Frame")
-		visual.Size = UDim2.new(1, -30, 0, 80)
-		visual.Position = UDim2.fromOffset(15, 12)
-		visual.BackgroundColor3 = discovered and definition.Color or Color3.fromRGB(23, 25, 35)
-		visual.Parent = card
+		addFace(card, definition.Color, not discovered)
 		local label = Components.Label(
 			card,
 			discovered
@@ -154,7 +181,7 @@ local function renderRebirth(body)
 	local info = Components.Label(
 		body,
 		string.format(
-			"REBIRTH %d → %d\n\nCost: $%s\n\nPermanent multiplier: x%s → x%s\n\nRebirth resets money and clears your stands. Your collection stays.",
+			"REBIRTH %d -> %d\n\nCost: $%s\n\nPermanent multiplier: x%s -> x%s\n\nRebirth resets money and clears your stands. Your collection stays.",
 			state.Rebirths,
 			state.Rebirths + 1,
 			context.Util.FormatNumber(cost),
@@ -205,6 +232,20 @@ local function refresh(newState)
 	counters.Money.Text = "$ " .. context.Util.FormatNumber(state.Money)
 	counters.Gems.Text = "Gems: " .. context.Util.FormatNumber(state.Gems)
 	counters.Rebirths.Text = "Rebirths: " .. state.Rebirths
+	local placedCount = 0
+	for _ in pairs(state.Placed) do
+		placedCount += 1
+	end
+	if #state.Inventory == 0 then
+		objectiveTitleLabel.Text = "FIRST QUEST"
+		objectiveBodyLabel.Text = "Find a pixel creature\nATTACK: click / Space\nCAPTURE: E when stunned"
+	elseif placedCount == 0 then
+		objectiveTitleLabel.Text = "NICE CAPTURE!"
+		objectiveBodyLabel.Text = "Open BAG below\nPress PLACE on a card\nYour stand earns money"
+	else
+		objectiveTitleLabel.Text = "BUILD YOUR EMPIRE"
+		objectiveBodyLabel.Text = "Collect stand money with F\nUpgrade your best creatures\nUnlock the next zone"
+	end
 	renderInventory(windows.Inventory.Body)
 	renderShop(windows.Shop.Body)
 	renderIndex(windows.Index.Body)
@@ -235,10 +276,14 @@ function UIController.Init(newContext)
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
 	gui.Parent = context.PlayerGui
+	local title = Components.Panel(gui, "GameTitle", UDim2.fromOffset(310, 54), UDim2.new(0.5, -155, 0, 10))
+	title.BackgroundColor3 = Color3.fromRGB(36, 31, 61)
+	local titleLabel = Components.Label(title, "PIXEL BRAINROT", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4))
+	titleLabel.TextColor3 = Theme.Colors.Yellow
 	local top = Instance.new("Frame")
 	top.Name = "Counters"
 	top.Size = UDim2.new(1, -24, 0, 52)
-	top.Position = UDim2.fromOffset(12, 10)
+	top.Position = UDim2.fromOffset(12, 74)
 	top.BackgroundTransparency = 1
 	top.Parent = gui
 	local layout = Instance.new("UIListLayout")
@@ -248,6 +293,20 @@ function UIController.Init(newContext)
 	makeCounter(top, "Money", Theme.Colors.Green)
 	makeCounter(top, "Gems", Theme.Colors.Blue)
 	makeCounter(top, "Rebirths", Theme.Colors.Purple)
+
+	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(300, 96), UDim2.fromOffset(14, 138))
+	objective.BackgroundColor3 = Color3.fromRGB(35, 41, 58)
+	objectiveTitleLabel = Components.Label(objective, "FIRST QUEST", UDim2.new(1, -20, 0, 28), UDim2.fromOffset(10, 8))
+	objectiveTitleLabel.TextColor3 = Theme.Colors.Yellow
+	objectiveTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	objectiveBodyLabel = Components.Label(
+		objective,
+		"Find a pixel creature\nATTACK: click / Space\nCAPTURE: E when stunned",
+		UDim2.new(1, -20, 0, 52),
+		UDim2.fromOffset(10, 38)
+	)
+	objectiveBodyLabel.TextXAlignment = Enum.TextXAlignment.Left
+	objectiveBodyLabel.TextYAlignment = Enum.TextYAlignment.Top
 
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"

@@ -1,4 +1,5 @@
 local PlotService = {}
+local PixelVisuals = require(script.Parent.PixelVisuals)
 local context
 local accrued = {}
 
@@ -39,6 +40,10 @@ function PlotService.RefreshPlot(player)
 			if old then
 				old:Destroy()
 			end
+			local oldArt = stand:FindFirstChild("PixelArt")
+			if oldArt then
+				oldArt:Destroy()
+			end
 			local uid = data.Placed[tostring(standIndex)]
 			local item = uid and findItem(data, uid)
 			if item then
@@ -47,11 +52,20 @@ function PlotService.RefreshPlot(player)
 				display.Name = "Display"
 				display.Anchored = true
 				display.CanCollide = false
-				display.Size = Vector3.new(5, 5, 1)
+				display.Size = Vector3.new(6, 1, 6)
 				display.Position = stand.Position + Vector3.new(0, 3.3, 0)
 				display.Color = definition.Color
 				display.Material = Enum.Material.Neon
 				display.Parent = stand
+				PixelVisuals.Build(
+					stand,
+					display,
+					item.BrainrotId,
+					definition.Color,
+					context.Config.Rarities[definition.Rarity].Color,
+					0.68,
+					context.Config.Mutations[item.Mutation or "None"].Color
+				)
 				local spriteId = context.AssetIds.Brainrots[item.BrainrotId]
 				if spriteId and spriteId ~= "rbxassetid://0" then
 					local spriteGui = Instance.new("BillboardGui")
@@ -65,6 +79,10 @@ function PlotService.RefreshPlot(player)
 					image.ResampleMode = Enum.ResamplerMode.Pixelated
 					image.Parent = spriteGui
 					display.Transparency = 1
+					local art = stand:FindFirstChild("PixelArt")
+					if art then
+						art:Destroy()
+					end
 				end
 				local gui = Instance.new("BillboardGui")
 				gui.Name = "Income"

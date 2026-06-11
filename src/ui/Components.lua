@@ -2,6 +2,36 @@ local Theme = require(script.Parent.Theme)
 
 local Components = {}
 
+local function addPixelCorners(parent, color)
+	for _, position in ipairs({
+		UDim2.fromOffset(-3, -3),
+		UDim2.new(1, -3, 0, -3),
+		UDim2.new(0, -3, 1, -3),
+		UDim2.new(1, -3, 1, -3),
+	}) do
+		local pixel = Instance.new("Frame")
+		pixel.Name = "CornerPixel"
+		pixel.Size = UDim2.fromOffset(6, 6)
+		pixel.Position = position
+		pixel.BackgroundColor3 = color or Color3.fromRGB(15, 17, 27)
+		pixel.BorderSizePixel = 0
+		pixel.ZIndex = parent.ZIndex + 1
+		pixel.Parent = parent
+	end
+end
+
+local function addHighlight(parent)
+	local highlight = Instance.new("Frame")
+	highlight.Name = "TopHighlight"
+	highlight.Size = UDim2.new(1, -8, 0, 3)
+	highlight.Position = UDim2.fromOffset(4, 4)
+	highlight.BackgroundColor3 = Color3.new(1, 1, 1)
+	highlight.BackgroundTransparency = 0.68
+	highlight.BorderSizePixel = 0
+	highlight.ZIndex = parent.ZIndex + 1
+	highlight.Parent = parent
+end
+
 local function corner(parent, radius)
 	local item = Instance.new("UICorner")
 	item.CornerRadius = radius or Theme.Corner
@@ -44,6 +74,8 @@ function Components.Button(parent, text, color)
 	button.Parent = parent
 	corner(button)
 	stroke(button)
+	addPixelCorners(button)
+	addHighlight(button)
 	return button
 end
 
@@ -57,6 +89,8 @@ function Components.Panel(parent, name, size, position)
 	panel.Parent = parent
 	corner(panel)
 	stroke(panel)
+	addPixelCorners(panel)
+	addHighlight(panel)
 	return panel
 end
 
@@ -112,6 +146,8 @@ function Components.Card(parent, color)
 	card.Parent = parent
 	corner(card)
 	stroke(card, color or Color3.fromRGB(20, 22, 34), 3)
+	addPixelCorners(card, color)
+	addHighlight(card)
 	return card
 end
 
