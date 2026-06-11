@@ -24,6 +24,7 @@ local template = {
 local profiles = {}
 local store
 local context
+local dataStoreAvailable = false
 
 local function reconcile(target, source)
 	for key, value in pairs(source) do
@@ -65,7 +66,18 @@ end
 
 function DataService.Init(newContext)
 	context = newContext
-	store = DataStoreService:GetDataStore(STORE_NAME)
+	if game.PlaceId == 0 then
+		return
+	end
+	local success, result = pcall(function()
+		return DataStoreService:GetDataStore(STORE_NAME)
+	end)
+	if success then
+		store = result
+		dataStoreAvailable = true
+	else
+		warn("DataStore unavailable; using temporary session data:", result)
+	end
 end
 
 function DataService.Get(player)
@@ -97,6 +109,15 @@ end
 
 function DataService.Load(player)
 	local key = "Player_" .. player.UserId
+	if not dataStoreAvailable then
+		profiles[player] = {
+			Key = key,
+			Data = context.Util.DeepCopy(template),
+			Temporary = true,
+		}
+		DataService.PushState(player)
+		return true
+	end
 	local loaded
 	local success, err = retry(function()
 		loaded = store:UpdateAsync(key, function(current)
@@ -129,6 +150,12 @@ end
 function DataService.Save(player, release)
 	local profile = profiles[player]
 	if not profile then
+		return true
+	end
+	if profile.Temporary or not dataStoreAvailable then
+		if release then
+			profiles[player] = nil
+		end
 		return true
 	end
 	local snapshot = context.Util.DeepCopy(profile.Data)

@@ -23,6 +23,28 @@
       }
     },
     "Workspace": {
+      "FallbackFloor": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "Color": [0.21, 0.55, 0.27],
+          "Material": "SmoothPlastic",
+          "Position": [0, -2, 0],
+          "Size": [240, 2, 180]
+        }
+      },
+      "FallbackSpawn": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "Color": [1, 0.84, 0.2],
+          "Neutral": true,
+          "Position": [0, 1, -35],
+          "Size": [14, 1, 14]
+        }
+      },
       "$properties": {
         "StreamingEnabled": true
       }
