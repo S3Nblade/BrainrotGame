@@ -36,6 +36,7 @@ function ZoneService.Start()
 		data.Money -= zone.UnlockCost
 		data.UnlockedZones[zoneId] = true
 		context.DataService.PushState(player)
+		context.QuestService.Progress(player, "UnlockZone", zoneId)
 		context.Remotes.Notify:FireClient(player, zone.DisplayName .. " unlocked!", "Success")
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		if root then

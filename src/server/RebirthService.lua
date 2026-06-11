@@ -30,6 +30,7 @@ function RebirthService.Start()
 		context.PlotService.ResetAccrued(player)
 		context.DataService.PushState(player)
 		context.PlotService.RefreshPlot(player)
+		context.QuestService.Progress(player, "Rebirth")
 		context.Remotes.Notify:FireClient(player, "Rebirth complete! Permanent income multiplied.", "Success")
 	end)
 end

@@ -33,6 +33,7 @@ local serviceNames = {
 	"PlayerVisualService",
 	"BrainrotSpawnService",
 	"EconomyService",
+	"QuestService",
 	"PlotService",
 	"CaptureService",
 	"RebirthService",

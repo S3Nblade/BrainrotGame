@@ -12,6 +12,8 @@ local counters = {}
 local windows = {}
 local objectiveTitleLabel
 local objectiveBodyLabel
+local toastQueue = {}
+local toastBusy = false
 
 local function rarityRank(rarityName)
 	return table.find(context.Config.Rarities.Order, rarityName) or 0
@@ -289,15 +291,25 @@ local function refresh(newState)
 	for _ in pairs(state.Placed) do
 		placedCount += 1
 	end
-	if #state.Inventory == 0 then
-		objectiveTitleLabel.Text = "FIRST QUEST"
-		objectiveBodyLabel.Text = "Find a pixel creature\nATTACK: click / Space\nCAPTURE: E when stunned"
+	local quest = context.Config.Quests[state.QuestStage]
+	if quest then
+		local reward = quest.RewardMoney and ("$" .. context.Util.FormatNumber(quest.RewardMoney))
+			or ((quest.RewardGems or 0) .. " Gems")
+		objectiveTitleLabel.Text = string.format("QUEST %d/%d", state.QuestStage, #context.Config.Quests)
+		objectiveBodyLabel.Text = string.format(
+			"%s\n%s  %d/%d\nReward: %s",
+			quest.Title,
+			quest.Description,
+			state.QuestProgress,
+			quest.Target,
+			reward
+		)
 	elseif placedCount == 0 then
-		objectiveTitleLabel.Text = "NICE CAPTURE!"
-		objectiveBodyLabel.Text = "Open BAG below\nPress PLACE on a card\nYour stand earns money"
+		objectiveTitleLabel.Text = "QUESTS COMPLETE!"
+		objectiveBodyLabel.Text = "Fill your stands\nComplete the index\nReach the Glitch Zone"
 	else
-		objectiveTitleLabel.Text = "BUILD YOUR EMPIRE"
-		objectiveBodyLabel.Text = "Collect stand money with F\nUpgrade your best creatures\nUnlock the next zone"
+		objectiveTitleLabel.Text = "QUESTS COMPLETE!"
+		objectiveBodyLabel.Text = "Build your best squad\nChase rare mutations\nClimb the rebirths"
 	end
 	renderInventory(windows.Inventory.Body)
 	renderShop(windows.Shop.Body)
@@ -307,18 +319,29 @@ local function refresh(newState)
 end
 
 local function notify(message, kind)
-	local toast = Components.Panel(gui, "Toast", UDim2.fromOffset(360, 56), UDim2.new(0.5, -180, 0, -70))
-	toast.BackgroundColor3 = kind == "Error" and Theme.Colors.Red or Theme.Colors.Green
-	toast.ZIndex = 30
-	local label = Components.Label(toast, message, UDim2.new(1, -20, 1, -10), UDim2.fromOffset(10, 5))
-	label.ZIndex = 31
-	TweenService:Create(toast, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Position = UDim2.new(0.5, -180, 0, 24) })
-		:Play()
-	task.delay(2.4, function()
-		local tween = TweenService:Create(toast, TweenInfo.new(0.2), { Position = UDim2.new(0.5, -180, 0, -70) })
-		tween:Play()
-		tween.Completed:Wait()
-		toast:Destroy()
+	table.insert(toastQueue, { Message = message, Kind = kind })
+	if toastBusy then
+		return
+	end
+	toastBusy = true
+	task.spawn(function()
+		while #toastQueue > 0 do
+			local entry = table.remove(toastQueue, 1)
+			local toast = Components.Panel(gui, "Toast", UDim2.fromOffset(360, 56), UDim2.new(0.5, -180, 0, -70))
+			toast.BackgroundColor3 = entry.Kind == "Error" and Theme.Colors.Red or Theme.Colors.Green
+			toast.ZIndex = 30
+			local label = Components.Label(toast, entry.Message, UDim2.new(1, -20, 1, -10), UDim2.fromOffset(10, 5))
+			label.ZIndex = 31
+			TweenService:Create(toast, TweenInfo.new(0.25, Enum.EasingStyle.Back), {
+				Position = UDim2.new(0.5, -180, 0, 24),
+			}):Play()
+			task.wait(2.1)
+			local tween = TweenService:Create(toast, TweenInfo.new(0.2), { Position = UDim2.new(0.5, -180, 0, -70) })
+			tween:Play()
+			tween.Completed:Wait()
+			toast:Destroy()
+		end
+		toastBusy = false
 	end)
 end
 
@@ -350,7 +373,7 @@ function UIController.Init(newContext)
 	makeCounter(top, "Gems", Theme.Colors.Blue, 2)
 	makeCounter(top, "Rebirths", Theme.Colors.Purple, 3)
 
-	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(246, 82), UDim2.fromOffset(14, 112))
+	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(270, 104), UDim2.fromOffset(14, 112))
 	objective.BackgroundColor3 = Color3.fromRGB(35, 41, 58)
 	objectiveTitleLabel = Components.Label(objective, "FIRST QUEST", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(10, 8))
 	objectiveTitleLabel.TextColor3 = Theme.Colors.Yellow
@@ -358,7 +381,7 @@ function UIController.Init(newContext)
 	objectiveBodyLabel = Components.Label(
 		objective,
 		"Find a pixel creature\nATTACK: click / Space\nCAPTURE: E when stunned",
-		UDim2.new(1, -20, 0, 43),
+		UDim2.new(1, -20, 0, 65),
 		UDim2.fromOffset(10, 32)
 	)
 	objectiveBodyLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -366,7 +389,7 @@ function UIController.Init(newContext)
 
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
-	nav.Position = UDim2.fromOffset(18, 205)
+	nav.Position = UDim2.fromOffset(18, 227)
 	nav.Size = UDim2.fromOffset(620, 58)
 	nav.BackgroundTransparency = 1
 	nav.Parent = gui

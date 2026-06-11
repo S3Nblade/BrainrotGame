@@ -48,6 +48,11 @@ REGRESSION_SNIPPETS = {
         "context.Remotes.TravelPlotRequest.OnServerEvent",
         '"Plot collected! +$"',
     ],
+    "src/server/QuestService.lua": [
+        'QuestService.Progress(player, eventName, value, amount)',
+        "function QuestService.Sync(player, notify)",
+        '"Quest complete! +"',
+    ],
 }
 
 

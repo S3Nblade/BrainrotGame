@@ -19,6 +19,8 @@ local template = {
 	Settings = { Music = true, SFX = true },
 	StorageLevel = 0,
 	Boosts = { LuckUntil = 0, SpeedUntil = 0, MoneyUntil = 0 },
+	QuestStage = 1,
+	QuestProgress = 0,
 }
 
 local profiles = {}
@@ -61,6 +63,8 @@ local function publicState(data)
 		Settings = data.Settings,
 		StorageLevel = data.StorageLevel,
 		Boosts = data.Boosts,
+		QuestStage = data.QuestStage,
+		QuestProgress = data.QuestProgress,
 	}
 end
 

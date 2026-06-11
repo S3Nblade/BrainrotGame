@@ -141,6 +141,7 @@ function PlotService.Start()
 		accrued[player][standIndex] = 0
 		context.DataService.PushState(player)
 		PlotService.RefreshPlot(player)
+		context.QuestService.Progress(player, "Place")
 	end)
 
 	context.Remotes.UnplaceRequest.OnServerEvent:Connect(function(player, uid)
@@ -208,6 +209,7 @@ function PlotService.Start()
 		item.Level += 1
 		context.DataService.PushState(player)
 		PlotService.RefreshPlot(player)
+		context.QuestService.Progress(player, "Upgrade")
 	end)
 
 	task.spawn(function()

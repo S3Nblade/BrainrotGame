@@ -102,6 +102,7 @@ function CaptureService.Start()
 		local position = record.Root.Position
 		context.BrainrotSpawnService.Remove(model)
 		context.DataService.PushState(player)
+		context.QuestService.Progress(player, "Capture")
 		context.Remotes.CaptureEffect:FireAllClients(position, context.Config.Mutations[mutation].Color)
 		context.Remotes.RevealBrainrot:FireClient(player, item)
 		context.Remotes.Notify:FireClient(

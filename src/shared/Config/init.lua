@@ -5,4 +5,5 @@ return {
 	Zones = require(script.Zones),
 	Economy = require(script.Economy),
 	Shop = require(script.Shop),
+	Quests = require(script.Quests),
 }
