@@ -9,6 +9,8 @@ local player = Players.LocalPlayer
 local context
 local highlight
 local targetLabel
+local attackHeld = false
+local unlockedZones = { Grass = true }
 
 local function closestBrainrot(requireStunned)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -21,7 +23,8 @@ local function closestBrainrot(requireStunned)
 		local modelRoot = model.PrimaryPart
 		if modelRoot then
 			local stunned = model:GetAttribute("Stunned") == true
-			if requireStunned == nil or stunned == requireStunned then
+			local zoneUnlocked = unlockedZones[model:GetAttribute("ZoneId")] == true
+			if zoneUnlocked and (requireStunned == nil or stunned == requireStunned) then
 				local distance = (root.Position - modelRoot.Position).Magnitude
 				if distance < bestDistance then
 					best = model
@@ -33,21 +36,45 @@ local function closestBrainrot(requireStunned)
 	return best, bestDistance
 end
 
-local function attack(_, state, input)
-	if state ~= Enum.UserInputState.Begin then
-		return Enum.ContextActionResult.Pass
-	end
+local function canStartAttack(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		for _, object in ipairs(context.PlayerGui:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)) do
 			if object:IsA("GuiButton") or object:FindFirstAncestorWhichIsA("GuiButton") then
-				return Enum.ContextActionResult.Pass
+				return false
 			end
 		end
 	end
+	return true
+end
+
+local function tryAttack()
 	local model, distance = closestBrainrot(false)
 	if model and distance <= context.Config.Economy.AttackRange then
 		context.Remotes.AttackRequest:FireServer(model)
 	end
+end
+
+local function attack(_, state, input)
+	if state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+		attackHeld = false
+		return Enum.ContextActionResult.Pass
+	end
+	if state ~= Enum.UserInputState.Begin or not canStartAttack(input) then
+		return Enum.ContextActionResult.Pass
+	end
+	if attackHeld then
+		return Enum.ContextActionResult.Sink
+	end
+	attackHeld = true
+	tryAttack()
+	task.spawn(function()
+		while attackHeld do
+			task.wait(context.Config.Economy.AttackCooldown * 0.9)
+			if attackHeld then
+				tryAttack()
+			end
+		end
+	end)
 	return input.UserInputType == Enum.UserInputType.MouseButton1 and Enum.ContextActionResult.Pass
 		or Enum.ContextActionResult.Sink
 end
@@ -123,6 +150,17 @@ function InputController.Init(newContext)
 end
 
 function InputController.Start()
+	context.Remotes.StateChanged.OnClientEvent:Connect(function(newState)
+		unlockedZones = newState.UnlockedZones or unlockedZones
+	end)
+	task.spawn(function()
+		local success, initial = pcall(function()
+			return context.Remotes.GetState:InvokeServer()
+		end)
+		if success and initial then
+			unlockedZones = initial.UnlockedZones or unlockedZones
+		end
+	end)
 	ContextActionService:BindAction(
 		"PixelAttack",
 		attack,

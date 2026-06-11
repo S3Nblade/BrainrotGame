@@ -1,6 +1,7 @@
 local CaptureService = {}
 local context
 local cooldowns = {}
+local combos = {}
 local random = Random.new()
 
 local function distanceTo(player, position)
@@ -21,6 +22,17 @@ local function rollMutation(player)
 		table.insert(entries, { Value = name, Weight = weight })
 	end
 	return context.Util.WeightedChoice(entries, random)
+end
+
+local function advanceCombo(player)
+	local now = os.clock()
+	local current = combos[player]
+	local count = current and current.ExpiresAt > now and current.Count + 1 or 1
+	count = math.min(count, context.Config.Economy.CaptureComboMax)
+	local expiresAt = now + context.Config.Economy.CaptureComboSeconds
+	combos[player] = { Count = count, ExpiresAt = expiresAt }
+	context.Remotes.ComboChanged:FireClient(player, count, context.Config.Economy.CaptureComboSeconds)
+	return 1 + (count - 1) * context.Config.Economy.CaptureComboRewardPerLevel
 end
 
 function CaptureService.Init(newContext)
@@ -50,10 +62,14 @@ function CaptureService.Start()
 		record.Attacker = player
 		record.IdleUntil = 0
 		record.ChaseEnds = now + context.Config.Economy.ChaseDuration
-		local damage = context.Config.Economy.BaseDamage
+		local critical = random:NextNumber() <= context.Config.Economy.CriticalChance
+		local damage = context.EconomyService.GetPlayerDamage(data)
+		if critical then
+			damage = math.floor(damage * context.Config.Economy.CriticalMultiplier)
+		end
 		record.HP = math.max(0, record.HP - damage)
 		record.Root.Status.HPBack.Fill.Size = UDim2.fromScale(record.HP / record.MaxHP, 1)
-		context.Remotes.DamagePopup:FireAllClients(record.Root.Position, damage)
+		context.Remotes.DamagePopup:FireAllClients(record.Root.Position, damage, critical)
 		if record.HP <= 0 then
 			record.Stunned = true
 			record.StunnedUntil = now + context.Config.Economy.StunDuration
@@ -90,12 +106,14 @@ function CaptureService.Start()
 		}
 		table.insert(data.Inventory, item)
 		data.Discovered[record.Id] = true
+		local comboMultiplier = advanceCombo(player)
 		local captureReward = math.max(
 			1,
 			math.floor(
 				context.EconomyService.GetItemIncome(item)
 					* context.EconomyService.GetRebirthMultiplier(data)
 					* context.Config.Economy.CaptureRewardSeconds
+					* comboMultiplier
 			)
 		)
 		data.Money += captureReward
@@ -110,6 +128,10 @@ function CaptureService.Start()
 			"Captured " .. record.Definition.Name .. "! +$" .. context.Util.FormatNumber(captureReward),
 			"Success"
 		)
+	end)
+	game:GetService("Players").PlayerRemoving:Connect(function(player)
+		cooldowns[player] = nil
+		combos[player] = nil
 	end)
 end
 

@@ -38,8 +38,12 @@ function EffectsController.Init(newContext)
 end
 
 function EffectsController.Start()
-	context.Remotes.DamagePopup.OnClientEvent:Connect(function(position, amount)
-		worldPopup(position, "-" .. amount, Color3.fromRGB(255, 92, 92))
+	context.Remotes.DamagePopup.OnClientEvent:Connect(function(position, amount, critical)
+		worldPopup(
+			position,
+			critical and ("CRIT! -" .. amount) or ("-" .. amount),
+			critical and Color3.fromRGB(255, 226, 74) or Color3.fromRGB(255, 92, 92)
+		)
 	end)
 	context.Remotes.CaptureEffect.OnClientEvent:Connect(function(position, color)
 		for index = 1, 10 do

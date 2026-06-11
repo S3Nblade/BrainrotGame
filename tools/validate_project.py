@@ -42,6 +42,9 @@ REGRESSION_SNIPPETS = {
         'model:GetAttribute("Stunned") == true',
         "context.PlayerGui:GetGuiObjectsAtPosition",
         'highlight.Name = "TargetHighlight"',
+        "while attackHeld do",
+        "context.Config.Economy.AttackCooldown * 0.9",
+        'unlockedZones[model:GetAttribute("ZoneId")] == true',
     ],
     "src/server/PlotService.lua": [
         "context.Remotes.UnplaceRequest.OnServerEvent",
@@ -66,6 +69,18 @@ REGRESSION_SNIPPETS = {
     "src/client/UIController.lua": [
         'context.Remotes.ClaimDailyRequest:FireServer()',
         '"7-DAY STREAK"',
+        "context.Remotes.ComboChanged.OnClientEvent",
+        'counters.Power.Text = "Power: "',
+    ],
+    "src/server/EconomyService.lua": [
+        "function EconomyService.GetPlayerDamage(data)",
+        "DamageRebirthGrowth",
+        "DamageMultiplier",
+    ],
+    "src/server/CaptureService.lua": [
+        "local comboMultiplier = advanceCombo(player)",
+        "context.Config.Economy.CriticalChance",
+        "context.EconomyService.GetPlayerDamage(data)",
     ],
 }
 

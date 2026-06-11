@@ -17,6 +17,7 @@ return {
 		"Notify",
 		"DamagePopup",
 		"CaptureEffect",
+		"ComboChanged",
 	},
 	Functions = {
 		"GetState",

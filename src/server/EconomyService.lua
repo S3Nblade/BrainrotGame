@@ -5,6 +5,18 @@ function EconomyService.GetRebirthMultiplier(data)
 	return context.Config.Economy.RebirthMultiplierPerLevel ^ data.Rebirths
 end
 
+function EconomyService.GetPlayerDamage(data)
+	local zoneMultiplier = 1
+	for _, zoneId in ipairs(context.Config.Zones.Order) do
+		if data.UnlockedZones[zoneId] then
+			zoneMultiplier = math.max(zoneMultiplier, context.Config.Zones[zoneId].DamageMultiplier or 1)
+		end
+	end
+	return math.floor(
+		context.Config.Economy.BaseDamage * zoneMultiplier * context.Config.Economy.DamageRebirthGrowth ^ data.Rebirths
+	)
+end
+
 function EconomyService.GetItemIncome(item)
 	local definition = context.Config.Brainrots[item.BrainrotId]
 	local mutation = context.Config.Mutations[item.Mutation or "None"]

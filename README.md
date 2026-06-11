@@ -1,6 +1,6 @@
 # Pixel Brainrot Simulator
 
-An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, daily rewards, capped offline earnings, and a collection index.
+An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, hold-to-attack combat, critical hits, capture combos, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, daily rewards, capped offline earnings, and a collection index.
 
 No assets or code were copied from another Roblox experience. All included PNGs are generated locally by this repository.
 
@@ -92,18 +92,19 @@ Before Play testing:
 Core smoke test:
 
 1. Confirm the camera locks into a smooth top-down view.
-2. Approach a colored brainrot and click, press Space, tap **ATTACK**, or use a controller trigger.
+2. Approach a colored brainrot and hold click, Space, **ATTACK**, or a controller trigger.
 3. Reduce HP before the chase timer expires.
 4. Press E, tap **CAPTURE**, or use controller X while near the stunned brainrot.
 5. Confirm the reveal animation and inventory card appear.
-6. Open **BAG**, place the brainrot, wait for stand income, and press F at the stand to collect.
-7. Upgrade the item from its inventory card.
-8. Unlock zones from **ZONES** and confirm locked-zone brainrots cannot be attacked beforehand.
-9. Purchase each shop placeholder and verify money is charged server-side.
-10. Reach the rebirth cost, rebirth, and confirm money and stands reset while inventory remains.
-11. Open **DAILY**, claim the current reward, and confirm it cannot be claimed twice that day.
-12. Leave with a creature on a stand, wait at least one minute, and rejoin to verify capped offline income.
-13. Rejoin again to confirm saved inventory, levels, discovery, zones, daily streak, and rebirths.
+6. Capture another creature within 45 seconds and confirm the combo reward indicator increases.
+7. Open **BAG**, place the brainrot, wait for stand income, and press F at the stand to collect.
+8. Upgrade the item from its inventory card.
+9. Unlock zones from **ZONES** and confirm capture power rises enough to defeat the next zone.
+10. Purchase each shop placeholder and verify money is charged server-side.
+11. Reach the rebirth cost, rebirth, and confirm money and stands reset while inventory remains.
+12. Open **DAILY**, claim the current reward, and confirm it cannot be claimed twice that day.
+13. Leave with a creature on a stand, wait at least one minute, and rejoin to verify capped offline income.
+14. Rejoin again to confirm saved inventory, levels, discovery, zones, daily streak, and rebirths.
 
 ## Validation
 

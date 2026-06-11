@@ -8,6 +8,7 @@ return {
 		TileColor = Color3.fromRGB(92, 193, 91),
 		AccentColor = Color3.fromRGB(56, 142, 70),
 		RewardMultiplier = 1,
+		DamageMultiplier = 1,
 	},
 	Desert = {
 		DisplayName = "Desert Zone",
@@ -17,6 +18,7 @@ return {
 		TileColor = Color3.fromRGB(235, 194, 101),
 		AccentColor = Color3.fromRGB(196, 131, 67),
 		RewardMultiplier = 2.5,
+		DamageMultiplier = 2,
 	},
 	Ice = {
 		DisplayName = "Ice Zone",
@@ -26,6 +28,7 @@ return {
 		TileColor = Color3.fromRGB(146, 224, 242),
 		AccentColor = Color3.fromRGB(82, 159, 210),
 		RewardMultiplier = 7,
+		DamageMultiplier = 5,
 	},
 	Lava = {
 		DisplayName = "Lava Zone",
@@ -35,6 +38,7 @@ return {
 		TileColor = Color3.fromRGB(91, 55, 61),
 		AccentColor = Color3.fromRGB(244, 89, 48),
 		RewardMultiplier = 20,
+		DamageMultiplier = 15,
 	},
 	Glitch = {
 		DisplayName = "Glitch Zone",
@@ -44,5 +48,6 @@ return {
 		TileColor = Color3.fromRGB(48, 38, 73),
 		AccentColor = Color3.fromRGB(68, 255, 169),
 		RewardMultiplier = 65,
+		DamageMultiplier = 50,
 	},
 }

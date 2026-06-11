@@ -67,6 +67,7 @@ local function publicState(data)
 		Boosts = data.Boosts,
 		QuestStage = data.QuestStage,
 		QuestProgress = data.QuestProgress,
+		Power = context.EconomyService.GetPlayerDamage(data),
 		Daily = {
 			LastClaimDay = data.Daily.LastClaimDay,
 			Streak = data.Daily.Streak,

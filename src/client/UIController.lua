@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local UIController = {}
@@ -12,6 +13,9 @@ local counters = {}
 local windows = {}
 local objectiveTitleLabel
 local objectiveBodyLabel
+local comboPanel
+local comboLabel
+local comboExpiresAt = 0
 local toastQueue = {}
 local toastBusy = false
 
@@ -66,9 +70,13 @@ local function openOnly(window)
 end
 
 local function makeCounter(parent, name, color, layoutOrder)
-	local panel = Components.Panel(parent, name, UDim2.fromOffset(138, 38), UDim2.new())
+	local panel = Components.Panel(parent, name, UDim2.new(0.25, -8, 0, 38), UDim2.new())
 	panel.BackgroundColor3 = color
 	panel.LayoutOrder = layoutOrder
+	local sizeConstraint = Instance.new("UISizeConstraint")
+	sizeConstraint.MinSize = Vector2.new(72, 38)
+	sizeConstraint.MaxSize = Vector2.new(138, 38)
+	sizeConstraint.Parent = panel
 	local label = Components.Label(panel, name .. ": 0", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4))
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	counters[name] = label
@@ -356,6 +364,7 @@ local function refresh(newState)
 	counters.Money.Text = "$ " .. context.Util.FormatNumber(state.Money)
 	counters.Gems.Text = "Gems: " .. context.Util.FormatNumber(state.Gems)
 	counters.Rebirths.Text = "Rebirths: " .. state.Rebirths
+	counters.Power.Text = "Power: " .. context.Util.FormatNumber(state.Power)
 	local placedCount = 0
 	for _ in pairs(state.Placed) do
 		placedCount += 1
@@ -442,6 +451,7 @@ function UIController.Init(newContext)
 	makeCounter(top, "Money", Theme.Colors.Green, 1)
 	makeCounter(top, "Gems", Theme.Colors.Blue, 2)
 	makeCounter(top, "Rebirths", Theme.Colors.Purple, 3)
+	makeCounter(top, "Power", Color3.fromRGB(246, 154, 70), 4)
 
 	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(270, 104), UDim2.fromOffset(14, 112))
 	objective.BackgroundColor3 = Color3.fromRGB(35, 41, 58)
@@ -456,6 +466,12 @@ function UIController.Init(newContext)
 	)
 	objectiveBodyLabel.TextXAlignment = Enum.TextXAlignment.Left
 	objectiveBodyLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+	comboPanel = Components.Panel(gui, "CaptureCombo", UDim2.fromOffset(230, 58), UDim2.new(1, -248, 0, 165))
+	comboPanel.BackgroundColor3 = Color3.fromRGB(108, 58, 137)
+	comboPanel.Visible = false
+	comboLabel = Components.Label(comboPanel, "COMBO x1", UDim2.new(1, -16, 1, -10), UDim2.fromOffset(8, 5))
+	comboLabel.TextColor3 = Theme.Colors.Yellow
 
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
@@ -505,6 +521,20 @@ end
 function UIController.Start()
 	context.Remotes.StateChanged.OnClientEvent:Connect(refresh)
 	context.Remotes.Notify.OnClientEvent:Connect(notify)
+	context.Remotes.ComboChanged.OnClientEvent:Connect(function(count, duration)
+		comboExpiresAt = os.clock() + duration
+		local bonus = math.floor((count - 1) * context.Config.Economy.CaptureComboRewardPerLevel * 100)
+		comboLabel.Text = string.format("CAPTURE COMBO x%d  +%d%%", count, bonus)
+		comboPanel.Visible = true
+		comboPanel.Size = UDim2.fromOffset(190, 48)
+		TweenService:Create(comboPanel, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Size = UDim2.fromOffset(230, 58) })
+			:Play()
+	end)
+	RunService.RenderStepped:Connect(function()
+		if comboPanel.Visible and os.clock() >= comboExpiresAt then
+			comboPanel.Visible = false
+		end
+	end)
 	task.spawn(function()
 		local success, initial = pcall(function()
 			return context.Remotes.GetState:InvokeServer()
