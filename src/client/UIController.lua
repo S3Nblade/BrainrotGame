@@ -11,6 +11,7 @@ local state
 local gui
 local counters = {}
 local windows = {}
+local navButtons = {}
 local objectiveTitleLabel
 local objectiveBodyLabel
 local comboPanel
@@ -18,6 +19,8 @@ local comboLabel
 local comboExpiresAt = 0
 local toastQueue = {}
 local toastBusy = false
+local activeGuideButton
+local guideTween
 
 local function rarityRank(rarityName)
 	return table.find(context.Config.Rarities.Order, rarityName) or 0
@@ -67,6 +70,29 @@ local function openOnly(window)
 	for _, other in pairs(windows) do
 		other.Visible = other == window and not window.Visible
 	end
+end
+
+local function guideButton(name)
+	if activeGuideButton == navButtons[name] then
+		return
+	end
+	if guideTween then
+		guideTween:Cancel()
+		guideTween = nil
+	end
+	if activeGuideButton then
+		activeGuideButton.GuideScale.Scale = 1
+	end
+	activeGuideButton = navButtons[name]
+	if not activeGuideButton then
+		return
+	end
+	guideTween = TweenService:Create(
+		activeGuideButton.GuideScale,
+		TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Scale = 1.08 }
+	)
+	guideTween:Play()
 end
 
 local function makeCounter(parent, name, color, layoutOrder)
@@ -389,6 +415,15 @@ local function refresh(newState)
 		objectiveTitleLabel.Text = "QUESTS COMPLETE!"
 		objectiveBodyLabel.Text = "Build your best squad\nChase rare mutations\nClimb the rebirths"
 	end
+	if state.QuestStage == 2 or state.QuestStage == 3 then
+		guideButton("Inventory")
+	elseif state.QuestStage == 5 then
+		guideButton("Zones")
+	elseif state.Daily.CanClaim then
+		guideButton("Daily")
+	else
+		guideButton(nil)
+	end
 	renderInventory(windows.Inventory.Body)
 	renderShop(windows.Shop.Body)
 	renderIndex(windows.Index.Body)
@@ -501,7 +536,11 @@ function UIController.Init(newContext)
 		local window, body = Components.Window(gui, spec[1], string.upper(spec[1]))
 		windows[spec[1]] = window
 		local button = Components.Button(nav, spec[2], spec[3])
+		navButtons[spec[1]] = button
 		button.Size = UDim2.new(1 / 7, -7, 0, 50)
+		local guideScale = Instance.new("UIScale")
+		guideScale.Name = "GuideScale"
+		guideScale.Parent = button
 		button.LayoutOrder = index
 		button.Activated:Connect(function()
 			openOnly(window)

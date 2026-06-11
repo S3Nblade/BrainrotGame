@@ -1,6 +1,6 @@
 # Pixel Brainrot Simulator
 
-An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, hold-to-attack combat, critical hits, capture combos, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, daily rewards, capped offline earnings, and a collection index.
+An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, hold-to-attack combat, critical hits, capture combos, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, live next-step coaching, mobile-styled action controls, daily rewards, capped offline earnings, and a collection index.
 
 No assets or code were copied from another Roblox experience. All included PNGs are generated locally by this repository.
 

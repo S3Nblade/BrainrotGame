@@ -45,6 +45,10 @@ REGRESSION_SNIPPETS = {
         "while attackHeld do",
         "context.Config.Economy.AttackCooldown * 0.9",
         'unlockedZones[model:GetAttribute("ZoneId")] == true',
+        '"NEXT: HOLD ATTACK!"',
+        '"NEXT: PRESS E TO CAPTURE!"',
+        "ContextActionService:GetButton(actionName)",
+        '"NEXT: OPEN BAG AND PLACE YOUR CREATURE"',
     ],
     "src/server/PlotService.lua": [
         "context.Remotes.UnplaceRequest.OnServerEvent",
@@ -71,6 +75,8 @@ REGRESSION_SNIPPETS = {
         '"7-DAY STREAK"',
         "context.Remotes.ComboChanged.OnClientEvent",
         'counters.Power.Text = "Power: "',
+        'guideButton("Inventory")',
+        'guideButton("Zones")',
     ],
     "src/server/EconomyService.lua": [
         "function EconomyService.GetPlayerDamage(data)",
