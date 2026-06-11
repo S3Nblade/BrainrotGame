@@ -26,6 +26,8 @@ REGRESSION_SNIPPETS = {
     "src/server/DataService.lua": [
         "template.Money = context.Config.Economy.StartingMoney",
         "template.Gems = context.Config.Economy.StartingGems",
+        "if loading[player] then",
+        "loading[player] = nil",
     ],
     "src/server/BrainrotSpawnService.lua": [
         'model:SetAttribute("Stunned", false)',
@@ -79,11 +81,15 @@ REGRESSION_SNIPPETS = {
         'counters.Power.Text = "Power: "',
         'guideButton("Inventory")',
         'guideButton("Zones")',
+        '"TAP AGAIN TO CONFIRM"',
+        "itemIncome(item) * context.Config.Economy.UpgradeIncomeSeconds",
     ],
     "src/server/EconomyService.lua": [
         "function EconomyService.GetPlayerDamage(data)",
         "DamageRebirthGrowth",
         "DamageMultiplier",
+        "context.Config.Economy.UpgradeIncomeSeconds",
+        "math.max(baseCost, incomeCost)",
     ],
     "src/server/CaptureService.lua": [
         "local comboMultiplier = advanceCombo(player)",

@@ -19,6 +19,7 @@ return {
 	PlotStandCount = 6,
 	MaxBrainrotLevel = 25,
 	UpgradeBaseCost = 75,
+	UpgradeIncomeSeconds = 15,
 	UpgradeCostGrowth = 1.68,
 	LevelIncomeGrowth = 1.28,
 	RebirthBaseCost = 10000,

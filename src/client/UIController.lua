@@ -21,9 +21,33 @@ local toastQueue = {}
 local toastBusy = false
 local activeGuideButton
 local guideTween
+local rebirthConfirmUntil = 0
 
 local function rarityRank(rarityName)
 	return table.find(context.Config.Rarities.Order, rarityName) or 0
+end
+
+local function itemIncome(item)
+	local definition = context.Config.Brainrots[item.BrainrotId]
+	local mutation = context.Config.Mutations[item.Mutation or "None"]
+	local zone = definition and context.Config.Zones[definition.Zone]
+	if not definition or not mutation then
+		return 0
+	end
+	return definition.MoneyPerSecond
+		* mutation.Multiplier
+		* (zone and zone.RewardMultiplier or 1)
+		* context.Config.Economy.LevelIncomeGrowth ^ ((item.Level or 1) - 1)
+end
+
+local function getUpgradeCost(item)
+	local levelGrowth = context.Config.Economy.UpgradeCostGrowth ^ ((item.Level or 1) - 1)
+	return math.floor(
+		math.max(
+			context.Config.Economy.UpgradeBaseCost * levelGrowth,
+			itemIncome(item) * context.Config.Economy.UpgradeIncomeSeconds
+		)
+	)
 end
 
 local function addFace(parent, color, locked)
@@ -131,12 +155,7 @@ local function renderInventory(body)
 	for _, item in ipairs(inventory) do
 		local definition = context.Config.Brainrots[item.BrainrotId]
 		local rarity = context.Config.Rarities[definition.Rarity]
-		local mutation = context.Config.Mutations[item.Mutation]
-		local zone = context.Config.Zones[definition.Zone]
-		local income = definition.MoneyPerSecond
-			* mutation.Multiplier
-			* zone.RewardMultiplier
-			* context.Config.Economy.LevelIncomeGrowth ^ (item.Level - 1)
+		local income = itemIncome(item)
 		local placedStand
 		for stand, uid in pairs(state.Placed) do
 			if uid == item.Uid then
@@ -185,9 +204,7 @@ local function renderInventory(body)
 			end
 			context.Remotes.PlaceRequest:FireServer(item.Uid, target)
 		end)
-		local upgradeCost = math.floor(
-			context.Config.Economy.UpgradeBaseCost * context.Config.Economy.UpgradeCostGrowth ^ (item.Level - 1)
-		)
+		local upgradeCost = getUpgradeCost(item)
 		local upgradeText = item.Level >= context.Config.Economy.MaxBrainrotLevel and "MAX"
 			or ("UP $" .. context.Util.FormatNumber(upgradeCost))
 		local upgrade = Components.Button(card, upgradeText, Theme.Colors.Yellow)
@@ -288,6 +305,19 @@ local function renderRebirth(body)
 	button.Size = UDim2.new(0.7, 0, 0, 58)
 	button.Position = UDim2.new(0.15, 0, 0, 290)
 	button.Activated:Connect(function()
+		if os.clock() > rebirthConfirmUntil then
+			rebirthConfirmUntil = os.clock() + 3
+			button.Text = "TAP AGAIN TO CONFIRM"
+			button.BackgroundColor3 = Theme.Colors.Red
+			task.delay(3, function()
+				if button.Parent and os.clock() >= rebirthConfirmUntil then
+					button.Text = "REBIRTH NOW"
+					button.BackgroundColor3 = Theme.Colors.Purple
+				end
+			end)
+			return
+		end
+		rebirthConfirmUntil = 0
 		context.Remotes.RebirthRequest:FireServer()
 	end)
 end
@@ -303,7 +333,12 @@ local function renderZones(body)
 		local button = Components.Button(
 			body,
 			owned and (zone.DisplayName .. " - TRAVEL")
-				or (zone.DisplayName .. " - $" .. context.Util.FormatNumber(zone.UnlockCost)),
+				or string.format(
+					"%s - $%s | x%s POWER",
+					zone.DisplayName,
+					context.Util.FormatNumber(zone.UnlockCost),
+					context.Util.FormatNumber(zone.DamageMultiplier)
+				),
 			owned and Theme.Colors.Green or zone.AccentColor
 		)
 		button.Size = UDim2.new(1, -12, 0, 58)

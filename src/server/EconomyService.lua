@@ -31,9 +31,10 @@ function EconomyService.GetItemIncome(item)
 end
 
 function EconomyService.GetUpgradeCost(item)
-	return math.floor(
-		context.Config.Economy.UpgradeBaseCost * (context.Config.Economy.UpgradeCostGrowth ^ ((item.Level or 1) - 1))
-	)
+	local levelGrowth = context.Config.Economy.UpgradeCostGrowth ^ ((item.Level or 1) - 1)
+	local baseCost = context.Config.Economy.UpgradeBaseCost * levelGrowth
+	local incomeCost = EconomyService.GetItemIncome(item) * context.Config.Economy.UpgradeIncomeSeconds
+	return math.floor(math.max(baseCost, incomeCost))
 end
 
 function EconomyService.Init(newContext)

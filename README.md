@@ -134,7 +134,7 @@ Edit these modules:
 - `src/shared/Config/Rarities.lua`: spawn weights and stat multipliers
 - `src/shared/Config/Mutations.lua`: mutation odds and income multipliers
 - `src/shared/Config/Zones.lua`: map positions, unlock costs, tiles, and rewards
-- `src/shared/Config/Economy.lua`: combat, storage, stands, upgrades, rebirths, offline earnings, and timers
+- `src/shared/Config/Economy.lua`: combat, storage, income-scaled upgrades, rebirths, offline earnings, and timers
 - `src/shared/Config/DailyRewards.lua`: seven-day reward values
 - `src/shared/Config/Shop.lua`: placeholder boost products
 

@@ -26,6 +26,7 @@ local template = {
 }
 
 local profiles = {}
+local loading = {}
 local store
 local context
 local dataStoreAvailable = false
@@ -122,6 +123,22 @@ function DataService.Update(player, callback)
 end
 
 function DataService.Load(player)
+	if profiles[player] then
+		return true
+	end
+	if loading[player] then
+		for _ = 1, 80 do
+			if profiles[player] then
+				return true
+			end
+			if not loading[player] or not player.Parent then
+				break
+			end
+			task.wait(0.1)
+		end
+		return profiles[player] ~= nil
+	end
+	loading[player] = true
 	local key = "Player_" .. player.UserId
 	if not dataStoreAvailable then
 		profiles[player] = {
@@ -130,6 +147,7 @@ function DataService.Load(player)
 			Temporary = true,
 		}
 		context.OfflineEarningsService.Apply(profiles[player].Data)
+		loading[player] = nil
 		DataService.PushState(player)
 		return true
 	end
@@ -152,12 +170,14 @@ function DataService.Load(player)
 			warn("DataStore unavailable in Studio; using temporary data:", err)
 			loaded = { Data = context.Util.DeepCopy(template) }
 		else
+			loading[player] = nil
 			player:Kick("Your data is active on another server. Please try again shortly.")
 			return false
 		end
 	end
 
 	profiles[player] = { Key = key, Data = loaded.Data, Dirty = false }
+	loading[player] = nil
 	local offlineReward, secondsAway = context.OfflineEarningsService.Apply(loaded.Data)
 	DataService.PushState(player)
 	if offlineReward > 0 then
@@ -215,6 +235,7 @@ end
 function DataService.Start()
 	Players.PlayerAdded:Connect(DataService.Load)
 	Players.PlayerRemoving:Connect(function(player)
+		loading[player] = nil
 		DataService.Save(player, true)
 	end)
 	for _, player in ipairs(Players:GetPlayers()) do
