@@ -13,6 +13,10 @@ local windows = {}
 local objectiveTitleLabel
 local objectiveBodyLabel
 
+local function rarityRank(rarityName)
+	return table.find(context.Config.Rarities.Order, rarityName) or 0
+end
+
 local function addFace(parent, color, locked)
 	local sprite = Instance.new("Frame")
 	sprite.Size = UDim2.new(1, -28, 0, 76)
@@ -49,9 +53,7 @@ end
 
 local function clear(container)
 	for _, child in ipairs(container:GetChildren()) do
-		if not child:IsA("UIGridLayout") and not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
-			child:Destroy()
-		end
+		child:Destroy()
 	end
 end
 
@@ -61,9 +63,10 @@ local function openOnly(window)
 	end
 end
 
-local function makeCounter(parent, name, color)
+local function makeCounter(parent, name, color, layoutOrder)
 	local panel = Components.Panel(parent, name, UDim2.fromOffset(138, 38), UDim2.new())
 	panel.BackgroundColor3 = color
+	panel.LayoutOrder = layoutOrder
 	local label = Components.Label(panel, name .. ": 0", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4))
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	counters[name] = label
@@ -73,10 +76,31 @@ end
 local function renderInventory(body)
 	clear(body)
 	Components.Grid(body, UDim2.fromOffset(175, 205))
-	for _, item in ipairs(state.Inventory) do
+	local inventory = table.clone(state.Inventory)
+	table.sort(inventory, function(left, right)
+		local leftDefinition = context.Config.Brainrots[left.BrainrotId]
+		local rightDefinition = context.Config.Brainrots[right.BrainrotId]
+		local leftRank = rarityRank(leftDefinition.Rarity)
+		local rightRank = rarityRank(rightDefinition.Rarity)
+		if leftRank == rightRank then
+			return leftDefinition.Name < rightDefinition.Name
+		end
+		return leftRank > rightRank
+	end)
+	local placedCount = 0
+	for _ in pairs(state.Placed) do
+		placedCount += 1
+	end
+	local standsFull = placedCount >= context.Config.Economy.PlotStandCount
+	for _, item in ipairs(inventory) do
 		local definition = context.Config.Brainrots[item.BrainrotId]
 		local rarity = context.Config.Rarities[definition.Rarity]
 		local mutation = context.Config.Mutations[item.Mutation]
+		local zone = context.Config.Zones[definition.Zone]
+		local income = definition.MoneyPerSecond
+			* mutation.Multiplier
+			* zone.RewardMultiplier
+			* context.Config.Economy.LevelIncomeGrowth ^ (item.Level - 1)
 		local card = Components.Card(body, rarity.Color)
 		addFace(card, definition.Color, false)
 		local info = Components.Label(
@@ -87,20 +111,19 @@ local function renderInventory(body)
 				item.Mutation ~= "None" and item.Mutation or "",
 				definition.Rarity,
 				item.Level,
-				context.Util.FormatNumber(
-					definition.MoneyPerSecond
-						* mutation.Multiplier
-						* context.Config.Economy.LevelIncomeGrowth ^ (item.Level - 1)
-				)
+				context.Util.FormatNumber(income)
 			),
 			UDim2.new(1, -12, 0, 70),
 			UDim2.fromOffset(6, 92)
 		)
 		info.TextColor3 = rarity.Color
-		local place = Components.Button(card, "PLACE", Theme.Colors.Green)
+		local place = Components.Button(card, standsFull and "FULL" or "PLACE", Theme.Colors.Green)
 		place.Size = UDim2.new(0.48, -8, 0, 34)
 		place.Position = UDim2.new(0.02, 0, 1, -40)
 		place.Activated:Connect(function()
+			if standsFull then
+				return
+			end
 			local occupied = {}
 			for stand, uid in pairs(state.Placed) do
 				occupied[tonumber(stand)] = uid
@@ -110,11 +133,16 @@ local function renderInventory(body)
 				target += 1
 			end
 			if target > context.Config.Economy.PlotStandCount then
-				target = 1
+				return
 			end
 			context.Remotes.PlaceRequest:FireServer(item.Uid, target)
 		end)
-		local upgrade = Components.Button(card, "UP", Theme.Colors.Yellow)
+		local upgradeCost = math.floor(
+			context.Config.Economy.UpgradeBaseCost * context.Config.Economy.UpgradeCostGrowth ^ (item.Level - 1)
+		)
+		local upgradeText = item.Level >= context.Config.Economy.MaxBrainrotLevel and "MAX"
+			or ("UP $" .. context.Util.FormatNumber(upgradeCost))
+		local upgrade = Components.Button(card, upgradeText, Theme.Colors.Yellow)
 		upgrade.Size = UDim2.new(0.48, -8, 0, 34)
 		upgrade.Position = UDim2.new(0.52, 0, 1, -40)
 		upgrade.Activated:Connect(function()
@@ -126,7 +154,8 @@ end
 local function renderShop(body)
 	clear(body)
 	Components.Grid(body, UDim2.fromOffset(220, 170))
-	for productId, product in pairs(context.Config.Shop) do
+	for _, productId in ipairs({ "Luck", "Speed", "Storage", "Money" }) do
+		local product = context.Config.Shop[productId]
 		local card = Components.Card(body, Theme.Colors.Purple)
 		local info = Components.Label(
 			card,
@@ -149,7 +178,22 @@ local function renderIndex(body)
 	Components.Grid(body, UDim2.fromOffset(175, 175))
 	local found = 0
 	local total = 0
-	for id, definition in pairs(context.Config.Brainrots) do
+	local ids = {}
+	for id in pairs(context.Config.Brainrots) do
+		table.insert(ids, id)
+	end
+	table.sort(ids, function(left, right)
+		local leftDefinition = context.Config.Brainrots[left]
+		local rightDefinition = context.Config.Brainrots[right]
+		local leftRank = rarityRank(leftDefinition.Rarity)
+		local rightRank = rarityRank(rightDefinition.Rarity)
+		if leftRank == rightRank then
+			return leftDefinition.Name < rightDefinition.Name
+		end
+		return leftRank < rightRank
+	end)
+	for _, id in ipairs(ids) do
+		local definition = context.Config.Brainrots[id]
 		total += 1
 		local discovered = state.Discovered[id]
 		if discovered then
@@ -272,6 +316,8 @@ function UIController.Init(newContext)
 	gui.Name = "PixelHUD"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
+	gui.DisplayOrder = 10
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	gui.Parent = context.PlayerGui
 	local title = Components.Panel(gui, "GameTitle", UDim2.fromOffset(230, 40), UDim2.new(0.5, -115, 0, 10))
 	title.BackgroundColor3 = Color3.fromRGB(36, 31, 61)
@@ -286,10 +332,11 @@ function UIController.Init(newContext)
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
 	layout.Padding = UDim.new(0, 10)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = top
-	makeCounter(top, "Money", Theme.Colors.Green)
-	makeCounter(top, "Gems", Theme.Colors.Blue)
-	makeCounter(top, "Rebirths", Theme.Colors.Purple)
+	makeCounter(top, "Money", Theme.Colors.Green, 1)
+	makeCounter(top, "Gems", Theme.Colors.Blue, 2)
+	makeCounter(top, "Rebirths", Theme.Colors.Purple, 3)
 
 	local objective = Components.Panel(gui, "Objective", UDim2.fromOffset(246, 82), UDim2.fromOffset(14, 112))
 	objective.BackgroundColor3 = Color3.fromRGB(35, 41, 58)
@@ -307,18 +354,19 @@ function UIController.Init(newContext)
 
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
-	nav.AnchorPoint = Vector2.new(1, 0.5)
-	nav.Position = UDim2.new(1, -18, 0.56, 0)
-	nav.Size = UDim2.fromOffset(118, 286)
+	nav.Position = UDim2.fromOffset(18, 205)
+	nav.Size = UDim2.fromOffset(600, 58)
 	nav.BackgroundTransparency = 1
 	nav.Parent = gui
 	local navLayout = Instance.new("UIListLayout")
 	navLayout.Padding = UDim.new(0, 8)
+	navLayout.FillDirection = Enum.FillDirection.Horizontal
 	navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	navLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	navLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	navLayout.Parent = nav
 
-	for _, spec in ipairs({
+	for index, spec in ipairs({
 		{ "Inventory", "BAG", Theme.Colors.Blue },
 		{ "Shop", "SHOP", Theme.Colors.Green },
 		{ "Index", "INDEX", Theme.Colors.Yellow },
@@ -329,6 +377,7 @@ function UIController.Init(newContext)
 		windows[spec[1]] = window
 		local button = Components.Button(nav, spec[2], spec[3])
 		button.Size = UDim2.fromOffset(112, 50)
+		button.LayoutOrder = index
 		button.Activated:Connect(function()
 			openOnly(window)
 		end)

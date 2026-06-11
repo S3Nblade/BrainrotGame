@@ -66,6 +66,8 @@ end
 
 function DataService.Init(newContext)
 	context = newContext
+	template.Money = context.Config.Economy.StartingMoney
+	template.Gems = context.Config.Economy.StartingGems
 	if game.PlaceId == 0 then
 		return
 	end

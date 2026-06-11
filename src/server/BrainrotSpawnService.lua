@@ -1,4 +1,5 @@
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local PixelVisuals = require(script.Parent.PixelVisuals)
 
@@ -62,6 +63,18 @@ local function randomPoint(zone)
 		)
 end
 
+local function recover(record)
+	record.Attacker = nil
+	record.Stunned = false
+	record.StunnedUntil = 0
+	record.HP = record.MaxHP
+	record.Root.Color = record.Definition.Color
+	record.Model:SetAttribute("Stunned", false)
+	record.Root.Status.HPBack.Fill.Size = UDim2.fromScale(1, 1)
+	record.Root.Status.NameLabel.Text = record.Definition.Name
+	record.Target = randomPoint(context.Config.Zones[record.Model:GetAttribute("ZoneId")])
+end
+
 function BrainrotSpawnService.Spawn(zoneId, forcedPosition)
 	local id = chooseForZone(zoneId)
 	if not id then
@@ -73,6 +86,7 @@ function BrainrotSpawnService.Spawn(zoneId, forcedPosition)
 	model.Name = id
 	model:SetAttribute("BrainrotId", id)
 	model:SetAttribute("ZoneId", zoneId)
+	model:SetAttribute("Stunned", false)
 	model.Parent = context.MapService.GetWorld().Brainrots
 	local root = Instance.new("Part")
 	root.Name = "Root"
@@ -117,7 +131,8 @@ function BrainrotSpawnService.Spawn(zoneId, forcedPosition)
 		Attacker = nil,
 		ChaseEnds = 0,
 		Stunned = false,
-		IdleUntil = forcedPosition and os.clock() + 10 or 0,
+		StunnedUntil = 0,
+		IdleUntil = forcedPosition and os.clock() + 25 or 0,
 	}
 	active[model] = record
 	makeBar(root, record)
@@ -166,6 +181,9 @@ function BrainrotSpawnService.Start()
 				continue
 			end
 			if record.Stunned then
+				if os.clock() >= record.StunnedUntil then
+					recover(record)
+				end
 				continue
 			end
 			if os.clock() < record.IdleUntil then
@@ -200,6 +218,13 @@ function BrainrotSpawnService.Start()
 					math.clamp(nextPosition.Z, zone.Center.Z - zone.Size.Y / 2 + 6, zone.Center.Z + zone.Size.Y / 2 - 6)
 				)
 				record.Model:PivotTo(CFrame.new(nextPosition))
+			end
+		end
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		for _, record in pairs(active) do
+			if record.Attacker == player then
+				recover(record)
 			end
 		end
 	end)

@@ -72,6 +72,10 @@ function Components.Button(parent, text, color)
 	button.TextScaled = true
 	button.BorderSizePixel = 0
 	button.Parent = parent
+	local textSize = Instance.new("UITextSizeConstraint")
+	textSize.MaxTextSize = 24
+	textSize.MinTextSize = 10
+	textSize.Parent = button
 	corner(button)
 	stroke(button)
 	addPixelCorners(button)
@@ -95,12 +99,9 @@ function Components.Panel(parent, name, size, position)
 end
 
 function Components.Window(parent, name, title)
-	local window = Components.Panel(parent, name, UDim2.fromScale(0.72, 0.76), UDim2.fromScale(0.14, 0.12))
+	local window = Components.Panel(parent, name, UDim2.fromScale(0.54, 0.6), UDim2.fromScale(0.5, 0.5))
+	window.AnchorPoint = Vector2.new(0.5, 0.5)
 	window.Visible = false
-	local sizeConstraint = Instance.new("UISizeConstraint")
-	sizeConstraint.MaxSize = Vector2.new(820, 620)
-	sizeConstraint.MinSize = Vector2.new(320, 340)
-	sizeConstraint.Parent = window
 	local header = Instance.new("Frame")
 	header.Name = "Header"
 	header.Size = UDim2.new(1, 0, 0, 58)
@@ -110,10 +111,17 @@ function Components.Window(parent, name, title)
 	corner(header)
 	local titleLabel = Components.Label(header, title, UDim2.new(1, -76, 1, -12), UDim2.fromOffset(18, 6))
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	local titleSize = Instance.new("UITextSizeConstraint")
+	titleSize.MaxTextSize = 30
+	titleSize.MinTextSize = 16
+	titleSize.Parent = titleLabel
 	local close = Components.Button(header, "X", Theme.Colors.Red)
 	close.Name = "Close"
 	close.Size = UDim2.fromOffset(44, 40)
 	close.Position = UDim2.new(1, -52, 0, 9)
+	local closeSize = Instance.new("UITextSizeConstraint")
+	closeSize.MaxTextSize = 22
+	closeSize.Parent = close
 	local body = Instance.new("ScrollingFrame")
 	body.Name = "Body"
 	body.Size = UDim2.new(1, -24, 1, -82)

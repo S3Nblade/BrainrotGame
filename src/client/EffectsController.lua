@@ -45,7 +45,7 @@ function EffectsController.Start()
 		for index = 1, 10 do
 			task.delay(index * 0.025, function()
 				local angle = math.pi * 2 * index / 10
-				local anchor = worldPopup(position, "■", color:Lerp(Color3.new(1, 1, 1), 0.35))
+				local anchor = worldPopup(position, "+", color:Lerp(Color3.new(1, 1, 1), 0.35))
 				anchor.Position += Vector3.new(math.cos(angle) * 2, 0, math.sin(angle) * 2)
 			end)
 		end

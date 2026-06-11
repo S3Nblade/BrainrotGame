@@ -27,6 +27,7 @@ function RebirthService.Start()
 		data.Money = 0
 		data.Rebirths += 1
 		data.Placed = {}
+		context.PlotService.ResetAccrued(player)
 		context.DataService.PushState(player)
 		context.PlotService.RefreshPlot(player)
 		context.Remotes.Notify:FireClient(player, "Rebirth complete! Permanent income multiplied.", "Success")

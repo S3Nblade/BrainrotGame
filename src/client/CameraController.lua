@@ -19,14 +19,14 @@ function CameraController.Start()
 			return
 		end
 		local focus = root.Position
-		local target = CFrame.lookAt(focus + Vector3.new(0, 76, 12), focus, Vector3.new(0, 0, -1))
+		local target = CFrame.lookAt(focus + Vector3.new(0, 88, 14), focus, Vector3.new(0, 0, -1))
 		if not initialized then
 			camera.CFrame = target
 			initialized = true
 		else
 			camera.CFrame = camera.CFrame:Lerp(target, 0.16)
 		end
-		camera.FieldOfView = 32
+		camera.FieldOfView = 38
 	end)
 end
 

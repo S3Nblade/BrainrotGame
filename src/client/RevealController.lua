@@ -9,6 +9,7 @@ local crack
 local silhouettes
 local result
 local busy = false
+local queue = {}
 
 local function tween(instance, time, properties, style, direction)
 	local animation = TweenService:Create(
@@ -88,11 +89,7 @@ function RevealController.Init(newContext)
 	result.Parent = overlay
 end
 
-function RevealController.Play(item)
-	if busy then
-		return
-	end
-	busy = true
+local function revealOne(item)
 	local definition = context.Config.Brainrots[item.BrainrotId]
 	local rarity = context.Config.Rarities[definition.Rarity]
 	local mutation = context.Config.Mutations[item.Mutation]
@@ -100,6 +97,7 @@ function RevealController.Play(item)
 	overlay.BackgroundTransparency = 1
 	egg.Visible = true
 	egg.BackgroundColor3 = Color3.fromRGB(242, 239, 220)
+	egg.BackgroundTransparency = 0
 	egg.Size = UDim2.fromOffset(80, 105)
 	egg.Rotation = 0
 	crack.Visible = false
@@ -139,7 +137,20 @@ function RevealController.Play(item)
 	tween(overlay, 0.25, { BackgroundTransparency = 1 })
 	task.wait(0.25)
 	overlay.Visible = false
-	busy = false
+end
+
+function RevealController.Play(item)
+	table.insert(queue, item)
+	if busy then
+		return
+	end
+	busy = true
+	task.spawn(function()
+		while #queue > 0 do
+			revealOne(table.remove(queue, 1))
+		end
+		busy = false
+	end)
 end
 
 function RevealController.Start()

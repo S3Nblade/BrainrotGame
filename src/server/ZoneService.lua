@@ -21,13 +21,26 @@ function ZoneService.Start()
 		end
 		local orderIndex = table.find(context.Config.Zones.Order, zoneId)
 		local previous = orderIndex and context.Config.Zones.Order[orderIndex - 1]
-		if not previous or not data.UnlockedZones[previous] or data.Money < zone.UnlockCost then
+		if not previous or not data.UnlockedZones[previous] then
+			context.Remotes.Notify:FireClient(player, "Unlock the previous zone first.", "Error")
+			return
+		end
+		if data.Money < zone.UnlockCost then
+			context.Remotes.Notify:FireClient(
+				player,
+				"You need $" .. context.Util.FormatNumber(zone.UnlockCost) .. " to unlock this zone.",
+				"Error"
+			)
 			return
 		end
 		data.Money -= zone.UnlockCost
 		data.UnlockedZones[zoneId] = true
 		context.DataService.PushState(player)
 		context.Remotes.Notify:FireClient(player, zone.DisplayName .. " unlocked!", "Success")
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			root.CFrame = CFrame.new(zone.Center + Vector3.new(0, 4, 0))
+		end
 	end)
 end
 

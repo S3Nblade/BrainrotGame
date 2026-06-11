@@ -40,9 +40,12 @@
           "Anchored": true,
           "CanCollide": true,
           "Color": [1, 0.84, 0.2],
+          "Duration": 0,
+          "Material": "SmoothPlastic",
           "Neutral": true,
           "Position": [0, 1, -35],
-          "Size": [14, 1, 14]
+          "Size": [8, 1, 8],
+          "Transparency": 0.2
         }
       },
       "$properties": {

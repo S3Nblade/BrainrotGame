@@ -56,6 +56,8 @@ function CaptureService.Start()
 		context.Remotes.DamagePopup:FireAllClients(record.Root.Position, damage)
 		if record.HP <= 0 then
 			record.Stunned = true
+			record.StunnedUntil = now + context.Config.Economy.StunDuration
+			record.Model:SetAttribute("Stunned", true)
 			record.Root.Color = Color3.fromRGB(155, 155, 165)
 			record.Root.Status.NameLabel.Text = record.Definition.Name .. " - PRESS E"
 		end
@@ -88,11 +90,25 @@ function CaptureService.Start()
 		}
 		table.insert(data.Inventory, item)
 		data.Discovered[record.Id] = true
+		local captureReward = math.max(
+			1,
+			math.floor(
+				context.EconomyService.GetItemIncome(item)
+					* context.EconomyService.GetRebirthMultiplier(data)
+					* context.Config.Economy.CaptureRewardSeconds
+			)
+		)
+		data.Money += captureReward
 		local position = record.Root.Position
 		context.BrainrotSpawnService.Remove(model)
 		context.DataService.PushState(player)
 		context.Remotes.CaptureEffect:FireAllClients(position, context.Config.Mutations[mutation].Color)
 		context.Remotes.RevealBrainrot:FireClient(player, item)
+		context.Remotes.Notify:FireClient(
+			player,
+			"Captured " .. record.Definition.Name .. "! +$" .. context.Util.FormatNumber(captureReward),
+			"Success"
+		)
 	end)
 end
 

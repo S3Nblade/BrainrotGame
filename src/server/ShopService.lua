@@ -14,16 +14,31 @@ function ShopService.Init(newContext)
 end
 
 function ShopService.Start()
-	game:GetService("Players").PlayerAdded:Connect(function(player)
+	local function initializePlayer(player)
 		player.CharacterAdded:Connect(function()
 			task.wait()
 			applySpeed(player)
 		end)
-	end)
+		if player.Character then
+			task.defer(applySpeed, player)
+		end
+	end
+	game:GetService("Players").PlayerAdded:Connect(initializePlayer)
+	for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+		initializePlayer(player)
+	end
 	context.Remotes.ShopPurchaseRequest.OnServerEvent:Connect(function(player, productId)
 		local product = type(productId) == "string" and context.Config.Shop[productId]
 		local data = context.DataService.Get(player)
-		if not product or not data or data.Money < product.Cost then
+		if not product or not data then
+			return
+		end
+		if data.Money < product.Cost then
+			context.Remotes.Notify:FireClient(
+				player,
+				"You need $" .. context.Util.FormatNumber(product.Cost) .. " for that.",
+				"Error"
+			)
 			return
 		end
 		data.Money -= product.Cost

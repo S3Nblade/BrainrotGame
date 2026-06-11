@@ -187,6 +187,7 @@ local function buildGate(zoneId, zone, previous)
 	local gate =
 		part(zoneId .. "Gate", Vector3.new(5, 12, 90), midpoint + Vector3.new(0, 6, 0), zone.AccentColor, world.Gates)
 	gate.Transparency = 0.18
+	gate.CanCollide = false
 	gate:SetAttribute("ZoneId", zoneId)
 	CollectionService:AddTag(gate, "ZoneGate")
 	label(
@@ -261,10 +262,12 @@ function MapService.Init(newContext)
 	spawn.Name = "PlayerSpawn"
 	spawn.Anchored = true
 	spawn.Neutral = true
-	spawn.Size = Vector3.new(14, 1, 14)
+	spawn.Duration = 0
+	spawn.Size = Vector3.new(8, 1, 8)
 	spawn.Position = context.Config.Zones.Grass.Center + Vector3.new(0, 2, -35)
 	spawn.Color = Color3.fromRGB(255, 232, 91)
-	spawn.Material = Enum.Material.Neon
+	spawn.Material = Enum.Material.SmoothPlastic
+	spawn.Transparency = 0.2
 	spawn.Parent = world
 	for index, zoneId in ipairs(context.Config.Zones.Order) do
 		local zone = context.Config.Zones[zoneId]

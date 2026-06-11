@@ -17,14 +17,22 @@ local function collect(player, standIndex)
 	if not amount or amount <= 0 then
 		return
 	end
-	accrued[player][standIndex] = 0
+	local payout = math.floor(amount)
+	if payout <= 0 then
+		return
+	end
+	accrued[player][standIndex] -= payout
 	context.DataService.Update(player, function(data)
-		data.Money += math.floor(amount)
+		data.Money += payout
 	end)
 end
 
 function PlotService.Init(newContext)
 	context = newContext
+end
+
+function PlotService.ResetAccrued(player)
+	accrued[player] = {}
 end
 
 function PlotService.RefreshPlot(player)
@@ -117,6 +125,11 @@ function PlotService.Start()
 		if not data or not findItem(data, uid) then
 			return
 		end
+		local currentUid = data.Placed[tostring(standIndex)]
+		if currentUid and currentUid ~= uid then
+			context.Remotes.Notify:FireClient(player, "That stand is already occupied.", "Error")
+			return
+		end
 		for key, placedUid in pairs(data.Placed) do
 			if placedUid == uid then
 				data.Placed[key] = nil
@@ -177,14 +190,25 @@ function PlotService.Start()
 		end
 	end)
 
-	game:GetService("Players").PlayerAdded:Connect(function(player)
+	local function initializePlayer(player)
 		accrued[player] = {}
-		task.wait(2)
-		PlotService.RefreshPlot(player)
-	end)
+		task.spawn(function()
+			for _ = 1, 20 do
+				if context.MapService.GetPlot(player) and context.DataService.Get(player) then
+					PlotService.RefreshPlot(player)
+					return
+				end
+				task.wait(0.25)
+			end
+		end)
+	end
+	game:GetService("Players").PlayerAdded:Connect(initializePlayer)
 	game:GetService("Players").PlayerRemoving:Connect(function(player)
 		accrued[player] = nil
 	end)
+	for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+		initializePlayer(player)
+	end
 	for _, stand in ipairs(game:GetService("CollectionService"):GetTagged("PlotStand")) do
 		stand.CollectPrompt.Triggered:Connect(function(player)
 			local plot = stand.Parent

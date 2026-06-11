@@ -22,6 +22,27 @@ REQUIRED = [
     "README.md",
 ]
 
+REGRESSION_SNIPPETS = {
+    "src/server/DataService.lua": [
+        "template.Money = context.Config.Economy.StartingMoney",
+        "template.Gems = context.Config.Economy.StartingGems",
+    ],
+    "src/server/BrainrotSpawnService.lua": [
+        'model:SetAttribute("Stunned", false)',
+        "record.StunnedUntil",
+    ],
+    "src/server/RebirthService.lua": [
+        "context.PlotService.ResetAccrued(player)",
+    ],
+    "src/client/RevealController.lua": [
+        "egg.BackgroundTransparency = 0",
+        "table.insert(queue, item)",
+    ],
+    "src/client/InputController.lua": [
+        'model:GetAttribute("Stunned") == true',
+    ],
+}
+
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}")
@@ -37,6 +58,18 @@ def main() -> None:
         json.loads((ROOT / "default.project.json").read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         fail(f"default.project.json is invalid: {error}")
+
+    for lua_path in (ROOT / "src").rglob("*.lua"):
+        try:
+            lua_path.read_text(encoding="ascii")
+        except UnicodeDecodeError:
+            fail(f"Source must remain ASCII-clean: {lua_path.relative_to(ROOT)}")
+
+    for relative, snippets in REGRESSION_SNIPPETS.items():
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        for snippet in snippets:
+            if snippet not in source:
+                fail(f"Regression guard missing in {relative}: {snippet}")
 
     manifest = json.loads((ROOT / "assets/manifest.json").read_text(encoding="utf-8"))
     assets = manifest.get("assets", [])

@@ -17,8 +17,7 @@ local function closestBrainrot(requireStunned)
 	for _, model in ipairs(CollectionService:GetTagged("Brainrot")) do
 		local modelRoot = model.PrimaryPart
 		if modelRoot then
-			local stunned = modelRoot:FindFirstChild("Status")
-				and string.find(modelRoot.Status.NameLabel.Text, "PRESS E") ~= nil
+			local stunned = model:GetAttribute("Stunned") == true
 			if stunned == requireStunned then
 				local distance = (root.Position - modelRoot.Position).Magnitude
 				if distance < bestDistance then

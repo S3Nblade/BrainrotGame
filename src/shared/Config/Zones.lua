@@ -11,7 +11,7 @@ return {
 	},
 	Desert = {
 		DisplayName = "Desert Zone",
-		UnlockCost = 5000,
+		UnlockCost = 1500,
 		Center = Vector3.new(210, 0, 0),
 		Size = Vector2.new(180, 130),
 		TileColor = Color3.fromRGB(235, 194, 101),
@@ -20,7 +20,7 @@ return {
 	},
 	Ice = {
 		DisplayName = "Ice Zone",
-		UnlockCost = 50000,
+		UnlockCost = 15000,
 		Center = Vector3.new(420, 0, 0),
 		Size = Vector2.new(180, 130),
 		TileColor = Color3.fromRGB(146, 224, 242),
@@ -29,7 +29,7 @@ return {
 	},
 	Lava = {
 		DisplayName = "Lava Zone",
-		UnlockCost = 500000,
+		UnlockCost = 150000,
 		Center = Vector3.new(630, 0, 0),
 		Size = Vector2.new(180, 130),
 		TileColor = Color3.fromRGB(91, 55, 61),
@@ -38,7 +38,7 @@ return {
 	},
 	Glitch = {
 		DisplayName = "Glitch Zone",
-		UnlockCost = 5000000,
+		UnlockCost = 1500000,
 		Center = Vector3.new(840, 0, 0),
 		Size = Vector2.new(180, 130),
 		TileColor = Color3.fromRGB(48, 38, 73),
