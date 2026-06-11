@@ -53,6 +53,20 @@ REGRESSION_SNIPPETS = {
         "function QuestService.Sync(player, notify)",
         '"Quest complete! +"',
     ],
+    "src/server/OfflineEarningsService.lua": [
+        "OfflineEarningsCapSeconds",
+        "context.EconomyService.GetRebirthMultiplier(data)",
+        "data.Money += reward",
+    ],
+    "src/server/DailyRewardService.lua": [
+        "context.Remotes.ClaimDailyRequest.OnServerEvent",
+        "data.Daily.LastClaimDay = day",
+        "context.EconomyService.GetRebirthMultiplier(data)",
+    ],
+    "src/client/UIController.lua": [
+        'context.Remotes.ClaimDailyRequest:FireServer()',
+        '"7-DAY STREAK"',
+    ],
 }
 
 

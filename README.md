@@ -1,6 +1,6 @@
 # Pixel Brainrot Simulator
 
-An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, and a collection index.
+An original top-down Roblox simulator built with Rojo and Luau. The project uses a flat pixel-tile world, sprite-ready brainrots, authoritative server gameplay, capture reveals, inventory placement, stand income, upgrades, rebirths, zones, boosts, a persistent starter quest chain, daily rewards, capped offline earnings, and a collection index.
 
 No assets or code were copied from another Roblox experience. All included PNGs are generated locally by this repository.
 
@@ -101,7 +101,9 @@ Core smoke test:
 8. Unlock zones from **ZONES** and confirm locked-zone brainrots cannot be attacked beforehand.
 9. Purchase each shop placeholder and verify money is charged server-side.
 10. Reach the rebirth cost, rebirth, and confirm money and stands reset while inventory remains.
-11. Leave and rejoin to confirm saved inventory, levels, discovery, zones, and rebirths.
+11. Open **DAILY**, claim the current reward, and confirm it cannot be claimed twice that day.
+12. Leave with a creature on a stand, wait at least one minute, and rejoin to verify capped offline income.
+13. Rejoin again to confirm saved inventory, levels, discovery, zones, daily streak, and rebirths.
 
 ## Validation
 
@@ -131,7 +133,8 @@ Edit these modules:
 - `src/shared/Config/Rarities.lua`: spawn weights and stat multipliers
 - `src/shared/Config/Mutations.lua`: mutation odds and income multipliers
 - `src/shared/Config/Zones.lua`: map positions, unlock costs, tiles, and rewards
-- `src/shared/Config/Economy.lua`: combat, storage, stands, upgrades, rebirths, and timers
+- `src/shared/Config/Economy.lua`: combat, storage, stands, upgrades, rebirths, offline earnings, and timers
+- `src/shared/Config/DailyRewards.lua`: seven-day reward values
 - `src/shared/Config/Shop.lua`: placeholder boost products
 
 Developer products are intentionally not enabled. `ShopService` is structured around product keys so MarketplaceService receipt handling can replace the soft-currency placeholder path later.

@@ -11,6 +11,7 @@ return {
 		"RebirthRequest",
 		"UnlockZoneRequest",
 		"ShopPurchaseRequest",
+		"ClaimDailyRequest",
 		"StateChanged",
 		"RevealBrainrot",
 		"Notify",

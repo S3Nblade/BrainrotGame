@@ -279,6 +279,75 @@ local function renderZones(body)
 	end
 end
 
+local function renderDaily(body)
+	clear(body)
+	local day = math.floor(os.time() / 86400)
+	local daily = state.Daily
+	local rewardIndex = 1
+	if daily.LastClaimDay == day then
+		rewardIndex = daily.Streak
+	elseif daily.LastClaimDay == day - 1 then
+		rewardIndex = daily.Streak % #context.Config.DailyRewards + 1
+	end
+	local reward = context.Config.DailyRewards[rewardIndex]
+	local multiplier = context.Config.Economy.RebirthMultiplierPerLevel ^ state.Rebirths
+	local money = math.floor((reward.Money or 0) * multiplier)
+	local rewardDescription = "$" .. context.Util.FormatNumber(money)
+	if (reward.Gems or 0) > 0 then
+		rewardDescription ..= " + " .. reward.Gems .. " Gems"
+	end
+
+	local banner = Components.Panel(body, "DailyBanner", UDim2.new(1, -16, 0, 168), UDim2.fromOffset(8, 4))
+	banner.BackgroundColor3 = Color3.fromRGB(74, 48, 96)
+	local title = Components.Label(
+		banner,
+		daily.CanClaim and ("DAY " .. rewardIndex .. " IS READY!") or ("DAY " .. daily.Streak .. " CLAIMED"),
+		UDim2.new(1, -24, 0, 42),
+		UDim2.fromOffset(12, 14)
+	)
+	title.TextColor3 = Theme.Colors.Yellow
+	local details = Components.Label(
+		banner,
+		daily.CanClaim and ("Today's reward\n" .. rewardDescription) or "Come back tomorrow\nto continue your streak!",
+		UDim2.new(1, -24, 0, 64),
+		UDim2.fromOffset(12, 56)
+	)
+	details.TextWrapped = true
+	local claim = Components.Button(
+		banner,
+		daily.CanClaim and "CLAIM REWARD" or "CLAIMED TODAY",
+		daily.CanClaim and Theme.Colors.Green or Theme.Colors.Muted
+	)
+	claim.Size = UDim2.new(0.66, 0, 0, 42)
+	claim.Position = UDim2.new(0.17, 0, 1, -52)
+	claim.Active = daily.CanClaim
+	claim.Activated:Connect(function()
+		if daily.CanClaim then
+			context.Remotes.ClaimDailyRequest:FireServer()
+		end
+	end)
+
+	local streakTitle = Components.Label(body, "7-DAY STREAK", UDim2.new(1, -16, 0, 34), UDim2.fromOffset(8, 190))
+	streakTitle.TextColor3 = Theme.Colors.Yellow
+	for index, entry in ipairs(context.Config.DailyRewards) do
+		local card = Components.Panel(
+			body,
+			"Day" .. index,
+			UDim2.fromOffset(94, 92),
+			UDim2.fromOffset(8 + ((index - 1) % 4) * 106, 232 + math.floor((index - 1) / 4) * 104)
+		)
+		local completed = daily.LastClaimDay == day and index <= daily.Streak
+		card.BackgroundColor3 = completed and Color3.fromRGB(48, 112, 83) or Color3.fromRGB(45, 51, 70)
+		local amount = "$" .. context.Util.FormatNumber(math.floor((entry.Money or 0) * multiplier))
+		if (entry.Gems or 0) > 0 then
+			amount ..= "\n+" .. entry.Gems .. " Gems"
+		end
+		local label =
+			Components.Label(card, "DAY " .. index .. "\n" .. amount, UDim2.new(1, -10, 1, -10), UDim2.fromOffset(5, 5))
+		label.TextColor3 = index == rewardIndex and Theme.Colors.Yellow or Theme.Colors.Ink
+	end
+end
+
 local function refresh(newState)
 	state = newState
 	if not state then
@@ -316,6 +385,7 @@ local function refresh(newState)
 	renderIndex(windows.Index.Body)
 	renderRebirth(windows.Rebirth.Body)
 	renderZones(windows.Zones.Body)
+	renderDaily(windows.Daily.Body)
 end
 
 local function notify(message, kind)
@@ -390,9 +460,12 @@ function UIController.Init(newContext)
 	local nav = Instance.new("Frame")
 	nav.Name = "Navigation"
 	nav.Position = UDim2.fromOffset(18, 227)
-	nav.Size = UDim2.fromOffset(620, 58)
+	nav.Size = UDim2.new(1, -36, 0, 58)
 	nav.BackgroundTransparency = 1
 	nav.Parent = gui
+	local navConstraint = Instance.new("UISizeConstraint")
+	navConstraint.MaxSize = Vector2.new(690, 58)
+	navConstraint.Parent = nav
 	local navLayout = Instance.new("UIListLayout")
 	navLayout.Padding = UDim.new(0, 8)
 	navLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -406,20 +479,21 @@ function UIController.Init(newContext)
 		{ "Shop", "SHOP", Theme.Colors.Green },
 		{ "Index", "INDEX", Theme.Colors.Yellow },
 		{ "Zones", "ZONES", Theme.Colors.Red },
+		{ "Daily", "DAILY", Color3.fromRGB(246, 154, 70) },
 		{ "Rebirth", "REBIRTH", Theme.Colors.Purple },
 	}) do
 		local window, body = Components.Window(gui, spec[1], string.upper(spec[1]))
 		windows[spec[1]] = window
 		local button = Components.Button(nav, spec[2], spec[3])
-		button.Size = UDim2.fromOffset(96, 50)
+		button.Size = UDim2.new(1 / 7, -7, 0, 50)
 		button.LayoutOrder = index
 		button.Activated:Connect(function()
 			openOnly(window)
 		end)
 	end
 	local plotButton = Components.Button(nav, "PLOT", Color3.fromRGB(91, 224, 209))
-	plotButton.Size = UDim2.fromOffset(96, 50)
-	plotButton.LayoutOrder = 6
+	plotButton.Size = UDim2.new(1 / 7, -7, 0, 50)
+	plotButton.LayoutOrder = 7
 	plotButton.Activated:Connect(function()
 		for _, window in pairs(windows) do
 			window.Visible = false

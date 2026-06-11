@@ -6,4 +6,5 @@ return {
 	Economy = require(script.Economy),
 	Shop = require(script.Shop),
 	Quests = require(script.Quests),
+	DailyRewards = require(script.DailyRewards),
 }

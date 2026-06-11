@@ -21,6 +21,8 @@ local template = {
 	Boosts = { LuckUntil = 0, SpeedUntil = 0, MoneyUntil = 0 },
 	QuestStage = 1,
 	QuestProgress = 0,
+	LastSeen = 0,
+	Daily = { LastClaimDay = -1, Streak = 0 },
 }
 
 local profiles = {}
@@ -65,6 +67,11 @@ local function publicState(data)
 		Boosts = data.Boosts,
 		QuestStage = data.QuestStage,
 		QuestProgress = data.QuestProgress,
+		Daily = {
+			LastClaimDay = data.Daily.LastClaimDay,
+			Streak = data.Daily.Streak,
+			CanClaim = data.Daily.LastClaimDay < math.floor(os.time() / 86400),
+		},
 	}
 end
 
@@ -121,6 +128,7 @@ function DataService.Load(player)
 			Data = context.Util.DeepCopy(template),
 			Temporary = true,
 		}
+		context.OfflineEarningsService.Apply(profiles[player].Data)
 		DataService.PushState(player)
 		return true
 	end
@@ -149,7 +157,23 @@ function DataService.Load(player)
 	end
 
 	profiles[player] = { Key = key, Data = loaded.Data, Dirty = false }
+	local offlineReward, secondsAway = context.OfflineEarningsService.Apply(loaded.Data)
 	DataService.PushState(player)
+	if offlineReward > 0 then
+		task.delay(2, function()
+			if player.Parent then
+				context.Remotes.Notify:FireClient(
+					player,
+					string.format(
+						"Welcome back! Your stands earned $%s while you were away for %s.",
+						context.Util.FormatNumber(offlineReward),
+						context.OfflineEarningsService.FormatDuration(secondsAway)
+					),
+					"Success"
+				)
+			end
+		end)
+	end
 	return true
 end
 
@@ -164,6 +188,7 @@ function DataService.Save(player, release)
 		end
 		return true
 	end
+	profile.Data.LastSeen = os.time()
 	local snapshot = context.Util.DeepCopy(profile.Data)
 	local success, err = retry(function()
 		store:UpdateAsync(profile.Key, function(current)
