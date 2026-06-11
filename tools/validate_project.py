@@ -37,6 +37,8 @@ REGRESSION_SNIPPETS = {
     "src/client/RevealController.lua": [
         "egg.BackgroundTransparency = 0",
         "table.insert(queue, item)",
+        "buildCreature(item, definition, rarity, mutation)",
+        "rarityBurst(rarity.Color)",
     ],
     "src/client/InputController.lua": [
         'model:GetAttribute("Stunned") == true',
@@ -87,6 +89,11 @@ REGRESSION_SNIPPETS = {
         "local comboMultiplier = advanceCombo(player)",
         "context.Config.Economy.CriticalChance",
         "context.EconomyService.GetPlayerDamage(data)",
+    ],
+    "src/server/ZoneService.lua": [
+        "context.MapService.GetZoneAt(root.Position)",
+        "not data.UnlockedZones[zoneId]",
+        '"That zone is locked. Unlock it from ZONES!"',
     ],
 }
 
